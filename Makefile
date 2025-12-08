@@ -32,3 +32,5 @@ run: $(EXEC)
 clean:
 	$(MAKE) -C $(ASM_DIR) clean
 	rm -f $(C_OBJECTS) $(EXEC)
+
+re: clean all run
