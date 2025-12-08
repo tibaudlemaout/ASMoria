@@ -11,7 +11,9 @@ int main() {
     // Run 10 ticks
     for(int i = 0; i < 10; i++) {
         asm_tick();   // Call ASM tick
-        printf("Tick %d: Gold = %lu\n", i+1, get_gold()); // %lu for uint64_t
+        resource_tick(); // Increment other resources
+        printf("Tick %d: Gold = %lu, Stone = %lu, Iron = %lu\n",
+               i+1, get_gold(), get_stone(), get_iron());
         sleep(1);
     }
 

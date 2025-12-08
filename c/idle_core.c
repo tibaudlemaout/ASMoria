@@ -8,3 +8,11 @@ extern uint64_t gold;
 uint64_t get_gold(void) {
     return gold;
 }
+
+uint64_t get_stone(void) {
+    return stone;
+}
+
+uint64_t get_iron(void) {
+    return iron;
+}
