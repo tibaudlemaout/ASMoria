@@ -4,11 +4,15 @@
 global init_resources
 global resource_tick
 global stone
+global stone_rate
 global iron
+global iron_rate
 
 section .data
 stone: dq 0
 iron: dq 0
+stone_rate: dq 1
+iron_rate: dq 1
 
 section .text
 
@@ -27,10 +31,10 @@ init_resources:
 ; ------------------------------
 resource_tick:
     mov rax, [rel stone]
-    add rax, 1           ; 1 stone per tick
+    add rax, [rel stone_rate]
     mov [rel stone], rax
 
     mov rax, [rel iron]
-    add rax, 1           ; 1 iron per tick
+    add rax, [rel iron_rate]
     mov [rel iron], rax
     ret

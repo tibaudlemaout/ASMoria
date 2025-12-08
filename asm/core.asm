@@ -4,10 +4,12 @@
 
 global asm_tick  ; Make tick function accessible to C
 global gold      ; Make gold variable accessible to C
+global gold_rate ; Make gold rate variable accessible to C
 
 section .data
 ; Resource storage (RIP-relative for PIC)
 gold: dq 0        ; 64-bit integer to store current gold
+gold_rate: dq 1   ; 64-bit integer for gold increment rate per tick
 
 section .text
 
@@ -18,6 +20,6 @@ section .text
 ; ------------------------------
 asm_tick:
     mov rax, [rel gold]   ; Load current gold into RAX (PIC-safe)
-    add rax, 1            ; Increment gold by 1
+    add rax, [rel gold_rate]            ; Increment gold by 1
     mov [rel gold], rax   ; Store updated gold back
     ret
