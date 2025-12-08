@@ -1,22 +1,25 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "idle_core.h"
+#include "dwarves.h"
+#include "resources.h"
 
 int main() {
     init_resources();
 
-    //upgrade production after 5 ticks
-    for (int i = 0; i < 10; i++) {
-        if (i == 5) {
-            set_gold_rate(5);   // upgrade gold production
-            set_stone_rate(3);
-            set_iron_rate(2);
-            printf("Upgrade applied!\n");
+    // Example: give 1 dwarf assigned to stone
+    add_dwarf(RES_STONE);
+
+    while (1) {
+        asm_tick();   // gold += 1
+        dwarf_tick(); // stone += dwarves assigned to stone
+
+        if (get_gold() > 5) {
+            move_dwarf(0, RES_IRON); // Move dwarf to iron
         }
 
-        game_tick();
-        printf("Tick %d: Gold = %lu, Stone = %lu, Iron = %lu\n",
-               i+1, get_gold(), get_stone(), get_iron());
+        printf("Gold: %lu, Stone: %lu, Iron: %lu\n",
+            get_gold(), get_stone(), get_iron());
         sleep(1);
     }
 }

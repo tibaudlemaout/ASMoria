@@ -11,8 +11,8 @@ global iron_rate
 section .data
 stone: dq 0
 iron: dq 0
-stone_rate: dq 1
-iron_rate: dq 1
+stone_rate: dq 0
+iron_rate: dq 0
 
 section .text
 
