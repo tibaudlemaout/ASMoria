@@ -1,24 +1,34 @@
-# Root Makefile - build ASM + C + run (PIC-ready)
+# Root Makefile - auto-detect C files and link ASM library
 
-ASM_DIR=asm
-C_DIR=c
-EXEC=test_main
+CC = gcc
+CFLAGS = -Wall -g -no-pie
+
+ASM_DIR = asm
+C_DIR = c
+EXEC = test_main
+
+# Automatically detect all .c files in c/
+C_SOURCES := $(wildcard $(C_DIR)/*.c)
+C_OBJECTS := $(C_SOURCES:.c=.o)
 
 all: $(EXEC)
 
-# Step 1: build ASM library
+# Step 1: build the ASM library
 $(ASM_DIR)/libasmoria.a:
 	$(MAKE) -C $(ASM_DIR)
 
-# Step 2: compile C code and link ASM library with PIC
-$(EXEC): $(C_DIR)/main.c $(C_DIR)/idle_core.c $(ASM_DIR)/libasmoria.a
-	$(CC) -Wall -g -o $(EXEC) $(C_DIR)/main.c $(C_DIR)/idle_core.c $(ASM_DIR)/libasmoria.a -no-pie
+# Step 2: build C object files
+$(C_DIR)/%.o: $(C_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
-# Step 3: run program
+# Step 3: link everything into the final executable
+$(EXEC): $(ASM_DIR)/libasmoria.a $(C_OBJECTS)
+	$(CC) $(CFLAGS) -o $(EXEC) $(C_OBJECTS) $(ASM_DIR)/libasmoria.a
+
+# Step 4: run program
 run: $(EXEC)
 	./$(EXEC)
 
-# Clean all
 clean:
 	$(MAKE) -C $(ASM_DIR) clean
-	rm -f $(EXEC)
+	rm -f $(C_OBJECTS) $(EXEC)
