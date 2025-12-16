@@ -23,7 +23,8 @@ $(C_DIR)/%.o: $(C_DIR)/%.c
 
 # Step 3: link everything into the final executable
 $(EXEC): $(ASM_DIR)/libasmoria.a $(C_OBJECTS)
-	$(CC) $(CFLAGS) -o $(EXEC) $(C_OBJECTS) $(ASM_DIR)/libasmoria.a
+	$(CC) $(CFLAGS) -o $(EXEC) $(C_OBJECTS) $(ASM_DIR)/libasmoria.a \
+    	-lcsfml-graphics -lcsfml-window -lcsfml-system
 
 # Step 4: run program
 run: $(EXEC)

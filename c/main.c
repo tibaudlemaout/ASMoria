@@ -1,25 +1,45 @@
+#include <SFML/Graphics.h>
 #include <stdio.h>
-#include <unistd.h>
 #include "idle_core.h"
 #include "dwarves.h"
 #include "resources.h"
 
-int main() {
+int main(void) {
+    sfVideoMode mode = {800, 600, 32};
+    sfRenderWindow *window =
+        sfRenderWindow_create(mode, "ASMoria", sfResize | sfClose, NULL);
+
+    if (!window)
+        return 1;
+
     init_resources();
 
-    // Example: give 1 dwarf assigned to stone
+    // Example: start with one dwarf on stone
     add_dwarf(RES_STONE);
 
-    while (1) {
-        asm_tick();   // gold += 1
-        dwarf_tick(); // stone += dwarves assigned to stone
+    sfClock *clock = sfClock_create();
 
-        if (get_gold() > 5) {
-            move_dwarf(0, RES_IRON); // Move dwarf to iron
+    while (sfRenderWindow_isOpen(window)) {
+        sfEvent event;
+
+        while (sfRenderWindow_pollEvent(window, &event)) {
+            if (event.type == sfEvtClosed)
+                sfRenderWindow_close(window);
         }
 
-        printf("Gold: %lu, Stone: %lu, Iron: %lu\n",
-            get_gold(), get_stone(), get_iron());
-        sleep(1);
+        // Tick every frame (later we’ll control speed)
+        game_tick();
+        dwarf_tick();
+
+        // Clear window (dark gray)
+        sfRenderWindow_clear(window, sfColor_fromRGB(30, 30, 30));
+
+        // (Rendering will go here later)
+
+        sfRenderWindow_display(window);
     }
+
+    sfClock_destroy(clock);
+    sfRenderWindow_destroy(window);
+    return 0;
 }
