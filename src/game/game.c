@@ -2,6 +2,8 @@
 #include "../../include/asmoria.h"
 #include <string.h>
 #include <time.h>
+#include <stdio.h>
+#include <stddef.h>
 
 /* =========================================================
  * game_init
@@ -10,6 +12,15 @@
  * ========================================================= */
 void game_init(GameState *state) {
     memset(state, 0, sizeof(*state));
+    fprintf(stderr, "sizeof GameState  = %zu\n", sizeof(GameState));
+    fprintf(stderr, "sizeof EventLog   = %zu\n", sizeof(EventLog));
+    fprintf(stderr, "sizeof EventRecord= %zu\n", sizeof(EventRecord));
+    fprintf(stderr, "offset resources  = %zu\n", offsetof(GameState, resources));
+    fprintf(stderr, "offset dwarves    = %zu\n", offsetof(GameState, dwarves));
+    fprintf(stderr, "offset rng        = %zu\n", offsetof(GameState, rng));
+    fprintf(stderr, "offset tick       = %zu\n", offsetof(GameState, tick));
+    fprintf(stderr, "offset event_log  = %zu\n", offsetof(GameState, event_log));
+    fprintf(stderr, "offset evtlog head= %zu\n", offsetof(GameState, event_log.head));
 
     /* Seed RNG from system time */
     asm_rng_seed(state, (uint64_t)time(NULL) ^ 0xA5710A1A000ULL);
@@ -35,4 +46,8 @@ void game_init(GameState *state) {
  * ========================================================= */
 void game_update(GameState *state) {
     asm_tick(state);
+    fprintf(stderr, "tick=%llu count=%u head=%u\n",
+            (unsigned long long)state->tick,
+            state->event_log.count,
+            state->event_log.head);
 }

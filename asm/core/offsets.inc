@@ -2,6 +2,7 @@
 ; offsets.inc - GameState field offsets for NASM modules
 ;
 ; KEEP IN SYNC with include/asmoria.h
+; Offsets verified against GCC output via offsetof()
 ; =========================================================
 
 ; --- Resources offsets (base = &state->resources) ---
@@ -30,23 +31,25 @@
 %define JOB_SCHOLAR         5
 
 ; --- GameState field offsets (base = state ptr) ---
-%define GS_RESOURCES        0x0000
-%define GS_DWARVES          0x0028
-%define GS_UPGRADES         0x0828
-%define GS_RNG_SEED         0x0838
-%define GS_TICK             0x0840
-%define GS_DEPTH            0x0848
-%define GS_FLAGS            0x084C
-%define GS_EVENTLOG         0x0850
+; Verified: sizeof(GameState)=2136
+%define GS_RESOURCES        0x0000      ; offset   0
+%define GS_DWARVES          0x0028      ; offset  40
+%define GS_UPGRADES         0x0428      ; offset 1064
+%define GS_RNG_SEED         0x0438      ; offset 1080
+%define GS_TICK             0x0440      ; offset 1088
+%define GS_DEPTH            0x0448      ; offset 1096
+%define GS_FLAGS            0x044C      ; offset 1100
+%define GS_EVENTLOG         0x0450      ; offset 1104
 
 ; --- EventLog offsets (base = &state->event_log) ---
-%define EVTLOG_ENTRIES      0x000
-%define EVTLOG_HEAD         0x400
-%define EVTLOG_COUNT        0x401
+; sizeof(EventLog)=1032, sizeof(EventRecord)=16
+%define EVTLOG_ENTRIES      0x000       ; offset    0
+%define EVTLOG_HEAD         0x400       ; offset 1024
+%define EVTLOG_COUNT        0x401       ; offset 1025
 %define EVENT_LOG_SIZE      64
 %define SIZEOF_EVENTRECORD  0x10
 
-; --- EventRecord offsets (base = &event_log.entries[i]) ---
+; --- EventRecord offsets (base = &entries[i]) ---
 %define EVT_TICK            0x00
 %define EVT_CODE            0x08
 %define EVT_SEVERITY        0x09
