@@ -1,14 +1,11 @@
 ; =========================================================
 ; asm/core/resources.asm - per-tick resource accumulation
 ;
-; Yield is scaled by dwarf morale:
-;   morale 80-100 -> full yield
-;   morale 50-79  -> 75% yield  (yield * 3 / 4)
-;   morale 20-49  -> 50% yield  (yield / 2)
-;   morale  0-19  -> 25% yield  (yield / 4)
-;
-; Exports:
-;   asm_tick_resources(GameState *state)  [rdi]
+; Yield scaled by morale:
+;   80-100 -> full
+;   50-79  -> 75%
+;   20-49  -> 50%
+;    0-19  -> 25%
 ; =========================================================
 
 %include "core/offsets.inc"
@@ -17,8 +14,9 @@ section .text
     global asm_tick_resources
 
 ; ---------------------------------------------------------
-; apply_morale_scale(yield [rax], morale [cl]) -> rax
-; Scales yield by morale tier. Inline macro via call.
+; apply_morale_scale(yield=rax, morale=cl) -> rax
+; Local call — no stack frame needed, no further calls.
+; Stack alignment: caller adds sub rsp,8 so we're safe.
 ; ---------------------------------------------------------
 apply_morale_scale:
     cmp     cl, 80
@@ -27,28 +25,28 @@ apply_morale_scale:
     jge     .three_quarters
     cmp     cl, 20
     jge     .half
-    ; 0-19: quarter yield
-    shr     rax, 2
+    shr     rax, 2          ; 25%
     ret
 .half:
-    shr     rax, 1
+    shr     rax, 1          ; 50%
     ret
 .three_quarters:
-    ; yield * 3 / 4
-    lea     rax, [rax + rax*2]  ; rax = yield * 3
-    shr     rax, 2
+    lea     rax, [rax + rax*2]
+    shr     rax, 2          ; 75%
     ret
 .full:
-    ret                         ; rax unchanged
+    ret
 
 ; ---------------------------------------------------------
 ; asm_tick_resources(GameState *state [rdi])
 ;
-; Register map:
-;   r12 = state ptr
-;   rsi = &dwarves[i]
-;   rcx = loop counter
-;   r13 = base yield for current job
+; Stack accounting:
+;   return addr : 8   (RSP 8 mod 16 on entry)
+;   push rbp    : 16  aligned
+;   push rbx    : 24
+;   push r12    : 32  aligned
+;   push r13    : 40
+;   sub  rsp, 8 : 48  aligned  <- calls to apply_morale_scale happen here
 ; ---------------------------------------------------------
 asm_tick_resources:
     push    rbp
@@ -56,22 +54,25 @@ asm_tick_resources:
     push    rbx
     push    r12
     push    r13
+    sub     rsp, 8              ; realign for calls
 
     mov     r12, rdi
     lea     rsi, [rdi + GS_DWARVES]
-    mov     rcx, MAX_DWARVES
+    mov     rbx, MAX_DWARVES    ; loop counter (use rbx, free rcx for morale)
 
 .loop:
+    test    rbx, rbx
+    jz      .done
+
     movzx   eax, byte [rsi + DWARF_ALIVE]
     test    al, al
     jz      .next
 
-    ; skip idle dwarves - no resource production
     movzx   eax, byte [rsi + DWARF_JOB]
     test    eax, eax
-    jz      .next
+    jz      .next               ; idle: no production
 
-    movzx   r13d, byte [rsi + DWARF_MORALE]  ; r13 = morale for scaling
+    movzx   r13d, byte [rsi + DWARF_MORALE]
 
     cmp     al, JOB_MINER
     je      .do_miner
@@ -82,13 +83,11 @@ asm_tick_resources:
     jmp     .next
 
 .do_miner:
-    ; base: +2 stone
     mov     rax, 2
     mov     cl, r13b
     call    apply_morale_scale
     add     [r12 + GS_RESOURCES + RES_STONE], rax
 
-    ; base: +1 gold
     mov     rax, 1
     mov     cl, r13b
     call    apply_morale_scale
@@ -96,7 +95,6 @@ asm_tick_resources:
     jmp     .next
 
 .do_lumberer:
-    ; base: +3 wood
     mov     rax, 3
     mov     cl, r13b
     call    apply_morale_scale
@@ -104,18 +102,18 @@ asm_tick_resources:
     jmp     .next
 
 .do_farmer:
-    ; base: +2 food
     mov     rax, 2
     mov     cl, r13b
     call    apply_morale_scale
     add     [r12 + GS_RESOURCES + RES_FOOD], rax
-    jmp     .next
 
 .next:
     add     rsi, SIZEOF_DWARF
-    dec     rcx
-    jnz     .loop
+    dec     rbx
+    jmp     .loop
 
+.done:
+    add     rsp, 8
     pop     r13
     pop     r12
     pop     rbx
