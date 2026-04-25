@@ -5,34 +5,36 @@
 #include "../../include/asmoria.h"
 
 /* =========================================================
- * ASMoria UI
- * All UI is text-based. The screen is divided into named
- * panels drawn each frame from live GameState data.
+ * Screen layout (grid columns)
  *
- * Layout (80-col terminal aesthetic, scaled to window):
+ *  col 0                    col 62  col 64
+ *  |                        |       |
+ *  [ LEFT PANEL - 62 cols  ]|[ LOG  - right ]
  *
- *  ┌──────────────────────────────────────────────────┐
- *  │  ASMoria                          Tick: 000000   │  row 0   (title bar)
- *  ├──────────────────────────────────────────────────┤
- *  │  RESOURCES                                       │  row 2   (resource panel)
- *  │  Gold: 0   Stone: 0   Wood: 0   Food: 0          │  row 3
- *  ├──────────────────────────────────────────────────┤
- *  │  DWARVES (0/64)                                  │  row 5   (dwarf panel)
- *  │  ...                                             │
- *  ├──────────────────────────────────────────────────┤
- *  │  LOG                                             │  bottom  (event log)
- *  └──────────────────────────────────────────────────┘
+ *  Left panel:  title bar, resources, dwarves
+ *  Right panel: event log (scrolling, newest at bottom)
+ *  Divider:     vertical rule at col DIVIDER_COL
  * ========================================================= */
 
-/* Row constants for panel anchors */
-#define UI_ROW_TITLE     0
-#define UI_ROW_RES       2
-#define UI_ROW_DWARVES   5
-#define UI_COL_MARGIN    2
+#define DIVIDER_COL     62
+#define LOG_COL_START   (DIVIDER_COL + 2)
+#define LOG_HEADER_ROW  0
+#define LOG_START_ROW   2
+#define UI_COL_MARGIN   2
+
+/* Left panel row anchors */
+#define UI_ROW_TITLE    0
+#define UI_ROW_RES      2
+#define UI_ROW_DWARVES  6
+
+/* How many log lines fit on screen */
+#define LOG_VISIBLE_LINES  38
 
 void ui_draw_all(Renderer *r, const GameState *state);
 void ui_draw_titlebar(Renderer *r, const GameState *state);
 void ui_draw_resources(Renderer *r, const GameState *state);
 void ui_draw_dwarves(Renderer *r, const GameState *state);
+void ui_draw_divider(Renderer *r);
+void ui_draw_eventlog(Renderer *r, const GameState *state);
 
 #endif /* UI_H */
