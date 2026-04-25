@@ -26,6 +26,7 @@ C_SRCS    := $(SRCDIR)/main.c             \
 ASM_SRCS  := $(ASMDIR)/core/tick.asm      \
              $(ASMDIR)/core/resources.asm  \
              $(ASMDIR)/core/events.asm     \
+             $(ASMDIR)/core/dwarves.asm    \
              $(ASMDIR)/math/rng.asm
 
 C_OBJS    := $(patsubst $(SRCDIR)/%.c,   $(BLDDIR)/%.c.o,   $(C_SRCS))
