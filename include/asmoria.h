@@ -30,18 +30,38 @@ typedef struct {
 #define JOB_GUARD    4
 #define JOB_SCHOLAR  5
 
-/* Hire cost constants (keep in sync with hire.asm) */
 #define HIRE_GOLD_COST  50
 #define HIRE_FOOD_COST  20
 
-typedef struct {
-    uint64_t tier1;
-    uint64_t tier2;
-} Upgrades;
+/* =========================================================
+ * Upgrade system — Tools category (first pass)
+ *
+ * Levels packed as 4-bit nibbles in Upgrades.tier1:
+ *   bits [0..3]  = PICK_QUALITY  level (0-3)
+ *   bits [4..7]  = SAW_QUALITY   level (0-3)
+ *   bits [8..11] = IRRIGATION    level (0-3)
+ *
+ * Cost for next level: UPGR_COST_GOLD_BASE  * next_level gold
+ *                      UPGR_COST_STONE_BASE * next_level stone
+ * ========================================================= */
+#define UPGR_PICK_QUALITY   0
+#define UPGR_SAW_QUALITY    1
+#define UPGR_IRRIGATION     2
+#define UPGR_COUNT          3
+#define UPGR_MAX_LEVEL      3
+
+#define UPGR_COST_GOLD_BASE   100
+#define UPGR_COST_STONE_BASE   50
+
+/* Extract level of upgrade id from tier1 */
+#define UPGR_LEVEL(tier1, id)  (((tier1) >> ((id) * 4)) & 0xF)
 
 typedef struct {
-    uint64_t seed;
-} RngState;
+    uint64_t tier1;     /* packed 4-bit levels for upgrades 0-7  */
+    uint64_t tier2;     /* reserved                              */
+} Upgrades;
+
+typedef struct { uint64_t seed; } RngState;
 
 typedef struct {
     uint8_t  code;
@@ -90,12 +110,9 @@ extern uint64_t asm_rng_next(GameState *state);
 extern void     asm_event_push(GameState *state, uint8_t code,
                                uint8_t severity, uint8_t dwarf_idx);
 extern void     asm_tick_dwarves(GameState *state);
-
-/* Returns hired dwarf index (0-63), or -1 if failed */
 extern int64_t  asm_hire_dwarf(GameState *state);
-
-/* Returns 1 on success, 0 if dwarf is dead/resting/invalid */
 extern int64_t  asm_assign_job(GameState *state, uint8_t dwarf_idx,
                                uint8_t job);
+extern int64_t  asm_buy_upgrade(GameState *state, uint8_t upgrade_id);
 
 #endif /* ASMORIA_H */

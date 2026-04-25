@@ -28,6 +28,7 @@
 %define GS_RESOURCES        0x0000
 %define GS_DWARVES          0x0028
 %define GS_UPGRADES         0x0428
+%define GS_UPGR_TIER1       0x0428
 %define GS_RNG_SEED         0x0438
 %define GS_TICK             0x0440
 %define GS_DEPTH            0x0448
@@ -55,4 +56,12 @@
 %define EVT_NEGATIVE        2
 %define EVT_MILESTONE       3
 
-%define EVENT_INTERVAL      15
+%define EVENT_INTERVAL      30
+
+%define UPGR_PICK_QUALITY   0
+%define UPGR_SAW_QUALITY    1
+%define UPGR_IRRIGATION     2
+%define UPGR_COUNT          3
+%define UPGR_MAX_LEVEL      3
+%define UPGR_COST_GOLD_BASE  100
+%define UPGR_COST_STONE_BASE  50

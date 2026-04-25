@@ -5,6 +5,7 @@
 #include "../include/asmoria.h"
 #include "render/renderer.h"
 #include "ui/ui.h"
+#include "ui/ui_upgrades.h"
 #include "game/game.h"
 
 int main(void) {
@@ -28,47 +29,68 @@ int main(void) {
                     running = 0;
                     break;
 
-                /* ---- Mouse click: select a dwarf ---- */
                 case SDL_MOUSEBUTTONDOWN:
-                    if (ev.button.button == SDL_BUTTON_LEFT) {
+                    if (ev.button.button == SDL_BUTTON_LEFT
+                        && !ui_show_upgrades) {
                         int idx = ui_dwarf_at_pixel(&renderer, &state,
                                                     ev.button.x, ev.button.y);
-                        /* toggle selection */
                         ui_selected_dwarf = (idx == ui_selected_dwarf) ? -1 : idx;
                     }
                     break;
 
-                /* ---- Keyboard ---- */
                 case SDL_KEYDOWN:
                     switch (ev.key.keysym.sym) {
 
                         case SDLK_ESCAPE:
                         case SDLK_q:
-                            running = 0;
+                            if (ui_show_upgrades)
+                                ui_show_upgrades = 0;
+                            else
+                                running = 0;
                             break;
 
-                        /* Scroll log */
-                        case SDLK_UP:   ui_log_scroll(+1); break;
-                        case SDLK_DOWN: ui_log_scroll(-1); break;
+                        /* Toggle upgrade panel */
+                        case SDLK_u:
+                            ui_show_upgrades = !ui_show_upgrades;
+                            break;
 
-                        /* Hire a dwarf */
-                        case SDLK_h: {
-                            int64_t idx = asm_hire_dwarf(&state);
-                            if (idx < 0) {
-                                /* push a dim event to log — not enough resources */
-                                asm_event_push(&state, 0x09, EVT_FLAVOUR, 0xFF);
+                        /* Scroll log (main view) or navigate upgrades */
+                        case SDLK_UP:
+                            if (ui_show_upgrades) ui_upgr_move(-1);
+                            else                  ui_log_scroll(+1);
+                            break;
+                        case SDLK_DOWN:
+                            if (ui_show_upgrades) ui_upgr_move(+1);
+                            else                  ui_log_scroll(-1);
+                            break;
+
+                        /* Buy upgrade */
+                        case SDLK_RETURN:
+                        case SDLK_KP_ENTER:
+                            if (ui_show_upgrades) {
+                                int id = ui_upgr_selected();
+                                if (id >= 0)
+                                    asm_buy_upgrade(&state, (uint8_t)id);
                             }
                             break;
-                        }
 
-                        /* Job assignment — only if a dwarf is selected */
+                        /* Hire (main view only) */
+                        case SDLK_h:
+                            if (!ui_show_upgrades) {
+                                int64_t idx = asm_hire_dwarf(&state);
+                                (void)idx;
+                            }
+                            break;
+
+                        /* Job assignment */
                         case SDLK_m:
                         case SDLK_l:
                         case SDLK_f:
                         case SDLK_g:
                         case SDLK_s:
                         case SDLK_i: {
-                            if (ui_selected_dwarf < 0) break;
+                            if (ui_show_upgrades || ui_selected_dwarf < 0)
+                                break;
                             uint8_t job = JOB_IDLE;
                             switch (ev.key.keysym.sym) {
                                 case SDLK_m: job = JOB_MINER;    break;
@@ -90,7 +112,8 @@ int main(void) {
                     break;
 
                 case SDL_MOUSEWHEEL:
-                    ui_log_scroll(ev.wheel.y > 0 ? +3 : -3);
+                    if (!ui_show_upgrades)
+                        ui_log_scroll(ev.wheel.y > 0 ? +3 : -3);
                     break;
 
                 default:

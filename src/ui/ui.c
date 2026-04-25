@@ -1,3 +1,4 @@
+#include "ui_upgrades.h"
 #include "ui.h"
 #include "events_text.h"
 #include <stdio.h>
@@ -10,7 +11,8 @@ static const char *job_names[] = {
 /* =========================================================
  * UI state
  * ========================================================= */
-int ui_selected_dwarf = -1;     /* -1 = none selected */
+int ui_selected_dwarf = -1;
+int ui_show_upgrades  = 0;     /* -1 = none selected */
 static int scroll_offset = 0;
 
 void ui_log_scroll(int delta) {
@@ -100,6 +102,12 @@ int ui_dwarf_at_pixel(Renderer *r, const GameState *state, int px, int py) {
  * Master draw
  * ========================================================= */
 void ui_draw_all(Renderer *r, const GameState *state) {
+    if (ui_show_upgrades) {
+        ui_draw_upgrades(r, state);
+        ui_draw_divider(r);
+        ui_draw_eventlog(r, state);
+        return;
+    }
     ui_draw_titlebar(r, state);
     ui_draw_resources(r, state);
     ui_draw_dwarves(r, state);
@@ -232,7 +240,7 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state) {
                     /* check slot available — just show cost */
                     1);
     snprintf(line1, sizeof(line1),
-             "[H] Hire dwarf (%d gold, %d food)%s",
+             "[H] Hire (%d gold, %d food)%s  [U] Upgrades",
              HIRE_GOLD_COST, HIRE_FOOD_COST,
              can_hire ? "" : "  [insufficient resources]");
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR,
