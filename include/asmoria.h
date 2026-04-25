@@ -9,8 +9,8 @@
  * This header is the single source of truth for the
  * GameState memory layout. The ASM modules reference
  * fields via hardcoded offsets that must stay in sync
- * with this struct. If you add/reorder fields, update
- * asm/core/offsets.inc accordingly.
+ * with asm/core/offsets.inc. If you add/reorder fields,
+ * update offsets.inc accordingly.
  * ========================================================= */
 
 /* --- Resource block (offset 0x00) --- */
@@ -22,7 +22,7 @@ typedef struct {
     int64_t mana;           /* +0x20 */
 } Resources;                /* size: 0x28 */
 
-/* --- Dwarf block (offset 0x28 in GameState) --- */
+/* --- Dwarf block --- */
 #define MAX_DWARVES 64
 
 typedef struct {
@@ -53,29 +53,57 @@ typedef struct {
     uint64_t seed;          /* +0x00 */
 } RngState;
 
+/* --- Event system --- */
+
+/* Severity / colour hint for the renderer */
+#define EVT_FLAVOUR     0   /* neutral flavour text    -> parchment */
+#define EVT_POSITIVE    1   /* good stat impact        -> green     */
+#define EVT_NEGATIVE    2   /* bad stat impact         -> red       */
+#define EVT_MILESTONE   3   /* depth/upgrade milestone -> accent    */
+
+/* How many log lines we keep in the ring buffer */
+#define EVENT_LOG_SIZE  64
+
+/* An event record written by ASM, read by the UI */
+typedef struct {
+    uint64_t tick;          /* +0x00 : tick the event fired on      */
+    uint8_t  code;          /* +0x08 : message template index       */
+    uint8_t  severity;      /* +0x09 : EVT_* constant               */
+    uint8_t  dwarf_idx;     /* +0x0A : which dwarf (0xFF = none)    */
+    uint8_t  _pad[5];       /* +0x0B : padding to 16 bytes          */
+} EventRecord;              /* size : 0x10 = 16 bytes               */
+
+/* Ring buffer of recent events, managed by ASM */
+typedef struct {
+    EventRecord entries[EVENT_LOG_SIZE]; /* +0x000 : ring buffer     */
+    uint8_t     head;                    /* +0x400 : next write slot */
+    uint8_t     count;                   /* +0x401 : filled entries  */
+    uint8_t     _pad[6];                 /* +0x402 : alignment       */
+} EventLog;                              /* size  : 0x408            */
+
+/* Ticks between random flavour events */
+#define EVENT_INTERVAL  30
+
 /* --- Master game state --- */
 typedef struct {
     /* offset 0x0000 */ Resources  resources;
     /* offset 0x0028 */ Dwarf      dwarves[MAX_DWARVES];
     /* offset 0x0828 */ Upgrades   upgrades;
     /* offset 0x0838 */ RngState   rng;
-    /* offset 0x0840 */ uint64_t   tick;       /* total ticks elapsed  */
-    /* offset 0x0848 */ uint32_t   depth;      /* mine depth reached   */
-    /* offset 0x084C */ uint32_t   flags;      /* misc game flags      */
+    /* offset 0x0840 */ uint64_t   tick;
+    /* offset 0x0848 */ uint32_t   depth;
+    /* offset 0x084C */ uint32_t   flags;
+    /* offset 0x0850 */ EventLog   event_log;
 } GameState;
 
 /* =========================================================
  * ASM-exported function declarations
- * Defined in asm/core - tick.asm, resources.asm, rng.asm
  * ========================================================= */
 
-/* Advance game state by one tick */
-extern void asm_tick(GameState *state);
-
-/* RNG: seed the xorshift64 generator */
-extern void asm_rng_seed(GameState *state, uint64_t seed);
-
-/* RNG: return next pseudo-random uint64 */
+extern void     asm_tick(GameState *state);
+extern void     asm_rng_seed(GameState *state, uint64_t seed);
 extern uint64_t asm_rng_next(GameState *state);
+extern void     asm_event_push(GameState *state, uint8_t code,
+                               uint8_t severity, uint8_t dwarf_idx);
 
 #endif /* ASMORIA_H */
