@@ -3,10 +3,6 @@
 
 #include <stdint.h>
 
-/* =========================================================
- * ASMoria - Shared State & ASM API
- * ========================================================= */
-
 typedef struct {
     int64_t gold;
     int64_t stone;
@@ -34,6 +30,10 @@ typedef struct {
 #define JOB_GUARD    4
 #define JOB_SCHOLAR  5
 
+/* Hire cost constants (keep in sync with hire.asm) */
+#define HIRE_GOLD_COST  50
+#define HIRE_FOOD_COST  20
+
 typedef struct {
     uint64_t tier1;
     uint64_t tier2;
@@ -43,15 +43,13 @@ typedef struct {
     uint64_t seed;
 } RngState;
 
-/* --- Pending event: written by subsystems, flushed by tick.asm --- */
 typedef struct {
-    uint8_t  code;          /* 0xFF = no event pending */
+    uint8_t  code;
     uint8_t  severity;
     uint8_t  dwarf_idx;
     uint8_t  _pad[5];
-} PendingEvent;             /* size: 8 bytes */
+} PendingEvent;
 
-/* --- Event log --- */
 #define EVT_FLAVOUR     0
 #define EVT_POSITIVE    1
 #define EVT_NEGATIVE    2
@@ -74,7 +72,6 @@ typedef struct {
     uint8_t     _pad[6];
 } EventLog;
 
-/* --- Master game state --- */
 typedef struct {
     /* offset 0x0000 */ Resources    resources;
     /* offset 0x0028 */ Dwarf        dwarves[MAX_DWARVES];
@@ -93,5 +90,12 @@ extern uint64_t asm_rng_next(GameState *state);
 extern void     asm_event_push(GameState *state, uint8_t code,
                                uint8_t severity, uint8_t dwarf_idx);
 extern void     asm_tick_dwarves(GameState *state);
+
+/* Returns hired dwarf index (0-63), or -1 if failed */
+extern int64_t  asm_hire_dwarf(GameState *state);
+
+/* Returns 1 on success, 0 if dwarf is dead/resting/invalid */
+extern int64_t  asm_assign_job(GameState *state, uint8_t dwarf_idx,
+                               uint8_t job);
 
 #endif /* ASMORIA_H */

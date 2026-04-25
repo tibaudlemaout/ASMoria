@@ -2,79 +2,31 @@
 #include "events_text.h"
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 
 static const char *job_names[] = {
     "Idle", "Miner", "Lumberer", "Farmer", "Guard", "Scholar"
 };
 
 /* =========================================================
- * Scroll state — pure UI, not in GameState
- * scroll_offset: how many wrapped lines from the bottom we
- * are scrolled up. 0 = newest at bottom (default).
+ * UI state
  * ========================================================= */
+int ui_selected_dwarf = -1;     /* -1 = none selected */
 static int scroll_offset = 0;
 
 void ui_log_scroll(int delta) {
     scroll_offset += delta;
     if (scroll_offset < 0) scroll_offset = 0;
-    /* upper bound clamped in ui_draw_eventlog after wrap */
 }
 
 /* =========================================================
- * Word-wrap a string into fixed-width lines.
- * out      : array of char[line_w+1] buffers
- * max_lines: size of out array
- * returns  : number of lines written
- * ========================================================= */
-static int wordwrap(const char *text, int line_w,
-                    char out[][128], int max_lines) {
-    int n = 0;
-    int len = (int)strlen(text);
-    int pos = 0;
-
-    while (pos < len && n < max_lines) {
-        /* how many chars fit on this line? */
-        int remain = len - pos;
-        if (remain <= line_w) {
-            /* last chunk — fits entirely */
-            strncpy(out[n], text + pos, remain);
-            out[n][remain] = '\0';
-            n++;
-            break;
-        }
-
-        /* find last space within line_w chars */
-        int cut = line_w;
-        while (cut > 0 && text[pos + cut] != ' ') cut--;
-
-        if (cut == 0) {
-            /* no space found — hard cut */
-            cut = line_w;
-        }
-
-        strncpy(out[n], text + pos, cut);
-        out[n][cut] = '\0';
-        n++;
-
-        /* skip the space */
-        pos += cut;
-        while (pos < len && text[pos] == ' ') pos++;
-    }
-
-    return n;
-}
-
-/* =========================================================
- * Colour helpers
+ * Helpers
  * ========================================================= */
 static void make_bar(char *out, uint8_t val, uint8_t max) {
     int filled = (int)val * 8 / (int)max;
     out[0] = '[';
     for (int i = 0; i < 8; i++)
         out[i + 1] = (i < filled) ? '#' : '.';
-    out[9]  = ']';
-    out[10] = '\0';
+    out[9] = ']'; out[10] = '\0';
 }
 
 static uint32_t morale_color(uint8_t m) {
@@ -98,6 +50,52 @@ static uint32_t evt_color(uint8_t severity) {
     }
 }
 
+static int wordwrap(const char *text, int line_w,
+                    char out[][128], int max_lines) {
+    int n = 0, len = (int)strlen(text), pos = 0;
+    while (pos < len && n < max_lines) {
+        int remain = len - pos;
+        if (remain <= line_w) {
+            strncpy(out[n], text + pos, remain);
+            out[n][remain] = '\0';
+            n++; break;
+        }
+        int cut = line_w;
+        while (cut > 0 && text[pos + cut] != ' ') cut--;
+        if (cut == 0) cut = line_w;
+        strncpy(out[n], text + pos, cut);
+        out[n][cut] = '\0';
+        n++;
+        pos += cut;
+        while (pos < len && text[pos] == ' ') pos++;
+    }
+    return n;
+}
+
+/* =========================================================
+ * Hit-test: which dwarf row did the user click?
+ * Returns 0-based dwarf index among alive dwarves that are
+ * rendered, or -1 if the click wasn't on a dwarf row.
+ * ========================================================= */
+int ui_dwarf_at_pixel(Renderer *r, const GameState *state, int px, int py) {
+    /* clicks must be in the left panel */
+    if (px >= DIVIDER_COL * r->glyph_w) return -1;
+
+    int first_row = UI_ROW_DWARVES + 2;   /* first data row */
+    int click_row = py / r->glyph_h;
+
+    if (click_row < first_row) return -1;
+
+    /* walk alive dwarves to find which one occupies that row */
+    int row = first_row;
+    for (int i = 0; i < MAX_DWARVES; i++) {
+        if (!state->dwarves[i].alive) continue;
+        if (row == click_row) return i;
+        if (++row > 36) break;
+    }
+    return -1;
+}
+
 /* =========================================================
  * Master draw
  * ========================================================= */
@@ -105,6 +103,7 @@ void ui_draw_all(Renderer *r, const GameState *state) {
     ui_draw_titlebar(r, state);
     ui_draw_resources(r, state);
     ui_draw_dwarves(r, state);
+    ui_draw_cmdbar(r, state);
     ui_draw_divider(r);
     ui_draw_eventlog(r, state);
 }
@@ -166,7 +165,7 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
 
     if (alive == 0) {
         renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES + 1,
-                                COL_DIM, "Your halls are empty.");
+                                COL_DIM, "Your halls are empty. Press H to hire.");
         return;
     }
 
@@ -178,6 +177,8 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
         const Dwarf *d = &state->dwarves[i];
         if (!d->alive) continue;
 
+        int is_selected = (i == ui_selected_dwarf);
+
         const char *job = (d->job <= JOB_SCHOLAR) ? job_names[d->job] : "???";
         char job_label[16];
         if (d->job == JOB_IDLE && d->prev_job != JOB_IDLE)
@@ -188,12 +189,17 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
         make_bar(mor_bar, d->morale,  100);
         make_bar(fat_bar, d->fatigue, 100);
 
-        snprintf(buf, sizeof(buf), "%-3d %s", i + 1, job_label);
-        uint32_t job_col = (d->job == JOB_IDLE && d->prev_job != JOB_IDLE)
-                         ? 0xFF4444FF : COL_FG;
-        renderer_draw_text_grid(r, UI_COL_MARGIN, row, job_col, buf);
+        /* Selection indicator */
+        snprintf(buf, sizeof(buf), "%s%-3d %s",
+                 is_selected ? ">" : " ", i + 1, job_label);
 
-        int bar_col = UI_COL_MARGIN + 15;
+        uint32_t row_col = is_selected ? COL_ACCENT
+                         : (d->job == JOB_IDLE && d->prev_job != JOB_IDLE)
+                           ? 0xFF4444FF : COL_FG;
+
+        renderer_draw_text_grid(r, UI_COL_MARGIN, row, row_col, buf);
+
+        int bar_col = UI_COL_MARGIN + 16;
         renderer_draw_text_grid(r, bar_col, row, COL_DIM, "Mor:");
         bar_col += 4;
         renderer_draw_text_grid(r, bar_col, row, morale_color(d->morale), mor_bar);
@@ -205,13 +211,54 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
         snprintf(buf, sizeof(buf), "XP:%-6lld", (long long)d->xp);
         renderer_draw_text_grid(r, bar_col, row, COL_DIM, buf);
 
-        if (++row > 36) {
+        if (++row > UI_ROW_CMDBAR - 2) {
             renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM, "...");
             break;
         }
     }
+}
 
-    renderer_draw_hline(r, row + 1, COL_DIM);
+/* =========================================================
+ * Command bar
+ * ========================================================= */
+void ui_draw_cmdbar(Renderer *r, const GameState *state) {
+    renderer_draw_hline(r, UI_ROW_CMDBAR - 1, COL_DIM);
+
+    char line1[128], line2[128];
+
+    /* Line 1: hire info */
+    int can_hire = (state->resources.gold >= HIRE_GOLD_COST &&
+                    state->resources.food >= HIRE_FOOD_COST &&
+                    /* check slot available — just show cost */
+                    1);
+    snprintf(line1, sizeof(line1),
+             "[H] Hire dwarf (%d gold, %d food)%s",
+             HIRE_GOLD_COST, HIRE_FOOD_COST,
+             can_hire ? "" : "  [insufficient resources]");
+    renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR,
+                            can_hire ? COL_FG : COL_DIM, line1);
+
+    /* Line 2: job assignment (context-sensitive) */
+    if (ui_selected_dwarf >= 0 && ui_selected_dwarf < MAX_DWARVES
+        && state->dwarves[ui_selected_dwarf].alive) {
+        const Dwarf *d = &state->dwarves[ui_selected_dwarf];
+        if (d->prev_job != JOB_IDLE) {
+            snprintf(line2, sizeof(line2),
+                     "Dwarf #%d is resting — cannot assign job",
+                     ui_selected_dwarf + 1);
+            renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR + 1,
+                                    COL_DIM, line2);
+        } else {
+            snprintf(line2, sizeof(line2),
+                     "Dwarf #%d selected: [M]iner [L]umberer [F]armer [G]uard [S]cholar [I]dle",
+                     ui_selected_dwarf + 1);
+            renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR + 1,
+                                    COL_ACCENT, line2);
+        }
+    } else {
+        renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR + 1,
+                                COL_DIM, "Click a dwarf to select, then assign a job");
+    }
 }
 
 /* =========================================================
@@ -224,56 +271,35 @@ void ui_draw_divider(Renderer *r) {
 }
 
 /* =========================================================
- * Event log panel — word-wrapped + scrollable
- *
- * Algorithm:
- *   1. Iterate ring buffer oldest->newest, word-wrap each
- *      event into a flat array of {line, color} pairs.
- *   2. Clamp scroll_offset so we can't scroll past the top.
- *   3. Render the window [total - visible - scroll .. end].
- *   4. If scrolled up, show a scroll indicator in the header.
+ * Event log panel
  * ========================================================= */
-
-typedef struct {
-    char     text[128];
-    uint32_t color;
-} WrappedLine;
-
+typedef struct { char text[128]; uint32_t color; } WrappedLine;
 static WrappedLine wlines[LOG_MAX_WRAPPED];
 
 void ui_draw_eventlog(Renderer *r, const GameState *state) {
     const EventLog *log = &state->event_log;
-
-    /* Column width available for log text */
     int log_w = (WIN_W / r->glyph_w) - LOG_COL_START - 1;
     if (log_w < 10) log_w = 10;
     if (log_w > 127) log_w = 127;
 
-    /* --- Build wrapped line list from ring buffer --- */
     int total_wrapped = 0;
     int count = log->count;
 
     if (count > 0) {
         int oldest = ((int)log->head - count + EVENT_LOG_SIZE) % EVENT_LOG_SIZE;
-
         for (int i = 0; i < count && total_wrapped < LOG_MAX_WRAPPED; i++) {
             int slot = (oldest + i) % EVENT_LOG_SIZE;
             const EventRecord *e = &log->entries[slot];
 
             char who[16];
-            if (e->dwarf_idx == 0xFF)
-                who[0] = '\0';
-            else
-                snprintf(who, sizeof(who), "Dwarf #%d", e->dwarf_idx + 1);
+            if (e->dwarf_idx == 0xFF) who[0] = '\0';
+            else snprintf(who, sizeof(who), "Dwarf #%d", e->dwarf_idx + 1);
 
             const char *tmpl = evt_get_template(e->code);
             char full[256];
-            if (who[0])
-                snprintf(full, sizeof(full), tmpl, who);
-            else
-                snprintf(full, sizeof(full), "%s", tmpl);
+            if (who[0]) snprintf(full, sizeof(full), tmpl, who);
+            else        snprintf(full, sizeof(full), "%s", tmpl);
 
-            /* Word-wrap this event into one or more lines */
             char chunks[8][128];
             int nchunks = wordwrap(full, log_w, chunks, 8);
             uint32_t color = evt_color(e->severity);
@@ -281,7 +307,6 @@ void ui_draw_eventlog(Renderer *r, const GameState *state) {
             for (int c = 0; c < nchunks && total_wrapped < LOG_MAX_WRAPPED; c++) {
                 strncpy(wlines[total_wrapped].text, chunks[c], 127);
                 wlines[total_wrapped].text[127] = '\0';
-                /* Continuation lines slightly dimmed */
                 wlines[total_wrapped].color = (c == 0) ? color
                     : (color & 0xFFFFFF00) | (((color & 0xFF) * 2 / 3) & 0xFF);
                 total_wrapped++;
@@ -289,29 +314,24 @@ void ui_draw_eventlog(Renderer *r, const GameState *state) {
         }
     }
 
-    /* Clamp scroll so we can't go past the oldest line */
     int max_scroll = total_wrapped - LOG_VISIBLE_LINES;
     if (max_scroll < 0) max_scroll = 0;
     if (scroll_offset > max_scroll) scroll_offset = max_scroll;
 
-    /* --- Draw header --- */
     char header[64];
     if (scroll_offset > 0)
-        snprintf(header, sizeof(header), "[ EVENT LOG ] ^ %d lines up (UP/DN)", scroll_offset);
+        snprintf(header, sizeof(header), "[ EVENT LOG ] ^ %d up (UP/DN)", scroll_offset);
     else
         snprintf(header, sizeof(header), "[ EVENT LOG ]");
-    renderer_draw_text_grid(r, LOG_COL_START, LOG_HEADER_ROW,
-                            scroll_offset > 0 ? COL_ACCENT : COL_ACCENT, header);
+    renderer_draw_text_grid(r, LOG_COL_START, LOG_HEADER_ROW, COL_ACCENT, header);
     renderer_draw_hline(r, LOG_HEADER_ROW + 1, COL_DIM);
 
-    /* --- Draw visible window --- */
     if (total_wrapped == 0) {
         renderer_draw_text_grid(r, LOG_COL_START, LOG_START_ROW,
                                 COL_DIM, "The halls are quiet...");
         return;
     }
 
-    /* Window: show lines [start_line .. start_line + LOG_VISIBLE_LINES) */
     int start_line = total_wrapped - LOG_VISIBLE_LINES - scroll_offset;
     if (start_line < 0) start_line = 0;
 
@@ -323,10 +343,8 @@ void ui_draw_eventlog(Renderer *r, const GameState *state) {
                                 wlines[i].color, wlines[i].text);
     }
 
-    /* Scroll indicator at bottom if not at newest */
-    if (scroll_offset > 0) {
+    if (scroll_offset > 0)
         renderer_draw_text_grid(r, LOG_COL_START,
                                 LOG_START_ROW + LOG_VISIBLE_LINES,
-                                COL_DIM, "[ UP/DN to scroll - DN for latest ]");
-    }
+                                COL_DIM, "[ UP/DN to scroll ]");
 }
