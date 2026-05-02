@@ -68,7 +68,7 @@ static const char *evt_positive[16] = {
     /* 0x2A */ "%s trains a younger dwarf in passing. [+XP]",
     /* 0x2B */ "%s finds an ancient tool — still sharp. [+MORALE]",
     /* 0x2C */ "%s strikes a vein so pure it gleams gold. [+GOLD]",
-    /* 0x2D */ "A song breaks out — %s leads the chorus. [+MORALE]",
+    /* 0x2D */ "A building has been restored — upkeep resumed.",
     /* 0x2E */ "%s solves a long-standing drainage problem. [+XP]",
     /* 0x2F */ "%s uncovers a map scratched into the stone. [+MORALE]",
 };

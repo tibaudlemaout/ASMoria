@@ -35,10 +35,14 @@ asm_tick_infra:
 
     mov     rbx, rdi
     mov     r8,  [rbx + GS_UPGR_TIER1]
+    mov     r9d, [rbx + GS_FLAGS]       ; degraded flags
 
     ; -------------------------------------------------------
-    ; Mana Well: +2 mana per level per tick
+    ; Mana Well: +2 mana per level per tick (skip if degraded)
     ; -------------------------------------------------------
+    test    r9d, (1 << 2)               ; FLAG_MANA_DEGRADED
+    jnz     .check_rune
+
     mov     rax, r8
     shr     rax, (UPGR_MANA_WELL * 4)
     and     rax, 0xF                    ; mana well level
@@ -52,6 +56,9 @@ asm_tick_infra:
     ; Rune Halls: Scholar effects
     ; -------------------------------------------------------
 .check_rune:
+    test    r9d, (1 << 1)               ; FLAG_RUNE_DEGRADED
+    jnz     .check_xp_bonus             ; skip if degraded
+
     mov     rax, r8
     shr     rax, (UPGR_RUNE_HALLS * 4)
     and     rax, 0xF                    ; rune halls level

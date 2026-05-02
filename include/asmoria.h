@@ -87,6 +87,11 @@ typedef struct {
 #define HIRE_GOLD_DISCOUNT  10
 #define HIRE_FOOD_DISCOUNT   5
 
+/* Building degradation flags (GameState.flags bits) */
+#define FLAG_WATCH_DEGRADED  (1 << 0)
+#define FLAG_RUNE_DEGRADED   (1 << 1)
+#define FLAG_MANA_DEGRADED   (1 << 2)
+
 /* Job unlock checks */
 #define GUARD_UNLOCKED(tier1)   (UPGR_LEVEL(tier1, UPGR_WATCH_TOWER) >= 1)
 #define SCHOLAR_UNLOCKED(tier1) (UPGR_LEVEL(tier1, UPGR_RUNE_HALLS)  >= 1)

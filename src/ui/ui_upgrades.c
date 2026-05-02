@@ -122,11 +122,24 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
             && state->resources.stone >= cost_stone
             && state->resources.mana  >= cost_mana;
 
+        /* Check degraded flag for this building */
+        int is_degraded = 0;
+        if (i == UPGR_WATCH_TOWER) is_degraded = (state->flags & FLAG_WATCH_DEGRADED) != 0;
+        if (i == UPGR_RUNE_HALLS)  is_degraded = (state->flags & FLAG_RUNE_DEGRADED)  != 0;
+        if (i == UPGR_MANA_WELL)   is_degraded = (state->flags & FLAG_MANA_DEGRADED)  != 0;
+
         /* Name + level bar */
-        snprintf(buf, sizeof(buf), "%s %-18s %s  Lv %d/%d",
-                 sel ? ">" : " ", u->name, bar, level, u->max_level);
-        renderer_draw_text_grid(r, UI_COL_MARGIN, row,
-                                sel ? COL_ACCENT : COL_FG, buf);
+        if (is_degraded)
+            snprintf(buf, sizeof(buf), "%s %-18s %s  Lv %d/%d [DEGRADED]",
+                     sel ? ">" : " ", u->name, bar, level, u->max_level);
+        else
+            snprintf(buf, sizeof(buf), "%s %-18s %s  Lv %d/%d",
+                     sel ? ">" : " ", u->name, bar, level, u->max_level);
+
+        uint32_t name_col = is_degraded ? 0xFF4444FF
+                          : sel         ? COL_ACCENT
+                          :               COL_FG;
+        renderer_draw_text_grid(r, UI_COL_MARGIN, row, name_col, buf);
         row++;
 
         /* Next level effect — only show what the NEXT level does */

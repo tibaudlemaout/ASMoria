@@ -123,9 +123,11 @@ void ui_draw_titlebar(Renderer *r, const GameState *state) {
     char buf[64];
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_TITLE,
                             COL_ACCENT, "ASMoria");
-    snprintf(buf, sizeof(buf), "Depth: %-4u   Tick: %llu",
-             state->depth, (unsigned long long)state->tick);
-    renderer_draw_text_grid(r, 20, UI_ROW_TITLE, COL_DIM, buf);
+    int degraded = state->flags & (FLAG_WATCH_DEGRADED|FLAG_RUNE_DEGRADED|FLAG_MANA_DEGRADED);
+    snprintf(buf, sizeof(buf), "Depth: %-4u   Tick: %llu%s",
+             state->depth, (unsigned long long)state->tick,
+             degraded ? "   [!] BUILDING DEGRADED" : "");
+    renderer_draw_text_grid(r, 20, UI_ROW_TITLE, degraded ? 0xFF4444FF : COL_DIM, buf);
     renderer_draw_hline_partial(r, UI_ROW_TITLE + 1, 0, DIVIDER_COL, COL_DIM);
 }
  
@@ -418,4 +420,3 @@ void ui_draw_eventlog(Renderer *r, const GameState *state) {
                                 LOG_START_ROW + LOG_VISIBLE_LINES,
                                 COL_DIM, "[ UP/DN to scroll ]");
 }
- 

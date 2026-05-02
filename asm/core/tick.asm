@@ -10,6 +10,7 @@ extern asm_tick_events
 extern asm_tick_xp
 extern asm_event_push
 extern asm_tick_infra
+extern asm_tick_upkeep
 
 section .text
     global asm_tick
@@ -65,11 +66,15 @@ asm_tick:
     mov     rdi, rbx
     call    asm_tick_resources
 
-    ; 6. Infrastructure effects (Scholar/Mana Well)
+    ; 6. Building upkeep (before infra so degraded buildings dont produce)
+    mov     rdi, rbx
+    call    asm_tick_upkeep
+
+    ; 7. Infrastructure effects (Scholar/Mana Well) — skipped if degraded
     mov     rdi, rbx
     call    asm_tick_infra
 
-    ; 7. Flavour + stat events
+    ; 8. Flavour + stat events
     mov     rdi, rbx
     call    asm_tick_events
 
