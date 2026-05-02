@@ -6,58 +6,49 @@ int ui_upgr_cursor = 0;
 
 typedef struct {
     const char *name;
-    const char *desc;
-    const char *effect;
     const char *category;
     int         max_level;
     int         cost_gold;
     int         cost_stone;
-    int         cost_mana;   /* 0 = no mana cost */
+    int         cost_mana;
+    const char *level_effects[5]; /* what each level (1..max) unlocks */
 } UpgradeInfo;
 
 static const UpgradeInfo upgrades[UPGR_COUNT] = {
-    /* Tools */
-    { "Pick Quality",  "Sharper picks for your miners.",
-      "+1 stone & gold per miner/level",
-      "TOOLS", UPGR_MAX_TOOLS,
-      UPGR_COST_GOLD_TOOLS, UPGR_COST_STONE_TOOLS, 0 },
+    { "Pick Quality", "TOOLS", UPGR_MAX_TOOLS,
+      UPGR_COST_GOLD_TOOLS, UPGR_COST_STONE_TOOLS, 0,
+      { "+1 stone & gold per miner", "+2 stone & gold per miner", "+3 stone & gold per miner" } },
 
-    { "Saw Quality",   "Better saws for your lumberers.",
-      "+1 wood per lumberer/level",
-      "TOOLS", UPGR_MAX_TOOLS,
-      UPGR_COST_GOLD_TOOLS, UPGR_COST_STONE_TOOLS, 0 },
+    { "Saw Quality", "TOOLS", UPGR_MAX_TOOLS,
+      UPGR_COST_GOLD_TOOLS, UPGR_COST_STONE_TOOLS, 0,
+      { "+1 wood per lumberer", "+2 wood per lumberer", "+3 wood per lumberer" } },
 
-    { "Irrigation",    "Channels and ditches for the farms.",
-      "+1 food per farmer/level",
-      "TOOLS", UPGR_MAX_TOOLS,
-      UPGR_COST_GOLD_TOOLS, UPGR_COST_STONE_TOOLS, 0 },
+    { "Irrigation", "TOOLS", UPGR_MAX_TOOLS,
+      UPGR_COST_GOLD_TOOLS, UPGR_COST_STONE_TOOLS, 0,
+      { "+1 food per farmer", "+2 food per farmer", "+3 food per farmer" } },
 
-    /* Workforce */
-    { "Barracks",      "More bunks, more dwarves.",
-      "+16 dwarf slots per level (base: 16)",
-      "WORKFORCE", UPGR_MAX_WORKFORCE,
-      UPGR_COST_GOLD_WORK, UPGR_COST_STONE_WORK, 0 },
+    { "Barracks", "WORKFORCE", UPGR_MAX_WORKFORCE,
+      UPGR_COST_GOLD_WORK, UPGR_COST_STONE_WORK, 0,
+      { "Dwarf cap: 32", "Dwarf cap: 48", "Dwarf cap: 64" } },
 
-    { "Recruiters",    "Word spreads to distant holds.",
-      "-10 gold & -5 food hire cost/level",
-      "WORKFORCE", UPGR_MAX_WORKFORCE,
-      UPGR_COST_GOLD_WORK, UPGR_COST_STONE_WORK, 0 },
+    { "Recruiters", "WORKFORCE", UPGR_MAX_WORKFORCE,
+      UPGR_COST_GOLD_WORK, UPGR_COST_STONE_WORK, 0,
+      { "Hire cost: 40g/15f", "Hire cost: 30g/10f", "Hire cost: 10g/5f" } },
 
-    /* Infrastructure */
-    { "Watch Tower",   "A tower to watch the dark.",
-      "Lv1: Unlocks Guard | Lv2: -25% neg event damage | Lv3: -50%",
-      "INFRASTRUCTURE", UPGR_MAX_WATCHTOWER,
-      UPGR_COST_GOLD_WATCH, UPGR_COST_STONE_WATCH, 0 },
+    { "Watch Tower", "INFRASTRUCTURE", UPGR_MAX_WATCHTOWER,
+      UPGR_COST_GOLD_WATCH, UPGR_COST_STONE_WATCH, 0,
+      { "Unlocks Guard job", "Guards reduce neg event damage by 25%",
+        "Guards reduce neg event damage by 50%" } },
 
-    { "Rune Halls",    "Ancient halls of learning.",
-      "Lv1: Unlocks Scholar | Lv2: +mana/scholar | Lv3: +XP all | Lv4: +2mana/scholar | Lv5: Research",
-      "INFRASTRUCTURE", UPGR_MAX_RUNEHALLS,
-      UPGR_COST_GOLD_RUNE, UPGR_COST_STONE_RUNE, UPGR_COST_MANA_RUNE },
+    { "Rune Halls", "INFRASTRUCTURE", UPGR_MAX_RUNEHALLS,
+      UPGR_COST_GOLD_RUNE, UPGR_COST_STONE_RUNE, UPGR_COST_MANA_RUNE,
+      { "Unlocks Scholar job", "Scholars generate +1 mana/tick",
+        "All working dwarves gain +1 XP/tick", "Scholars generate +2 mana/tick",
+        "Unlocks Research" } },
 
-    { "Mana Well",     "A well tapping arcane depths.",
-      "+2 mana/tick per level (passive)",
-      "INFRASTRUCTURE", UPGR_MAX_MANAWELL,
-      UPGR_COST_GOLD_MANA, UPGR_COST_STONE_MANA, 0 },
+    { "Mana Well", "INFRASTRUCTURE", UPGR_MAX_MANAWELL,
+      UPGR_COST_GOLD_MANA, UPGR_COST_STONE_MANA, 0,
+      { "Passive +2 mana/tick", "Passive +4 mana/tick", "Passive +6 mana/tick" } },
 };
 
 void ui_upgr_move(int delta) {
@@ -72,7 +63,6 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
     char buf[128];
     int row = 0;
 
-    /* Live stats */
     int bar_lv    = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_BARRACKS);
     int rec_lv    = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_RECRUITERS);
     int wt_lv     = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_WATCH_TOWER);
@@ -132,32 +122,32 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
             && state->resources.stone >= cost_stone
             && state->resources.mana  >= cost_mana;
 
-        /* Name row */
+        /* Name + level bar */
         snprintf(buf, sizeof(buf), "%s %-18s %s  Lv %d/%d",
                  sel ? ">" : " ", u->name, bar, level, u->max_level);
         renderer_draw_text_grid(r, UI_COL_MARGIN, row,
                                 sel ? COL_ACCENT : COL_FG, buf);
         row++;
 
-        /* Effect */
-        snprintf(buf, sizeof(buf), "    %s", u->effect);
-        renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM, buf);
-        row++;
-
-        /* Cost / status */
+        /* Next level effect — only show what the NEXT level does */
         if (maxed) {
             renderer_draw_text_grid(r, UI_COL_MARGIN, row,
                                     COL_FOOD, "    [MAXED OUT]");
-        } else if (cost_mana > 0) {
-            snprintf(buf, sizeof(buf),
-                     "    Next: %d gold  %d stone  %d mana",
-                     cost_gold, cost_stone, cost_mana);
-            renderer_draw_text_grid(r, UI_COL_MARGIN, row,
-                                    can_afford ? COL_GOLD : COL_DIM, buf);
         } else {
-            snprintf(buf, sizeof(buf),
-                     "    Next: %d gold  %d stone",
-                     cost_gold, cost_stone);
+            snprintf(buf, sizeof(buf), "    Next: %s",
+                     u->level_effects[level]);   /* level = current, so index = next-1 */
+            renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM, buf);
+        }
+        row++;
+
+        /* Cost */
+        if (!maxed) {
+            if (cost_mana > 0)
+                snprintf(buf, sizeof(buf), "    Cost: %d gold  %d stone  %d mana",
+                         cost_gold, cost_stone, cost_mana);
+            else
+                snprintf(buf, sizeof(buf), "    Cost: %d gold  %d stone",
+                         cost_gold, cost_stone);
             renderer_draw_text_grid(r, UI_COL_MARGIN, row,
                                     can_afford ? COL_GOLD : COL_DIM, buf);
         }
