@@ -30,35 +30,58 @@ typedef struct {
 #define JOB_GUARD    4
 #define JOB_SCHOLAR  5
 
-#define HIRE_GOLD_COST  50
-#define HIRE_FOOD_COST  20
+/* Base hire costs — reduced by Recruiters upgrade */
+#define HIRE_GOLD_BASE  50
+#define HIRE_FOOD_BASE  20
+
+/* Keep old names as aliases for UI */
+#define HIRE_GOLD_COST  HIRE_GOLD_BASE
+#define HIRE_FOOD_COST  HIRE_FOOD_BASE
 
 /* =========================================================
- * Upgrade system — Tools category (first pass)
+ * Upgrade system
  *
  * Levels packed as 4-bit nibbles in Upgrades.tier1:
- *   bits [0..3]  = PICK_QUALITY  level (0-3)
- *   bits [4..7]  = SAW_QUALITY   level (0-3)
- *   bits [8..11] = IRRIGATION    level (0-3)
+ *   bits [0..3]  = PICK_QUALITY  (tools,     max 3)
+ *   bits [4..7]  = SAW_QUALITY   (tools,     max 3)
+ *   bits [8..11] = IRRIGATION    (tools,     max 3)
+ *   bits [12..15]= BARRACKS      (workforce, max 3)
+ *   bits [16..19]= RECRUITERS    (workforce, max 3)
  *
- * Cost for next level: UPGR_COST_GOLD_BASE  * next_level gold
- *                      UPGR_COST_STONE_BASE * next_level stone
+ * Cost for next level:
+ *   Tools:     gold = 100 * next,  stone = 50 * next
+ *   Workforce: gold = 150 * next,  stone = 75 * next
  * ========================================================= */
 #define UPGR_PICK_QUALITY   0
 #define UPGR_SAW_QUALITY    1
 #define UPGR_IRRIGATION     2
-#define UPGR_COUNT          3
-#define UPGR_MAX_LEVEL      3
+#define UPGR_BARRACKS       3
+#define UPGR_RECRUITERS     4
+#define UPGR_COUNT          5
 
-#define UPGR_COST_GOLD_BASE   100
-#define UPGR_COST_STONE_BASE   50
+#define UPGR_MAX_TOOLS      3
+#define UPGR_MAX_WORKFORCE  3
 
 /* Extract level of upgrade id from tier1 */
 #define UPGR_LEVEL(tier1, id)  (((tier1) >> ((id) * 4)) & 0xF)
 
+/* Starting dwarf cap (Barracks Lv0) */
+#define DWARF_CAP_BASE      16
+#define DWARF_CAP_PER_LEVEL 16
+
+/* Hire cost reduction per Recruiters level */
+#define HIRE_GOLD_DISCOUNT  10
+#define HIRE_FOOD_DISCOUNT   5
+
+/* Cost bases */
+#define UPGR_COST_GOLD_TOOLS    100
+#define UPGR_COST_STONE_TOOLS    50
+#define UPGR_COST_GOLD_WORK     150
+#define UPGR_COST_STONE_WORK     75
+
 typedef struct {
-    uint64_t tier1;     /* packed 4-bit levels for upgrades 0-7  */
-    uint64_t tier2;     /* reserved                              */
+    uint64_t tier1;
+    uint64_t tier2;
 } Upgrades;
 
 typedef struct { uint64_t seed; } RngState;

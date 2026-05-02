@@ -234,15 +234,20 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state) {
 
     char line1[128], line2[128];
 
+    /* Compute live hire cost */
+    int rec_lv    = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_RECRUITERS);
+    int hire_gold = HIRE_GOLD_BASE - rec_lv * HIRE_GOLD_DISCOUNT;
+    int hire_food = HIRE_FOOD_BASE - rec_lv * HIRE_FOOD_DISCOUNT;
+    if (hire_gold < 10) hire_gold = 10;
+    if (hire_food < 5)  hire_food = 5;
+
     /* Line 1: hire info */
-    int can_hire = (state->resources.gold >= HIRE_GOLD_COST &&
-                    state->resources.food >= HIRE_FOOD_COST &&
-                    /* check slot available — just show cost */
-                    1);
+    int can_hire = (state->resources.gold >= hire_gold &&
+                    state->resources.food >= hire_food);
     snprintf(line1, sizeof(line1),
              "[H] Hire (%d gold, %d food)%s  [U] Upgrades",
-             HIRE_GOLD_COST, HIRE_FOOD_COST,
-             can_hire ? "" : "  [insufficient resources]");
+             hire_gold, hire_food,
+             can_hire ? "" : "  [need resources]");
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR,
                             can_hire ? COL_FG : COL_DIM, line1);
 

@@ -22,12 +22,12 @@
 %define JOB_SCHOLAR         5
 
 %define FATIGUE_MAX         100
-%define FATIGUE_WARN        70
+%define FATIGUE_WARN        85
 %define MORALE_MAX          100
+%define MORALE_IDLE_RATE    10
 
 %define GS_RESOURCES        0x0000
 %define GS_DWARVES          0x0028
-%define GS_UPGRADES         0x0428
 %define GS_UPGR_TIER1       0x0428
 %define GS_RNG_SEED         0x0438
 %define GS_TICK             0x0440
@@ -61,7 +61,21 @@
 %define UPGR_PICK_QUALITY   0
 %define UPGR_SAW_QUALITY    1
 %define UPGR_IRRIGATION     2
-%define UPGR_COUNT          3
-%define UPGR_MAX_LEVEL      3
-%define UPGR_COST_GOLD_BASE  100
-%define UPGR_COST_STONE_BASE  50
+%define UPGR_BARRACKS       3
+%define UPGR_RECRUITERS     4
+%define UPGR_COUNT          5
+
+%define UPGR_MAX_TOOLS      3
+%define UPGR_MAX_WORKFORCE  3
+
+%define UPGR_COST_GOLD_TOOLS    100
+%define UPGR_COST_STONE_TOOLS    50
+%define UPGR_COST_GOLD_WORK     150
+%define UPGR_COST_STONE_WORK     75
+
+%define DWARF_CAP_BASE      16
+%define DWARF_CAP_PER_LEVEL 16
+%define HIRE_GOLD_BASE      50
+%define HIRE_FOOD_BASE      20
+%define HIRE_GOLD_DISCOUNT  10
+%define HIRE_FOOD_DISCOUNT   5
