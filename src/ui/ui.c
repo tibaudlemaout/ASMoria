@@ -168,7 +168,7 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
     for (int i = 0; i < MAX_DWARVES; i++)
         if (state->dwarves[i].alive) alive++;
 
-    int bar_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_BARRACKS);
+    int bar_lv    = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_BARRACKS);
     int dwarf_cap = DWARF_CAP_BASE + bar_lv * DWARF_CAP_PER_LEVEL;
     snprintf(buf, sizeof(buf), "[ DWARVES  %d / %d ]", alive, dwarf_cap);
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES, COL_FG, buf);
@@ -180,7 +180,7 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
     }
 
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES + 1,
-                            COL_DIM, "Name         Job        Morale      Fatigue     TLv Lv  Progress    XP");
+                            COL_DIM, "Name         Job        Morale        Fatigue       TLv Lv  Progress    XP");
 
     int row = UI_ROW_DWARVES + 2;
     for (int i = 0; i < MAX_DWARVES; i++) {
@@ -218,7 +218,7 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
 
         renderer_draw_text_grid(r, UI_COL_MARGIN, row, row_col, buf);
 
-        int bar_col = UI_COL_MARGIN + 24;
+        int bar_col = UI_COL_MARGIN + 26;
         renderer_draw_text_grid(r, bar_col, row, COL_DIM, "Mor:");
         bar_col += 4;
         renderer_draw_text_grid(r, bar_col, row, morale_color(d->morale), mor_bar);
@@ -235,13 +235,12 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
 
         char xp_bar[12];
         if (cur_lv >= MAX_JOB_LEVEL) {
-            /* maxed — solid bar */
             xp_bar[0] = '[';
             for (int x = 0; x < 8; x++) xp_bar[x+1] = '#';
             xp_bar[9] = ']'; xp_bar[10] = ' ';
-            } else {
-            int64_t span  = xp_next - xp_prev;
-            int64_t prog  = cur_xp  - xp_prev;
+        } else {
+            int64_t span   = xp_next - xp_prev;
+            int64_t prog   = cur_xp  - xp_prev;
             int     filled = (span > 0) ? (int)(prog * 8 / span) : 0;
             if (filled < 0) filled = 0;
             if (filled > 8) filled = 8;
@@ -249,27 +248,25 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
             for (int x = 0; x < 8; x++) xp_bar[x+1] = (x < filled) ? '#' : '.';
             xp_bar[9] = ']'; xp_bar[10] = ' ';
         }
- 
-        /* TLv:N  Lv%d bar  xp/next */
-        snprintf(buf, sizeof(buf), "T%d ", total_lv);
+
+        snprintf(buf, sizeof(buf), "T%-2d ", total_lv);
         renderer_draw_text_grid(r, bar_col, row, COL_DIM, buf);
-        bar_col += 3;
- 
+        bar_col += 4;
+
         uint32_t lv_col = (cur_lv >= MAX_JOB_LEVEL) ? COL_ACCENT : COL_GOLD;
         snprintf(buf, sizeof(buf), "Lv%d", cur_lv);
         renderer_draw_text_grid(r, bar_col, row, lv_col, buf);
         bar_col += 3;
- 
+
         renderer_draw_text_grid(r, bar_col, row, lv_col, xp_bar);
         bar_col += 12;
- 
-        if (cur_lv < MAX_JOB_LEVEL) {
+
+        if (cur_lv < MAX_JOB_LEVEL)
             snprintf(buf, sizeof(buf), "%lld/%lld", (long long)cur_xp, (long long)xp_next);
-        } else {
+        else
             snprintf(buf, sizeof(buf), "MAX");
-        }
         renderer_draw_text_grid(r, bar_col, row, COL_DIM, buf);
- 
+
         if (++row > UI_ROW_CMDBAR - 2) {
             renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM, "...");
             break;
