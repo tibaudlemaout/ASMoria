@@ -1,15 +1,26 @@
 ; =========================================================
 ; asm/core/dwarves.asm - Dwarf morale & fatigue system
 ;
-; No external calls made here. Events are written into
-; state->pending and flushed by tick.asm after this returns.
+; Morale rules:
+;   - Working, fatigue < FATIGUE_WARN : no change
+;   - Working, fatigue >= FATIGUE_WARN: -1/tick
+;   - Exhaustion (forced idle)        : -5 one-time, no recovery
+;   - Player-set idle                 : +1 every MORALE_IDLE_RATE ticks
+;
+; Fatigue rules:
+;   - Working : +rate/tick (by job)
+;   - Any idle: -2/tick (both forced and player-set)
+;   - Force-rest ends when fatigue == 0, returns to prev_job
+;
+; No external calls — events written to GS_PENDING.
 ; =========================================================
 
 %include "core/offsets.inc"
 
-%define FATIGUE_MAX     100
-%define FATIGUE_WARN    70
-%define MORALE_MAX      100
+%define FATIGUE_MAX         100
+%define FATIGUE_WARN        85
+%define MORALE_MAX          100
+%define MORALE_IDLE_RATE    10  ; +1 morale every N ticks when player-idle
 
 section .data
 fatigue_rate:   db 0, 3, 2, 1, 2, 1
@@ -17,6 +28,15 @@ fatigue_rate:   db 0, 3, 2, 1, 2, 1
 section .text
     global asm_tick_dwarves
 
+; STACK:
+;   entry   :  8 mod 16
+;   push rbp: 16  aligned
+;   push rbx: 24
+;   push r12: 32  aligned
+;   push r13: 40
+;   push r14: 48  aligned
+;   push r15: 56
+;   6 pushes, NO calls — alignment irrelevant.
 asm_tick_dwarves:
     push    rbp
     mov     rbp, rsp
@@ -30,7 +50,6 @@ asm_tick_dwarves:
     lea     r12, [rbx + GS_DWARVES]
     xor     r13, r13
 
-    ; clear pending event
     mov     byte [rbx + GS_PENDING + PENDING_CODE], 0xFF
 
 .loop:
@@ -41,14 +60,14 @@ asm_tick_dwarves:
     test    al, al
     jz      .next_dwarf
 
-    movzx   r14d, byte [r12 + DWARF_JOB]
-    movzx   r15d, byte [r12 + DWARF_FATIGUE]
+    movzx   r14d, byte [r12 + DWARF_JOB]       ; r14 = job
+    movzx   r15d, byte [r12 + DWARF_FATIGUE]   ; r15 = fatigue
 
     test    r14d, r14d
-    jz      .resting
+    jz      .idle                               ; JOB_IDLE
 
     ; =======================================================
-    ; WORKING: accumulate fatigue
+    ; WORKING
     ; =======================================================
     lea     rax, [rel fatigue_rate]
     movzx   eax, byte [rax + r14]
@@ -57,7 +76,7 @@ asm_tick_dwarves:
     cmp     r15d, FATIGUE_MAX
     jl      .check_warn
 
-    ; -- exhaustion: force idle --
+    ; -- exhaustion --
     mov     r15d, FATIGUE_MAX
     mov     al, r14b
     mov     [r12 + DWARF_PREV_JOB], al
@@ -70,13 +89,13 @@ asm_tick_dwarves:
 .clamp_ex:
     mov     [r12 + DWARF_MORALE], al
 
-    ; write pending event (overwrite previous — last dwarf wins per tick)
     mov     byte [rbx + GS_PENDING + PENDING_CODE],     0x38
     mov     byte [rbx + GS_PENDING + PENDING_SEVERITY], EVT_NEGATIVE
     mov     [rbx + GS_PENDING + PENDING_DWARF], r13b
     jmp     .store_fatigue
 
 .check_warn:
+    ; drain morale only when very tired
     cmp     r15d, FATIGUE_WARN
     jl      .store_fatigue
     movzx   eax, byte [r12 + DWARF_MORALE]
@@ -87,36 +106,48 @@ asm_tick_dwarves:
     jmp     .store_fatigue
 
     ; =======================================================
-    ; RESTING: drain fatigue, recover morale
+    ; IDLE (player-set or force-resting)
     ; =======================================================
-.resting:
+.idle:
+    ; drain fatigue for all idle dwarves
     sub     r15d, 2
     jge     .check_return
     xor     r15d, r15d
 
 .check_return:
-    test    r15d, r15d
-    jnz     .morale_recover
-
+    ; if force-resting (prev_job set), check if done
     movzx   eax, byte [r12 + DWARF_PREV_JOB]
     test    al, al
-    jz      .morale_recover
+    jz      .player_idle            ; prev_job == 0 -> player-set idle
 
-    ; return to previous job
+    ; force-resting: no morale recovery
+    test    r15d, r15d
+    jnz     .store_fatigue          ; still resting, no recovery
+
+    ; fatigue == 0: return to work
     mov     [r12 + DWARF_JOB], al
     mov     byte [r12 + DWARF_PREV_JOB], JOB_IDLE
 
     mov     byte [rbx + GS_PENDING + PENDING_CODE],     0x29
     mov     byte [rbx + GS_PENDING + PENDING_SEVERITY], EVT_POSITIVE
     mov     [rbx + GS_PENDING + PENDING_DWARF], r13b
+    jmp     .store_fatigue
 
-.morale_recover:
-    mov     rax, [rbx + GS_RESOURCES + RES_FOOD]
-    test    rax, rax
-    jle     .store_fatigue
+.player_idle:
+    ; player chose to idle this dwarf — recover morale slowly
     movzx   eax, byte [r12 + DWARF_MORALE]
     cmp     eax, MORALE_MAX
     jge     .store_fatigue
+
+    ; +1 every MORALE_IDLE_RATE ticks
+    mov     rax, [rbx + GS_TICK]
+    xor     rdx, rdx
+    mov     rcx, MORALE_IDLE_RATE
+    div     rcx
+    test    rdx, rdx
+    jnz     .store_fatigue
+
+    movzx   eax, byte [r12 + DWARF_MORALE]
     inc     eax
     mov     [r12 + DWARF_MORALE], al
 
