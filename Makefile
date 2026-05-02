@@ -1,37 +1,76 @@
-# Root Makefile - auto-detect C files and link ASM library
+# =========================================================
+# ASMoria Makefile
+# =========================================================
 
-CC = gcc
-CFLAGS = -Wall -g -no-pie
+CC        := gcc
+NASM      := nasm
 
-ASM_DIR = asm
-C_DIR = c
-EXEC = test_main
+CFLAGS    := -std=c11 -Wall -Wextra -O2 \
+             -I include \
+             $(shell sdl2-config --cflags)
 
-# Automatically detect all .c files in c/
-C_SOURCES := $(wildcard $(C_DIR)/*.c)
-C_OBJECTS := $(C_SOURCES:.c=.o)
+LDFLAGS   := $(shell sdl2-config --libs) -lSDL2_ttf
 
-all: $(EXEC)
+NASMFLAGS := -f elf64 -I asm/
 
-# Step 1: build the ASM library
-$(ASM_DIR)/libasmoria.a:
-	$(MAKE) -C $(ASM_DIR)
+SRCDIR    := src
+ASMDIR    := asm
+BLDDIR    := build
 
-# Step 2: build C object files
-$(C_DIR)/%.o: $(C_DIR)/%.c
+C_SRCS    := $(SRCDIR)/main.c              \
+             $(SRCDIR)/render/renderer.c   \
+             $(SRCDIR)/ui/ui.c             \
+             $(SRCDIR)/ui/ui_upgrades.c    \
+             $(SRCDIR)/game/game.c
+
+ASM_SRCS  := $(ASMDIR)/core/tick.asm      \
+             $(ASMDIR)/core/resources.asm  \
+             $(ASMDIR)/core/events.asm     \
+             $(ASMDIR)/core/dwarves.asm    \
+             $(ASMDIR)/core/hire.asm       \
+             $(ASMDIR)/core/jobs.asm       \
+             $(ASMDIR)/core/upgrades.asm   \
+             $(ASMDIR)/math/rng.asm
+
+C_OBJS    := $(patsubst $(SRCDIR)/%.c,   $(BLDDIR)/%.c.o,   $(C_SRCS))
+ASM_OBJS  := $(patsubst $(ASMDIR)/%.asm, $(BLDDIR)/%.asm.o, $(ASM_SRCS))
+
+TARGET    := $(BLDDIR)/asmoria
+
+.PHONY: all
+all: $(TARGET)
+
+$(TARGET): $(C_OBJS) $(ASM_OBJS)
+	@echo "[LD]  $@"
+	$(CC) $^ -o $@ $(LDFLAGS)
+	@echo "  Build complete -> $(TARGET)"
+
+$(BLDDIR)/%.c.o: $(SRCDIR)/%.c
+	@mkdir -p $(dir $@)
+	@echo "[CC]  $<"
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Step 3: link everything into the final executable
-$(EXEC): $(ASM_DIR)/libasmoria.a $(C_OBJECTS)
-	$(CC) $(CFLAGS) -o $(EXEC) $(C_OBJECTS) $(ASM_DIR)/libasmoria.a \
-    	-lcsfml-graphics -lcsfml-window -lcsfml-system
+$(BLDDIR)/%.asm.o: $(ASMDIR)/%.asm
+	@mkdir -p $(dir $@)
+	@echo "[AS]  $<"
+	$(NASM) $(NASMFLAGS) $< -o $@
 
-# Step 4: run program
-run: $(EXEC)
-	./$(EXEC)
+.PHONY: run
+run: all
+	./$(TARGET)
 
+.PHONY: clean
 clean:
-	$(MAKE) -C $(ASM_DIR) clean
-	rm -f $(C_OBJECTS) $(EXEC)
+	rm -rf $(BLDDIR)
+	@echo "Cleaned."
 
-re: clean all run
+.PHONY: install-deps
+install-deps:
+	sudo apt update
+	sudo apt install -y nasm gcc libsdl2-dev libsdl2-ttf-dev
+
+.PHONY: info
+info:
+	@echo "C sources:   $(C_SRCS)"
+	@echo "ASM sources: $(ASM_SRCS)"
+	@echo "Target:      $(TARGET)"

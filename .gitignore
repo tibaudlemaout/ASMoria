@@ -5,5 +5,7 @@
 !*.c
 !*.h
 !*.md
+!*.asm
+!*.inc
 !.gitignore
 !*.ttf
