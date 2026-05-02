@@ -23,7 +23,8 @@ C_SRCS    := $(SRCDIR)/main.c              \
              $(SRCDIR)/ui/ui_upgrades.c    \
              $(SRCDIR)/game/game.c \
              $(SRCDIR)/game/save.c \
-             $(SRCDIR)/ui/ui_research.c
+             $(SRCDIR)/ui/ui_research.c \
+             $(SRCDIR)/ui/ui_breach.c
 
 ASM_SRCS  := $(ASMDIR)/core/tick.asm      \
              $(ASMDIR)/core/resources.asm  \
@@ -40,6 +41,7 @@ ASM_SRCS  := $(ASMDIR)/core/tick.asm      \
              $(ASMDIR)/core/upkeep.asm      \
              $(ASMDIR)/core/research.asm    \
              $(ASMDIR)/core/feed.asm       \
+             $(ASMDIR)/core/breach.asm     \
              $(ASMDIR)/math/rng.asm
 
 C_OBJS    := $(patsubst $(SRCDIR)/%.c,   $(BLDDIR)/%.c.o,   $(C_SRCS))

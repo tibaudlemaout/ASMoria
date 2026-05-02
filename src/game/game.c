@@ -14,7 +14,8 @@ void game_init(GameState *state) {
     state->resources.wood  = 30;
     state->resources.food  = 20;
     state->depth           = 1;
-    state->pending.code    = 0xFF;
+    state->pending.code      = 0xFF;
+    state->raid.next_raid_tick = RAID_FIRST_TICK;
 
     state->dwarves[0].alive    = 1;
     state->dwarves[0].job      = JOB_MINER;

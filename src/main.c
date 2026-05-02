@@ -7,6 +7,7 @@
 #include "ui/ui.h"
 #include "ui/ui_upgrades.h"
 #include "ui/ui_research.h"
+#include "ui/ui_breach.h"
 #include "game/game.h"
 #include "game/save.h"
 
@@ -52,6 +53,8 @@ int main(void) {
                                 ui_show_upgrades = 0;
                             else if (ui_show_research)
                                 ui_show_research = 0;
+                            else if (ui_show_breach)
+                                ui_show_breach = 0;
                             else {
                                 save_game(&state);
                                 running = 0;
@@ -59,8 +62,15 @@ int main(void) {
                             break;
 
                         case SDLK_r:
-                            if (!ui_show_upgrades)
+                            if (ui_show_breach)
+                                asm_breach_retreat(&state);
+                            else if (!ui_show_upgrades)
                                 ui_show_research = !ui_show_research;
+                            break;
+
+                        case SDLK_b:
+                            if (!ui_show_upgrades && !ui_show_research)
+                                ui_show_breach = !ui_show_breach;
                             break;
 
                         /* Manual save */
@@ -96,11 +106,13 @@ int main(void) {
                         case SDLK_UP:
                             if (ui_show_upgrades)      ui_upgr_move(-1);
                             else if (ui_show_research) ui_research_move(-1);
+                            else if (ui_show_breach)   ui_breach_select(-1);
                             else                       ui_dwarf_select(-1);
                             break;
                         case SDLK_DOWN:
                             if (ui_show_upgrades)      ui_upgr_move(+1);
                             else if (ui_show_research) ui_research_move(+1);
+                            else if (ui_show_breach)   ui_breach_select(+1);
                             else                       ui_dwarf_select(+1);
                             break;
                         case SDLK_LEFT:
@@ -135,9 +147,15 @@ int main(void) {
                             break;
 
                         case SDLK_e:
-                            if (!ui_show_upgrades && !ui_show_research
-                                && ui_selected_dwarf >= 0)
+                            if (ui_show_breach
+                                && state.raid.active == RAID_COMBAT
+                                && ui_breach_selected_guard < state.raid.guard_count) {
+                                uint8_t gidx = state.raid.guard_idx[ui_breach_selected_guard];
+                                asm_feed_dwarf(&state, gidx);
+                            } else if (!ui_show_upgrades && !ui_show_research
+                                && ui_selected_dwarf >= 0) {
                                 asm_feed_dwarf(&state, (uint8_t)ui_selected_dwarf);
+                            }
                             break;
 
                         case SDLK_m:

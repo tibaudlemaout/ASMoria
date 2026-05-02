@@ -7,6 +7,7 @@
 extern asm_tick_resources
 extern asm_tick_dwarves
 extern asm_tick_events
+extern asm_tick_breach
 extern asm_tick_xp
 extern asm_event_push
 extern asm_tick_infra
@@ -74,7 +75,11 @@ asm_tick:
     mov     rdi, rbx
     call    asm_tick_infra
 
-    ; 8. Flavour + stat events
+    ; 8. Raid / Breach system
+    mov     rdi, rbx
+    call    asm_tick_breach
+
+    ; 9. Flavour + stat events
     mov     rdi, rbx
     call    asm_tick_events
 

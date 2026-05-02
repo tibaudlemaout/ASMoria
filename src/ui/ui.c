@@ -1,5 +1,6 @@
 #include "ui_upgrades.h"
 #include "ui_research.h"
+#include "ui_breach.h"
 #include "ui.h"
 #include "events_text.h"
 #include <stdio.h>
@@ -14,7 +15,8 @@ static const char *job_names[] = {
  * ========================================================= */
 int ui_selected_dwarf = -1;
 int ui_show_upgrades  = 0;     /* -1 = none selected */
-int ui_show_research     = 0;
+int ui_show_research  = 0;     /* -1 = none selected */
+int ui_show_breach    = 0;     /* -1 = none selected */
 static int scroll_offset      = 0;
 static int dwarf_scroll_offset = 0;
  
@@ -152,6 +154,12 @@ void ui_draw_all(Renderer *r, const GameState *state) {
     }
     if (ui_show_research) {
         ui_draw_research(r, state);
+        ui_draw_divider(r);
+        ui_draw_eventlog(r, state);
+        return;
+    }
+    if (ui_show_breach) {
+        ui_draw_breach(r, state);
         ui_draw_divider(r);
         ui_draw_eventlog(r, state);
         return;
@@ -371,12 +379,23 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state) {
     /* Line 1: hire info */
     int can_hire = (state->resources.gold >= hire_gold &&
                     state->resources.food >= hire_food);
+    /* Breach indicator */
+    const char *breach_hint =
+        state->raid.active == RAID_COMBAT  ? "  [B] BREACH(!)" :
+        state->raid.active == RAID_WARNING ? "  [B] Breach(warn)" :
+        "  [B] Breach";
+    uint32_t breach_col =
+        state->raid.active == RAID_COMBAT  ? 0xFF4444FF :
+        state->raid.active == RAID_WARNING ? COL_GOLD   : COL_DIM;
+ 
     snprintf(line1, sizeof(line1),
-             "[H] Hire (%d gold, %d food)%s  [U] Upgrades  [R] Research  [F5] Save  [F9] Load",
+             "[H] Hire (%d gold, %d food)%s  [U] Upgrades  [R] Research%s  [F5] Save  [F9] Load",
              hire_gold, hire_food,
-             can_hire ? "" : "  [need resources]");
+             can_hire ? "" : "  [need resources]",
+             breach_hint);
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR,
                             can_hire ? COL_FG : COL_DIM, line1);
+    (void)breach_col;
  
     /* Line 2: job assignment (context-sensitive) */
     if (ui_selected_dwarf >= 0 && ui_selected_dwarf < MAX_DWARVES

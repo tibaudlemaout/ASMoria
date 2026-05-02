@@ -128,6 +128,39 @@ typedef struct {
 /* Requires Rune Halls Lv5 */
 #define RESEARCH_UNLOCKED(tier1) (UPGR_LEVEL(tier1, UPGR_RUNE_HALLS) >= 5)
 
+/* =========================================================
+ * Raid / Breach system
+ * ========================================================= */
+#define RAID_NONE       0   /* no raid active              */
+#define RAID_WARNING    1   /* warning phase               */
+#define RAID_COMBAT     2   /* combat in progress          */
+#define RAID_RESULT     3   /* resolved, awaiting cleanup  */
+
+#define RAID_MAX_GUARDS 8
+#define RAID_WARN_TICKS 60  /* ticks between warning and combat */
+#define RAID_FIRST_TICK 300 /* tick of first raid warning  */
+#define RAID_INTERVAL   500 /* ticks between raids         */
+#define RAID_COMBAT_INTERVAL 5 /* ticks between damage rounds */
+#define RAID_TIMER      300 /* ticks before raid auto-resolves as loss */
+
+typedef struct {
+    uint8_t  active;                    /* RAID_* state            */
+    uint8_t  threat;                    /* 1-5                     */
+    uint8_t  guard_count;               /* guards in raid          */
+    uint8_t  _pad;
+    int32_t  enemy_hp;
+    int32_t  enemy_hp_max;
+    int32_t  enemy_atk;
+    uint8_t  guard_idx[RAID_MAX_GUARDS];
+    int32_t  guard_hp[RAID_MAX_GUARDS];
+    int32_t  guard_hp_max[RAID_MAX_GUARDS];
+    uint64_t next_raid_tick;            /* when next warning fires */
+    uint64_t combat_start_tick;         /* when combat began       */
+    uint64_t last_combat_tick;          /* last damage exchange    */
+    int32_t  reward_gold;               /* gold on win             */
+    int32_t  raids_completed;           /* for threat scaling      */
+} Raid;                                 /* size: ~120 bytes        */
+
 typedef struct { uint64_t tier1, tier2; } Upgrades;
 typedef struct { uint64_t seed; } RngState;
 
@@ -165,6 +198,7 @@ typedef struct {
     /* offset 0x104C */ uint32_t     flags;
     /* offset 0x1050 */ PendingEvent pending;
     /* offset 0x1058 */ EventLog     event_log;
+    /* offset 0x1060 */ Raid         raid;
 } GameState;
 
 extern void     asm_tick(GameState *state);
@@ -177,6 +211,8 @@ extern int64_t  asm_hire_dwarf(GameState *state);
 extern int64_t  asm_assign_job(GameState *state, uint8_t dwarf_idx,
                                uint8_t job);
 extern const char *asm_get_dwarf_name(uint8_t idx);
+extern void     asm_tick_breach(GameState *state);
+extern void     asm_breach_retreat(GameState *state);
 extern int64_t  asm_feed_dwarf(GameState *state, uint8_t dwarf_idx);
 extern int64_t  asm_buy_rune(GameState *state, uint8_t rune_id);
 extern int64_t  asm_buy_upgrade(GameState *state, uint8_t upgrade_id);

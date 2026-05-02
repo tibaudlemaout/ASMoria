@@ -140,5 +140,37 @@
 
 %define GS_UPGR_TIER2       0x1030
 
+; --- Raid / Breach system ---
+%define GS_RAID             0x1460
+
+%define RAID_ACTIVE         0x00
+%define RAID_THREAT         0x01
+%define RAID_GUARD_COUNT    0x02
+%define RAID_ENEMY_HP       0x04
+%define RAID_ENEMY_HP_MAX   0x08
+%define RAID_ENEMY_ATK      0x0C
+%define RAID_GUARD_IDX      0x10
+%define RAID_GUARD_HP       0x18
+%define RAID_GUARD_HP_MAX   0x38
+%define RAID_NEXT_TICK      0x58
+%define RAID_COMBAT_START   0x60
+%define RAID_LAST_COMBAT    0x68
+%define RAID_REWARD_GOLD    0x70
+%define RAID_COMPLETED      0x74
+
+%define RAID_NONE           0
+%define RAID_WARNING        1
+%define RAID_COMBAT         2
+%define RAID_RESULT         3
+
+%define RAID_MAX_GUARDS     8
+%define RAID_WARN_TICKS     60
+%define RAID_FIRST_TICK     300
+%define RAID_INTERVAL       500
+%define RAID_COMBAT_INTERVAL 5
+%define RAID_TIMER          300
+
+%undef GS_SIZE
+
 ; save.asm GS_SIZE must match sizeof(GameState)
-%define GS_SIZE             5216
+%define GS_SIZE             5336
