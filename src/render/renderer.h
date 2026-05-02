@@ -56,4 +56,7 @@ void renderer_draw_hline_partial(Renderer *r, int row,
 void renderer_draw_box(Renderer *r, int col, int row, int cols, int rows,
                        uint32_t color);
 
+/* Draw a pixel-precise border rect around the entire window */
+void renderer_draw_screen_border(Renderer *r, uint32_t color, int thickness);
+
 #endif /* RENDERER_H */

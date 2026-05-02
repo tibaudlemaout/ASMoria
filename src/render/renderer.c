@@ -139,3 +139,19 @@ void renderer_draw_box(Renderer *r, int col, int row, int cols, int rows,
     };
     SDL_RenderDrawRect(r->renderer, &rect);
 }
+
+void renderer_draw_screen_border(Renderer *r, uint32_t color, int thickness) {
+    set_color(r, color);
+    /* top */
+    SDL_Rect t = { 0, 0, r->win_w, thickness };
+    SDL_RenderFillRect(r->renderer, &t);
+    /* bottom */
+    SDL_Rect b = { 0, r->win_h - thickness, r->win_w, thickness };
+    SDL_RenderFillRect(r->renderer, &b);
+    /* left */
+    SDL_Rect l = { 0, 0, thickness, r->win_h };
+    SDL_RenderFillRect(r->renderer, &l);
+    /* right */
+    SDL_Rect ri = { r->win_w - thickness, 0, thickness, r->win_h };
+    SDL_RenderFillRect(r->renderer, &ri);
+}

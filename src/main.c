@@ -204,6 +204,14 @@ int main(void) {
 
         renderer_clear(&renderer);
         ui_draw_all(&renderer, &state);
+
+        /* Flashing red border during combat — toggles every 500ms */
+        if (state.raid.active == RAID_COMBAT) {
+            uint64_t flash = SDL_GetTicks64() / 500;
+            if (flash & 1)
+                renderer_draw_screen_border(&renderer, 0xFF2222FF, 3);
+        }
+
         renderer_present(&renderer);
     }
 
