@@ -34,7 +34,7 @@
 
 ; XP thresholds table (level 1..5 thresholds)
 section .data
-xp_thresholds: dq 500, 1500, 3500, 7500, 0  ; 0 = max level sentinel
+xp_thresholds: dq 500, 1200, 2500, 4500, 0  ; 0 = max level sentinel
 
 ; XP gain rates indexed by job id
 xp_rates: db 0, 3, 3, 2, 2, 2  ; idle=0(handled separately), miner=3, ...

@@ -20,10 +20,10 @@
 %define FATIGUE_MAX         100
 %define FATIGUE_WARN        85
 %define MORALE_MAX          100
-%define MORALE_IDLE_RATE    10  ; +1 morale every N ticks when player-idle
+%define MORALE_IDLE_RATE    5   ; +1 morale every N ticks when player-idle
 
 section .data
-fatigue_rate:   db 0, 3, 2, 1, 2, 1
+fatigue_rate:   db 0, 2, 1, 1, 1, 1
 
 section .text
     global asm_tick_dwarves

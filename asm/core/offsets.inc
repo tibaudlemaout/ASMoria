@@ -1,3 +1,8 @@
+; =========================================================
+; offsets.inc - GameState field offsets for NASM modules
+; Verified against GCC with new per-job XP Dwarf layout
+; =========================================================
+
 %define RES_GOLD            0x00
 %define RES_STONE           0x08
 %define RES_WOOD            0x10
@@ -5,6 +10,7 @@
 %define RES_MANA            0x20
 %define SIZEOF_RESOURCES    0x28
 
+; --- Dwarf offsets (sizeof = 64 = 0x40) ---
 %define DWARF_ALIVE         0x00
 %define DWARF_JOB           0x01
 %define DWARF_MORALE        0x02
@@ -12,7 +18,7 @@
 %define DWARF_PREV_JOB      0x04
 %define DWARF_JOB_LEVEL     0x05
 %define DWARF_NAME_IDX      0x0B    ; uint8_t — index into name table
-%define DWARF_JOB_XP        0x10
+%define DWARF_JOB_XP        0x10    ; int64_t[6] — index by job id * 8
 %define SIZEOF_DWARF        0x40
 %define MAX_DWARVES         64
 %define JOB_COUNT           6
@@ -28,8 +34,9 @@
 %define FATIGUE_MAX         100
 %define FATIGUE_WARN        85
 %define MORALE_MAX          100
-%define MORALE_IDLE_RATE    10
+%define MORALE_IDLE_RATE    5
 
+; --- GameState offsets (verified) ---
 %define GS_RESOURCES        0x0000
 %define GS_DWARVES          0x0028
 %define GS_UPGR_TIER1       0x1028
@@ -62,11 +69,13 @@
 
 %define EVENT_INTERVAL      30
 
+; --- XP thresholds ---
 %define XP_LVL2             500
-%define XP_LVL3             1500
-%define XP_LVL4             3500
-%define XP_LVL5             7500
+%define XP_LVL3             1200
+%define XP_LVL4             2500
+%define XP_LVL5             4500
 
+; --- XP gain per tick by job ---
 %define XP_RATE_IDLE        2
 %define XP_RATE_MINER       3
 %define XP_RATE_LUMBERER    3
@@ -74,33 +83,27 @@
 %define XP_RATE_GUARD       2
 %define XP_RATE_SCHOLAR     2
 
+; --- Upgrade IDs ---
 %define UPGR_PICK_QUALITY   0
 %define UPGR_SAW_QUALITY    1
 %define UPGR_IRRIGATION     2
 %define UPGR_BARRACKS       3
 %define UPGR_RECRUITERS     4
-%define UPGR_COUNT          5
-%define UPGR_MAX_TOOLS      3
-%define UPGR_MAX_WORKFORCE  3
-%define UPGR_COST_GOLD_TOOLS    100
-%define UPGR_COST_STONE_TOOLS    50
-%define UPGR_COST_GOLD_WORK     150
-%define UPGR_COST_STONE_WORK     75
-%define DWARF_CAP_BASE      16
-%define DWARF_CAP_PER_LEVEL 16
-%define HIRE_GOLD_BASE      50
-%define HIRE_FOOD_BASE      20
-%define HIRE_GOLD_DISCOUNT  10
-%define HIRE_FOOD_DISCOUNT   5
 %define UPGR_WATCH_TOWER    5
 %define UPGR_RUNE_HALLS     6
 %define UPGR_MANA_WELL      7
 %define UPGR_COUNT          8
 
+%define UPGR_MAX_TOOLS      3
+%define UPGR_MAX_WORKFORCE  3
 %define UPGR_MAX_WATCHTOWER 3
 %define UPGR_MAX_RUNEHALLS  5
 %define UPGR_MAX_MANAWELL   3
 
+%define UPGR_COST_GOLD_TOOLS    100
+%define UPGR_COST_STONE_TOOLS    50
+%define UPGR_COST_GOLD_WORK     150
+%define UPGR_COST_STONE_WORK     75
 %define UPGR_COST_GOLD_WATCH    200
 %define UPGR_COST_STONE_WATCH   150
 %define UPGR_COST_GOLD_RUNE     150
@@ -109,4 +112,12 @@
 %define UPGR_COST_GOLD_MANA     200
 %define UPGR_COST_STONE_MANA     50
 
+%define DWARF_CAP_BASE      16
+%define DWARF_CAP_PER_LEVEL 16
+%define HIRE_GOLD_BASE      50
+%define HIRE_FOOD_BASE      20
+%define HIRE_GOLD_DISCOUNT  10
+%define HIRE_FOOD_DISCOUNT   5
+
+; save.asm GS_SIZE must match sizeof(GameState)
 %define GS_SIZE             5216

@@ -12,7 +12,7 @@
 extern asm_rng_next
 extern asm_apply_stat_event
 
-%define STAT_INTERVAL   50      ; ticks between stat-impact events
+%define STAT_INTERVAL   80      ; ticks between stat-impact events
 
 section .text
     global asm_event_push

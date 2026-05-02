@@ -100,11 +100,11 @@ asm_tick_resources:
     jmp     .next
 
 .do_miner:
-    ; stone: 2 + pick_level + miner_job_level
+    ; stone: 1 + pick_level + miner_job_level
     GET_UPGR_LEVEL UPGR_PICK_QUALITY
     movzx   rcx, byte [rsi + DWARF_JOB_LEVEL + JOB_MINER]
     add     rax, rcx
-    add     rax, 2
+    add     rax, 1
     mov     cl, r13b
     call    apply_morale_scale
     add     [r12 + GS_RESOURCES + RES_STONE], rax
