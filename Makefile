@@ -21,7 +21,8 @@ C_SRCS    := $(SRCDIR)/main.c              \
              $(SRCDIR)/render/renderer.c   \
              $(SRCDIR)/ui/ui.c             \
              $(SRCDIR)/ui/ui_upgrades.c    \
-             $(SRCDIR)/game/game.c
+             $(SRCDIR)/game/game.c \
+             $(SRCDIR)/game/save.c
 
 ASM_SRCS  := $(ASMDIR)/core/tick.asm      \
              $(ASMDIR)/core/resources.asm  \
@@ -30,6 +31,7 @@ ASM_SRCS  := $(ASMDIR)/core/tick.asm      \
              $(ASMDIR)/core/hire.asm       \
              $(ASMDIR)/core/jobs.asm       \
              $(ASMDIR)/core/upgrades.asm   \
+             $(ASMDIR)/core/save.asm     \
              $(ASMDIR)/math/rng.asm
 
 C_OBJS    := $(patsubst $(SRCDIR)/%.c,   $(BLDDIR)/%.c.o,   $(C_SRCS))

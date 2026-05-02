@@ -7,6 +7,7 @@
 #include "ui/ui.h"
 #include "ui/ui_upgrades.h"
 #include "game/game.h"
+#include "game/save.h"
 
 int main(void) {
     Renderer  renderer;
@@ -15,7 +16,8 @@ int main(void) {
     if (renderer_init(&renderer, "ASMoria") != 0)
         return 1;
 
-    game_init(&state);
+    /* Load save or start fresh */
+    game_load_or_init(&state);
 
     int      running      = 1;
     uint64_t last_tick_ms = SDL_GetTicks64();
@@ -26,6 +28,8 @@ int main(void) {
             switch (ev.type) {
 
                 case SDL_QUIT:
+                    /* Autosave on quit */
+                    save_game(&state);
                     running = 0;
                     break;
 
@@ -45,16 +49,42 @@ int main(void) {
                         case SDLK_q:
                             if (ui_show_upgrades)
                                 ui_show_upgrades = 0;
-                            else
+                            else {
+                                save_game(&state);
                                 running = 0;
+                            }
                             break;
 
-                        /* Toggle upgrade panel */
+                        /* Manual save */
+                        case SDLK_F5: {
+                            SaveResult r = save_game(&state);
+                            if (r == SAVE_OK)
+                                asm_event_push(&state, 0x4B, EVT_MILESTONE, 0xFF);
+                            else
+                                fprintf(stderr, "[save] %s\n",
+                                        save_result_str(r));
+                            break;
+                        }
+
+                        /* Manual load */
+                        case SDLK_F9: {
+                            SaveResult r = load_game(&state);
+                            if (r == SAVE_OK)
+                                asm_event_push(&state, 0x4B, EVT_MILESTONE, 0xFF);
+                            else if (r == SAVE_ERR_NOFILE)
+                                asm_event_push(&state, 0x42, EVT_MILESTONE, 0xFF);
+                            else {
+                                fprintf(stderr, "[save] Load failed: %s\n",
+                                        save_result_str(r));
+                                asm_event_push(&state, 0x4A, EVT_NEGATIVE, 0xFF);
+                            }
+                            break;
+                        }
+
                         case SDLK_u:
                             ui_show_upgrades = !ui_show_upgrades;
                             break;
 
-                        /* Scroll log (main view) or navigate upgrades */
                         case SDLK_UP:
                             if (ui_show_upgrades) ui_upgr_move(-1);
                             else                  ui_log_scroll(+1);
@@ -64,7 +94,6 @@ int main(void) {
                             else                  ui_log_scroll(-1);
                             break;
 
-                        /* Buy upgrade */
                         case SDLK_RETURN:
                         case SDLK_KP_ENTER:
                             if (ui_show_upgrades) {
@@ -74,15 +103,11 @@ int main(void) {
                             }
                             break;
 
-                        /* Hire (main view only) */
                         case SDLK_h:
-                            if (!ui_show_upgrades) {
-                                int64_t idx = asm_hire_dwarf(&state);
-                                (void)idx;
-                            }
+                            if (!ui_show_upgrades)
+                                asm_hire_dwarf(&state);
                             break;
 
-                        /* Job assignment */
                         case SDLK_m:
                         case SDLK_l:
                         case SDLK_f:

@@ -1,8 +1,6 @@
 #ifndef EVENTS_TEXT_H
 #define EVENTS_TEXT_H
 
-#include <stdint.h>
-
 /* =========================================================
  * events_text.h
  * String tables for event codes produced by events.asm.
@@ -105,8 +103,8 @@ static const char *evt_milestone[16] = {
     /* 0x47 */ "An ancient door is found, sealed with runes.",
     /* 0x48 */ "The mountain itself seems to watch.",
     /* 0x49 */ "A great vein of mithril is rumoured below.",
-    /* 0x4A */ "The dwarves have survived their first crisis.",
-    /* 0x4B */ "Songs of ASMoria will be sung in the halls above.",
+    /* 0x4A */ "The chronicles are damaged. A new story begins from ruin.",
+    /* 0x4B */ "The chronicles of ASMoria have been preserved in stone.",
     /* 0x4C */ "The first scholar joins — knowledge accumulates.",
     /* 0x4D */ "Guards are posted. Something stirs below.",
     /* 0x4E */ "ASMoria grows. Word spreads to distant holds.",
