@@ -1,24 +1,12 @@
 ; =========================================================
 ; asm/core/resources.asm - per-tick resource accumulation
 ;
-; Yield = (base + upgrade_level + job_level) scaled by morale
-;
-; Miner:    stone = 2 + pick_level + miner_job_level
-;           gold  = 1 + pick_level + miner_job_level
-; Lumberer: wood  = 3 + saw_level  + lumberer_job_level
-; Farmer:   food  = 2 + irr_level  + farmer_job_level
-;
-; Morale scaling: 80-100=full, 50-79=75%, 20-49=50%, 0-19=25%
-; Minimum yield of 1 if base > 0.
+; Yield = (base + upgrade_level + job_level) * morale_scale * plenty_scale
 ;
 ; STACK:
 ;   entry   :  8 mod 16
-;   push rbp: 16  aligned
-;   push rbx: 24
-;   push r12: 32  aligned
-;   push r13: 40
-;   push r14: 48  aligned
-;   sub rsp,8: 56 -> 64  aligned  <- calls here
+;   push rbp: 16  push rbx: 24  push r12: 32
+;   push r13: 40  push r14: 48  sub rsp,8: 64  aligned
 ; =========================================================
 
 %include "core/offsets.inc"
@@ -26,6 +14,10 @@
 section .text
     global asm_tick_resources
 
+; ---------------------------------------------------------
+; apply_morale_scale(yield=rax, morale=cl) -> rax
+; Minimum yield of 1 if input > 0.
+; ---------------------------------------------------------
 apply_morale_scale:
     test    rax, rax
     jz      .zero
@@ -56,6 +48,34 @@ apply_morale_scale:
 .zero:
     ret
 
+; ---------------------------------------------------------
+; apply_plenty(yield=rax, tier2_ptr=rdi_unused) -> rax
+; Uses [rsp+8] as tier2 cache (set by caller before loop)
+; yield * (100 + plenty_stacks*5) / 100
+; Clobbers: rcx, rdx
+; ---------------------------------------------------------
+apply_plenty:
+    ; r15 = tier2 (set by caller: mov r15, [rsp] then call)
+    push    rdx
+    mov     rcx, r15
+    shr     rcx, (RUNE_PLENTY * 4)
+    and     rcx, 0xF                    ; plenty stacks
+    test    rcx, rcx
+    jz      .no_plenty
+    imul    rcx, 5
+    add     rcx, 100                    ; rcx = 100 + stacks*5
+    imul    rax, rcx                    ; rax = yield * multiplier
+    xor     rdx, rdx
+    mov     rcx, 100
+    div     rcx                         ; rax = result
+.no_plenty:
+    pop     rdx
+    ret
+
+; ---------------------------------------------------------
+; GET_UPGR_LEVEL macro: extracts nibble from r14 (tier1)
+; result in rax, clobbers rcx
+; ---------------------------------------------------------
 %macro GET_UPGR_LEVEL 1
     mov     rax, r14
     mov     rcx, %1 * 4
@@ -70,11 +90,15 @@ asm_tick_resources:
     push    r12
     push    r13
     push    r14
+    push    r15
     sub     rsp, 8
 
     mov     r12, rdi
     lea     rsi, [rdi + GS_DWARVES]
     mov     rbx, MAX_DWARVES
+
+    ; cache tier2 in r15 for plenty rune calculations
+    mov     r15, [r12 + GS_UPGR_TIER2]
 
 .loop:
     test    rbx, rbx
@@ -107,20 +131,7 @@ asm_tick_resources:
     add     rax, 1
     mov     cl, r13b
     call    apply_morale_scale
-    ; Rune of Plenty: yield * (100 + stacks*5) / 100
-    push    rax
-    mov     rax, [r12 + GS_UPGR_TIER2]
-    shr     rax, (RUNE_PLENTY * 4)
-    and     rax, 0xF
-    imul    rax, 5
-    add     rax, 100                    ; rax = 100 + stacks*5
-    pop     rcx
-    imul    rcx, rax
-    xor     rdx, rdx
-    push    rbx
-    mov     rbx, 100
-    div     rbx
-    pop     rbx
+    call    apply_plenty
     add     [r12 + GS_RESOURCES + RES_STONE], rax
 
     ; gold: 1 + pick_level + miner_job_level
@@ -130,19 +141,7 @@ asm_tick_resources:
     add     rax, 1
     mov     cl, r13b
     call    apply_morale_scale
-    push    rax
-    mov     rax, [r12 + GS_UPGR_TIER2]
-    shr     rax, (RUNE_PLENTY * 4)
-    and     rax, 0xF
-    imul    rax, 5
-    add     rax, 100
-    pop     rcx
-    imul    rcx, rax
-    xor     rdx, rdx
-    push    rbx
-    mov     rbx, 100
-    div     rbx
-    pop     rbx
+    call    apply_plenty
     add     [r12 + GS_RESOURCES + RES_GOLD], rax
     jmp     .next
 
@@ -154,6 +153,7 @@ asm_tick_resources:
     add     rax, 3
     mov     cl, r13b
     call    apply_morale_scale
+    call    apply_plenty
     add     [r12 + GS_RESOURCES + RES_WOOD], rax
     jmp     .next
 
@@ -165,6 +165,7 @@ asm_tick_resources:
     add     rax, 2
     mov     cl, r13b
     call    apply_morale_scale
+    call    apply_plenty
     add     [r12 + GS_RESOURCES + RES_FOOD], rax
 
 .next:
@@ -174,6 +175,7 @@ asm_tick_resources:
 
 .done:
     add     rsp, 8
+    pop     r15
     pop     r14
     pop     r13
     pop     r12
