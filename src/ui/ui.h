@@ -20,6 +20,7 @@
 
 extern int ui_selected_dwarf;   /* -1 = none */
 extern int ui_show_upgrades;    /* 0 = main, 1 = upgrade panel */
+extern int ui_show_research;    /* 0 = main, 1 = research panel */
 
 void ui_draw_all(Renderer *r, const GameState *state);
 void ui_draw_titlebar(Renderer *r, const GameState *state);

@@ -107,6 +107,20 @@ asm_tick_resources:
     add     rax, 1
     mov     cl, r13b
     call    apply_morale_scale
+    ; Rune of Plenty: yield * (100 + stacks*5) / 100
+    push    rax
+    mov     rax, [r12 + GS_UPGR_TIER2]
+    shr     rax, (RUNE_PLENTY * 4)
+    and     rax, 0xF
+    imul    rax, 5
+    add     rax, 100                    ; rax = 100 + stacks*5
+    pop     rcx
+    imul    rcx, rax
+    xor     rdx, rdx
+    push    rbx
+    mov     rbx, 100
+    div     rbx
+    pop     rbx
     add     [r12 + GS_RESOURCES + RES_STONE], rax
 
     ; gold: 1 + pick_level + miner_job_level
@@ -116,6 +130,19 @@ asm_tick_resources:
     add     rax, 1
     mov     cl, r13b
     call    apply_morale_scale
+    push    rax
+    mov     rax, [r12 + GS_UPGR_TIER2]
+    shr     rax, (RUNE_PLENTY * 4)
+    and     rax, 0xF
+    imul    rax, 5
+    add     rax, 100
+    pop     rcx
+    imul    rcx, rax
+    xor     rdx, rdx
+    push    rbx
+    mov     rbx, 100
+    div     rbx
+    pop     rbx
     add     [r12 + GS_RESOURCES + RES_GOLD], rax
     jmp     .next
 

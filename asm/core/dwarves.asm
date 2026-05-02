@@ -71,7 +71,19 @@ asm_tick_dwarves:
     ; =======================================================
     lea     rax, [rel fatigue_rate]
     movzx   eax, byte [rax + r14]
-    add     r15d, eax
+    ; Rune of Endurance: -1 fatigue gain per stack
+    push    rbx
+    push    rax
+    mov     rax, [rbx + GS_UPGR_TIER2]
+    shr     rax, (RUNE_ENDURANCE * 4)
+    and     rax, 0xF                    ; endurance stacks
+    pop     rcx
+    sub     ecx, eax                    ; reduce gain
+    jge     .endurance_ok
+    xor     ecx, ecx                    ; floor at 0
+.endurance_ok:
+    pop     rbx
+    add     r15d, ecx
 
     cmp     r15d, FATIGUE_MAX
     jl      .check_warn
@@ -141,10 +153,19 @@ asm_tick_dwarves:
     cmp     eax, MORALE_MAX
     jge     .store_fatigue
 
-    ; +1 every MORALE_IDLE_RATE ticks
+    ; +1 every (MORALE_IDLE_RATE - kinship_bonus) ticks
+    mov     rax, [rbx + GS_UPGR_TIER2]
+    shr     rax, (RUNE_KINSHIP * 4)
+    and     rax, 0xF                    ; kinship stacks
+    imul    rax, 2                      ; -2 ticks per stack
+    mov     rcx, MORALE_IDLE_RATE
+    sub     rcx, rax
+    cmp     rcx, 1
+    jge     .kinship_rate_ok
+    mov     rcx, 1                      ; floor at 1
+.kinship_rate_ok:
     mov     rax, [rbx + GS_TICK]
     xor     rdx, rdx
-    mov     rcx, MORALE_IDLE_RATE
     div     rcx
     test    rdx, rdx
     jnz     .store_fatigue

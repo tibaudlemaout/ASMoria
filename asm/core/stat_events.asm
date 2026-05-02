@@ -190,8 +190,20 @@ asm_apply_stat_event:
     movzx   eax, byte [r13 + DWARF_MORALE]
     sub     eax, 5
 .clamp_morale_low:
-    jge     .store_morale_neg
+    jge     .warding_check
     xor     eax, eax
+.warding_check:
+    ; Rune of Warding: each stack reduces morale damage by 1 point
+    ; Simple and predictable — 3 stacks = -3 less damage
+    push    rcx
+    mov     rcx, [rbx + GS_UPGR_TIER2]
+    shr     rcx, (RUNE_WARDING * 4)
+    and     rcx, 0xF                    ; warding stacks
+    add     eax, ecx                    ; add back warding reduction
+    pop     rcx
+    cmp     eax, MORALE_MAX
+    jle     .store_morale_neg
+    mov     eax, MORALE_MAX
 .store_morale_neg:
     mov     [r13 + DWARF_MORALE], al
 

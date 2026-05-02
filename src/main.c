@@ -6,6 +6,7 @@
 #include "render/renderer.h"
 #include "ui/ui.h"
 #include "ui/ui_upgrades.h"
+#include "ui/ui_research.h"
 #include "game/game.h"
 #include "game/save.h"
 
@@ -49,10 +50,17 @@ int main(void) {
                         case SDLK_q:
                             if (ui_show_upgrades)
                                 ui_show_upgrades = 0;
+                            else if (ui_show_research)
+                                ui_show_research = 0;
                             else {
                                 save_game(&state);
                                 running = 0;
                             }
+                            break;
+
+                        case SDLK_r:
+                            if (!ui_show_upgrades)
+                                ui_show_research = !ui_show_research;
                             break;
 
                         /* Manual save */
@@ -86,12 +94,14 @@ int main(void) {
                             break;
 
                         case SDLK_UP:
-                            if (ui_show_upgrades) ui_upgr_move(-1);
-                            else                  ui_dwarf_select(-1);
+                            if (ui_show_upgrades)      ui_upgr_move(-1);
+                            else if (ui_show_research) ui_research_move(-1);
+                            else                       ui_dwarf_select(-1);
                             break;
                         case SDLK_DOWN:
-                            if (ui_show_upgrades) ui_upgr_move(+1);
-                            else                  ui_dwarf_select(+1);
+                            if (ui_show_upgrades)      ui_upgr_move(+1);
+                            else if (ui_show_research) ui_research_move(+1);
+                            else                       ui_dwarf_select(+1);
                             break;
                         case SDLK_LEFT:
                             if (!ui_show_upgrades) ui_dwarf_scroll(-1);
@@ -112,6 +122,10 @@ int main(void) {
                                 int id = ui_upgr_selected();
                                 if (id >= 0)
                                     asm_buy_upgrade(&state, (uint8_t)id);
+                            } else if (ui_show_research) {
+                                int id = ui_research_selected();
+                                if (id >= 0)
+                                    asm_buy_rune(&state, (uint8_t)id);
                             }
                             break;
 

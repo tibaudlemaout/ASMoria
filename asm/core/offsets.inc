@@ -119,5 +119,26 @@
 %define HIRE_GOLD_DISCOUNT  10
 %define HIRE_FOOD_DISCOUNT   5
 
+; --- Research / Rune system (packed in tier2) ---
+%define RUNE_ENDURANCE      0
+%define RUNE_PLENTY         1
+%define RUNE_SWIFTNESS      2
+%define RUNE_WARDING        3
+%define RUNE_KINSHIP        4
+%define RUNE_DEEP           5
+%define RUNE_COUNT          6
+
+%define RUNE_MAX_SMALL      5
+%define RUNE_MAX_LARGE      3
+
+%define RUNE_COST_ENDURANCE   50
+%define RUNE_COST_PLENTY      75
+%define RUNE_COST_SWIFTNESS   60
+%define RUNE_COST_WARDING    100
+%define RUNE_COST_KINSHIP     80
+%define RUNE_COST_DEEP       150
+
+%define GS_UPGR_TIER2       0x1030
+
 ; save.asm GS_SIZE must match sizeof(GameState)
 %define GS_SIZE             5216

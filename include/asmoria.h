@@ -96,6 +96,33 @@ typedef struct {
 #define GUARD_UNLOCKED(tier1)   (UPGR_LEVEL(tier1, UPGR_WATCH_TOWER) >= 1)
 #define SCHOLAR_UNLOCKED(tier1) (UPGR_LEVEL(tier1, UPGR_RUNE_HALLS)  >= 1)
 
+/* =========================================================
+ * Research system — rune levels packed in Upgrades.tier2
+ * bits [id*4 .. id*4+3] = stack count (0 = not researched)
+ * ========================================================= */
+#define RUNE_ENDURANCE   0   /* -1 fatigue rate/stack, max 5        */
+#define RUNE_PLENTY      1   /* +5% yield/stack, max 5              */
+#define RUNE_SWIFTNESS   2   /* +1 XP/tick all working/stack, max 5 */
+#define RUNE_WARDING     3   /* -10% neg event severity/stack, max 3*/
+#define RUNE_KINSHIP     4   /* +2 morale idle rate/stack, max 3    */
+#define RUNE_DEEP        5   /* unlocks depth progression, max 3    */
+#define RUNE_COUNT       6
+
+#define RUNE_MAX_SMALL   5   /* Endurance, Plenty, Swiftness        */
+#define RUNE_MAX_LARGE   3   /* Warding, Kinship, Deep              */
+
+#define RUNE_COST_ENDURANCE   50
+#define RUNE_COST_PLENTY      75
+#define RUNE_COST_SWIFTNESS   60
+#define RUNE_COST_WARDING    100
+#define RUNE_COST_KINSHIP     80
+#define RUNE_COST_DEEP       150
+
+#define RUNE_LEVEL(tier2, id)  (((tier2) >> ((id) * 4)) & 0xF)
+
+/* Requires Rune Halls Lv5 */
+#define RESEARCH_UNLOCKED(tier1) (UPGR_LEVEL(tier1, UPGR_RUNE_HALLS) >= 5)
+
 typedef struct { uint64_t tier1, tier2; } Upgrades;
 typedef struct { uint64_t seed; } RngState;
 
@@ -145,6 +172,7 @@ extern int64_t  asm_hire_dwarf(GameState *state);
 extern int64_t  asm_assign_job(GameState *state, uint8_t dwarf_idx,
                                uint8_t job);
 extern const char *asm_get_dwarf_name(uint8_t idx);
+extern int64_t  asm_buy_rune(GameState *state, uint8_t rune_id);
 extern int64_t  asm_buy_upgrade(GameState *state, uint8_t upgrade_id);
 extern uint64_t asm_state_checksum(const void *data, uint64_t len);
 extern int64_t  asm_save_game(const char *path, const GameState *state);

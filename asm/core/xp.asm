@@ -82,10 +82,17 @@ asm_tick_xp:
     test    eax, eax
     jz      .next_dwarf
 
+    ; Rune of Swiftness: +1 XP/tick per stack
+    push    rax
+    mov     rax, [rbx + GS_UPGR_TIER2]
+    shr     rax, (RUNE_SWIFTNESS * 4)
+    and     rax, 0xF
+    pop     rcx
+    add     rcx, rax                    ; base + swiftness bonus
     ; add XP to job_xp[job]
-    mov     rcx, r14
-    shl     rcx, 3                     ; * 8 (sizeof int64_t)
-    add     [r12 + DWARF_JOB_XP + rcx], rax
+    mov     rax, r14
+    shl     rax, 3
+    add     [r12 + DWARF_JOB_XP + rax], rcx
     jmp     .check_levelup
 
 .idle_xp:
