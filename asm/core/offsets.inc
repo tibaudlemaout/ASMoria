@@ -11,6 +11,7 @@
 %define DWARF_FATIGUE       0x03
 %define DWARF_PREV_JOB      0x04
 %define DWARF_JOB_LEVEL     0x05
+%define DWARF_NAME_IDX      0x0B    ; uint8_t — index into name table
 %define DWARF_JOB_XP        0x10
 %define SIZEOF_DWARF        0x40
 %define MAX_DWARVES         64

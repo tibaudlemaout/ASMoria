@@ -18,7 +18,7 @@ typedef struct {
     uint8_t  fatigue;           /* +0x03 */
     uint8_t  prev_job;          /* +0x04 */
     uint8_t  job_level[6];      /* +0x05 : level per job (indexed by JOB_*) */
-    uint8_t  _pad;              /* +0x0B */
+    uint8_t  name_idx;          /* +0x0B : index into dwarf name table */
     int32_t  _pad2;             /* +0x0C */
     int64_t  job_xp[6];         /* +0x10 : xp per job */
 } Dwarf;                        /* size: 64 bytes */
@@ -112,6 +112,7 @@ extern void     asm_tick_dwarves(GameState *state);
 extern int64_t  asm_hire_dwarf(GameState *state);
 extern int64_t  asm_assign_job(GameState *state, uint8_t dwarf_idx,
                                uint8_t job);
+extern const char *asm_get_dwarf_name(uint8_t idx);
 extern int64_t  asm_buy_upgrade(GameState *state, uint8_t upgrade_id);
 extern uint64_t asm_state_checksum(const void *data, uint64_t len);
 extern int64_t  asm_save_game(const char *path, const GameState *state);

@@ -22,6 +22,8 @@
 
 %include "core/offsets.inc"
 
+extern asm_rng_next
+
 section .text
     global asm_hire_dwarf
 
@@ -137,6 +139,65 @@ asm_hire_dwarf:
     mov     [r12 + DWARF_JOB_XP + 24], rax
     mov     [r12 + DWARF_JOB_XP + 32], rax
     mov     [r12 + DWARF_JOB_XP + 40], rax
+
+    ; pick a name: roll RNG, pick unused index
+    ; try up to 64 times for a unique name
+    push    r12
+    push    r13
+    push    r14
+    push    r15
+    sub     rsp, 8                      ; align for call
+
+    ; r12 already = dwarf ptr (save before clobbering)
+    ; we need to reload after these pushes since r12 was saved
+    ; Actually r12 is still our dwarf ptr — just call rng
+    mov     rdi, rbx
+    call    asm_rng_next
+    and     rax, 63                     ; 0-63
+
+    ; check if any alive dwarf already has this name
+    ; simple: iterate all alive dwarves, if clash increment and retry
+    mov     r15, 64                     ; max attempts
+.name_try:
+    test    r15, r15
+    jz      .name_done                  ; give up, use whatever
+
+    lea     rcx, [rbx + GS_DWARVES]
+    mov     r14, MAX_DWARVES
+.name_scan:
+    test    r14, r14
+    jz      .name_done                  ; no clash found
+
+    movzx   r8d, byte [rcx + DWARF_ALIVE]
+    test    r8b, r8b
+    jz      .name_scan_next
+
+    movzx   r8d, byte [rcx + DWARF_NAME_IDX]
+    cmp     r8b, al
+    jne     .name_scan_next
+
+    ; clash — try next index
+    inc     al
+    and     al, 63
+    dec     r15
+    jmp     .name_try
+
+.name_scan_next:
+    add     rcx, SIZEOF_DWARF
+    dec     r14
+    jmp     .name_scan
+
+.name_done:
+    ; restore dwarf ptr (r12 may have been pushed — reload it)
+    imul    r9, rdx, SIZEOF_DWARF
+    lea     r12, [rbx + GS_DWARVES + r9]
+    mov     [r12 + DWARF_NAME_IDX], al
+
+    add     rsp, 8
+    pop     r15
+    pop     r14
+    pop     r13
+    pop     r12
 
     ; queue milestone event
     mov     byte [rbx + GS_PENDING + PENDING_CODE],     0x42

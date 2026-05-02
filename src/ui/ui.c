@@ -180,7 +180,7 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
     }
 
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES + 1,
-                            COL_DIM, "#   Job        Morale      Fatigue     TLv Lv  Progress    XP");
+                            COL_DIM, "Name         Job        Morale      Fatigue     TLv Lv  Progress    XP");
 
     int row = UI_ROW_DWARVES + 2;
     for (int i = 0; i < MAX_DWARVES; i++) {
@@ -208,8 +208,9 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
         int cur_lv     = d->job_level[d->job];
         int64_t cur_xp = d->job_xp[d->job];
 
-        snprintf(buf, sizeof(buf), "%s%-3d %s",
-                 is_selected ? ">" : " ", i + 1, job_label);
+        const char *dname = asm_get_dwarf_name(d->name_idx);
+        snprintf(buf, sizeof(buf), "%s%-12s %s",
+                 is_selected ? ">" : " ", dname, job_label);
 
         uint32_t row_col = is_selected ? COL_ACCENT
                          : (d->job == JOB_IDLE && d->prev_job != JOB_IDLE)
@@ -217,7 +218,7 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
 
         renderer_draw_text_grid(r, UI_COL_MARGIN, row, row_col, buf);
 
-        int bar_col = UI_COL_MARGIN + 16;
+        int bar_col = UI_COL_MARGIN + 24;
         renderer_draw_text_grid(r, bar_col, row, COL_DIM, "Mor:");
         bar_col += 4;
         renderer_draw_text_grid(r, bar_col, row, morale_color(d->morale), mor_bar);
@@ -306,15 +307,16 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state) {
         && state->dwarves[ui_selected_dwarf].alive) {
         const Dwarf *d = &state->dwarves[ui_selected_dwarf];
         if (d->prev_job != JOB_IDLE) {
+            const char *sname = asm_get_dwarf_name(d->name_idx);
             snprintf(line2, sizeof(line2),
-                     "Dwarf #%d is resting — cannot assign job",
-                     ui_selected_dwarf + 1);
+                     "%s is resting — cannot assign job", sname);
             renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR + 1,
                                     COL_DIM, line2);
         } else {
+            const char *sname2 = asm_get_dwarf_name(d->name_idx);
             snprintf(line2, sizeof(line2),
-                     "Dwarf #%d selected: [M]iner [L]umberer [F]armer [G]uard [S]cholar [I]dle",
-                     ui_selected_dwarf + 1);
+                     "%s: [M]iner [L]umberer [F]armer [G]uard [S]cholar [I]dle",
+                     sname2);
             renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR + 1,
                                     COL_ACCENT, line2);
         }
@@ -355,8 +357,13 @@ void ui_draw_eventlog(Renderer *r, const GameState *state) {
             const EventRecord *e = &log->entries[slot];
  
             char who[16];
-            if (e->dwarf_idx == 0xFF) who[0] = '\0';
-            else snprintf(who, sizeof(who), "Dwarf #%d", e->dwarf_idx + 1);
+            if (e->dwarf_idx == 0xFF) {
+                who[0] = '\0';
+            } else {
+                uint8_t nidx = state->dwarves[e->dwarf_idx].name_idx;
+                const char *wname = asm_get_dwarf_name(nidx);
+                snprintf(who, sizeof(who), "%s", wname);
+            }
  
             const char *tmpl = evt_get_template(e->code);
             char full[256];
