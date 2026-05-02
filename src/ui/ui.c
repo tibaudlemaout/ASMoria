@@ -168,7 +168,9 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
     for (int i = 0; i < MAX_DWARVES; i++)
         if (state->dwarves[i].alive) alive++;
 
-    snprintf(buf, sizeof(buf), "[ DWARVES  %d / %d ]", alive, MAX_DWARVES);
+    int bar_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_BARRACKS);
+    int dwarf_cap = DWARF_CAP_BASE + bar_lv * DWARF_CAP_PER_LEVEL;
+    snprintf(buf, sizeof(buf), "[ DWARVES  %d / %d ]", alive, dwarf_cap);
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES, COL_FG, buf);
 
     if (alive == 0) {
