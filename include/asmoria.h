@@ -46,23 +46,50 @@ typedef struct {
 /* =========================================================
  * Upgrade system
  * ========================================================= */
+/* Upgrade IDs */
 #define UPGR_PICK_QUALITY   0
 #define UPGR_SAW_QUALITY    1
 #define UPGR_IRRIGATION     2
 #define UPGR_BARRACKS       3
 #define UPGR_RECRUITERS     4
-#define UPGR_COUNT          5
+#define UPGR_WATCH_TOWER    5
+#define UPGR_RUNE_HALLS     6
+#define UPGR_MANA_WELL      7
+#define UPGR_COUNT          8
+
+/* Max levels per category */
 #define UPGR_MAX_TOOLS      3
 #define UPGR_MAX_WORKFORCE  3
+#define UPGR_MAX_WATCHTOWER 3
+#define UPGR_MAX_RUNEHALLS  5
+#define UPGR_MAX_MANAWELL   3
+
 #define UPGR_LEVEL(tier1, id)  (((tier1) >> ((id) * 4)) & 0xF)
+
+/* Tool costs */
 #define UPGR_COST_GOLD_TOOLS    100
 #define UPGR_COST_STONE_TOOLS    50
+/* Workforce costs */
 #define UPGR_COST_GOLD_WORK     150
 #define UPGR_COST_STONE_WORK     75
+/* Infrastructure costs */
+#define UPGR_COST_GOLD_WATCH    200
+#define UPGR_COST_STONE_WATCH   150
+#define UPGR_COST_GOLD_RUNE     150
+#define UPGR_COST_STONE_RUNE    100
+#define UPGR_COST_MANA_RUNE      10   /* mana cost per level after lv1 */
+#define UPGR_COST_GOLD_MANA     200
+#define UPGR_COST_STONE_MANA     50
+
+/* Workforce constants */
 #define DWARF_CAP_BASE      16
 #define DWARF_CAP_PER_LEVEL 16
 #define HIRE_GOLD_DISCOUNT  10
 #define HIRE_FOOD_DISCOUNT   5
+
+/* Job unlock checks */
+#define GUARD_UNLOCKED(tier1)   (UPGR_LEVEL(tier1, UPGR_WATCH_TOWER) >= 1)
+#define SCHOLAR_UNLOCKED(tier1) (UPGR_LEVEL(tier1, UPGR_RUNE_HALLS)  >= 1)
 
 typedef struct { uint64_t tier1, tier2; } Upgrades;
 typedef struct { uint64_t seed; } RngState;

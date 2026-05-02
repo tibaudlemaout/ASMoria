@@ -9,6 +9,7 @@ extern asm_tick_dwarves
 extern asm_tick_events
 extern asm_tick_xp
 extern asm_event_push
+extern asm_tick_infra
 
 section .text
     global asm_tick
@@ -64,7 +65,11 @@ asm_tick:
     mov     rdi, rbx
     call    asm_tick_resources
 
-    ; 6. Flavour + stat events
+    ; 6. Infrastructure effects (Scholar/Mana Well)
+    mov     rdi, rbx
+    call    asm_tick_infra
+
+    ; 7. Flavour + stat events
     mov     rdi, rbx
     call    asm_tick_events
 

@@ -1,13 +1,14 @@
 ; =========================================================
 ; asm/core/jobs.asm - Dwarf job assignment
 ;
-; asm_assign_job(GameState *state, uint8_t dwarf_idx, uint8_t job)
-;   rdi = state
-;   rsi = dwarf index (0-63)
-;   rdx = new job (JOB_*)
+; asm_assign_job(state, dwarf_idx, job)
+;   rdi = state, rsi = dwarf index, rdx = new job
+;   rax = 1 success, 0 failure
 ;
-; Only assigns if the dwarf is alive and not force-resting.
-; Returns 1 on success, 0 on failure (in rax).
+; Guard requires Watch Tower >= 1
+; Scholar requires Rune Halls >= 1
+;
+; STACK: no pushes, no calls.
 ; =========================================================
 
 %include "core/offsets.inc"
@@ -16,11 +17,9 @@ section .text
     global asm_assign_job
 
 asm_assign_job:
-    ; bounds check
     cmp     rsi, MAX_DWARVES
     jge     .fail
 
-    ; get dwarf ptr
     imul    rax, rsi, SIZEOF_DWARF
     lea     rcx, [rdi + GS_DWARVES + rax]
 
@@ -29,15 +28,37 @@ asm_assign_job:
     test    al, al
     jz      .fail
 
-    ; if force-resting (prev_job != IDLE), don't override rest
+    ; refuse if force-resting
     movzx   eax, byte [rcx + DWARF_PREV_JOB]
     test    al, al
     jnz     .fail
 
-    ; assign job and clear prev_job
-    mov     [rcx + DWARF_JOB],      dl
-    mov     byte [rcx + DWARF_PREV_JOB], JOB_IDLE
+    ; check job unlock requirements
+    cmp     dl, JOB_GUARD
+    je      .check_guard
+    cmp     dl, JOB_SCHOLAR
+    je      .check_scholar
+    jmp     .assign
 
+.check_guard:
+    mov     rax, [rdi + GS_UPGR_TIER1]
+    shr     rax, (UPGR_WATCH_TOWER * 4)
+    and     rax, 0xF
+    test    rax, rax
+    jz      .fail               ; Watch Tower not built
+    jmp     .assign
+
+.check_scholar:
+    mov     rax, [rdi + GS_UPGR_TIER1]
+    shr     rax, (UPGR_RUNE_HALLS * 4)
+    and     rax, 0xF
+    test    rax, rax
+    jz      .fail               ; Rune Halls not built
+    jmp     .assign
+
+.assign:
+    mov     [rcx + DWARF_JOB],           dl
+    mov     byte [rcx + DWARF_PREV_JOB], JOB_IDLE
     mov     rax, 1
     ret
 

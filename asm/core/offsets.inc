@@ -92,5 +92,21 @@
 %define HIRE_FOOD_BASE      20
 %define HIRE_GOLD_DISCOUNT  10
 %define HIRE_FOOD_DISCOUNT   5
+%define UPGR_WATCH_TOWER    5
+%define UPGR_RUNE_HALLS     6
+%define UPGR_MANA_WELL      7
+%define UPGR_COUNT          8
+
+%define UPGR_MAX_WATCHTOWER 3
+%define UPGR_MAX_RUNEHALLS  5
+%define UPGR_MAX_MANAWELL   3
+
+%define UPGR_COST_GOLD_WATCH    200
+%define UPGR_COST_STONE_WATCH   150
+%define UPGR_COST_GOLD_RUNE     150
+%define UPGR_COST_STONE_RUNE    100
+%define UPGR_COST_MANA_RUNE      10
+%define UPGR_COST_GOLD_MANA     200
+%define UPGR_COST_STONE_MANA     50
 
 %define GS_SIZE             5216
