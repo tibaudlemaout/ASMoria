@@ -134,6 +134,12 @@ int main(void) {
                                 asm_hire_dwarf(&state);
                             break;
 
+                        case SDLK_e:
+                            if (!ui_show_upgrades && !ui_show_research
+                                && ui_selected_dwarf >= 0)
+                                asm_feed_dwarf(&state, (uint8_t)ui_selected_dwarf);
+                            break;
+
                         case SDLK_m:
                         case SDLK_l:
                         case SDLK_f:

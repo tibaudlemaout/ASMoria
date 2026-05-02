@@ -37,6 +37,11 @@ typedef struct {
 #define XP_LVL4     3500
 #define XP_LVL5     7500
 
+/* Feed costs */
+#define FEED_FOOD_COST        10
+#define FEED_FATIGUE_RESTORE  20
+#define FEED_MORALE_RESTORE   10
+
 /* Hire costs */
 #define HIRE_GOLD_BASE  50
 #define HIRE_FOOD_BASE  20
@@ -172,6 +177,7 @@ extern int64_t  asm_hire_dwarf(GameState *state);
 extern int64_t  asm_assign_job(GameState *state, uint8_t dwarf_idx,
                                uint8_t job);
 extern const char *asm_get_dwarf_name(uint8_t idx);
+extern int64_t  asm_feed_dwarf(GameState *state, uint8_t dwarf_idx);
 extern int64_t  asm_buy_rune(GameState *state, uint8_t rune_id);
 extern int64_t  asm_buy_upgrade(GameState *state, uint8_t upgrade_id);
 extern uint64_t asm_state_checksum(const void *data, uint64_t len);

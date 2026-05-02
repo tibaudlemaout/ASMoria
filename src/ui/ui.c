@@ -390,9 +390,11 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state) {
                                     COL_DIM, line2);
         } else {
             const char *sname2 = asm_get_dwarf_name(d->name_idx);
+            int can_feed = (state->resources.food >= FEED_FOOD_COST);
             snprintf(line2, sizeof(line2),
-                     "%s: [M]iner [L]umberer [F]armer [G]uard [S]cholar [I]dle",
-                     sname2);
+                     "%s: [M]iner [L]umberer [F]armer [G]uard [S]cholar [I]dle  %s",
+                     sname2,
+                     can_feed ? "[E] Feed (10 food)" : "[E] Feed (need food)");
             renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR + 1,
                                     COL_ACCENT, line2);
         }

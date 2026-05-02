@@ -39,6 +39,7 @@ ASM_SRCS  := $(ASMDIR)/core/tick.asm      \
              $(ASMDIR)/core/infra.asm       \
              $(ASMDIR)/core/upkeep.asm      \
              $(ASMDIR)/core/research.asm    \
+             $(ASMDIR)/core/feed.asm       \
              $(ASMDIR)/math/rng.asm
 
 C_OBJS    := $(patsubst $(SRCDIR)/%.c,   $(BLDDIR)/%.c.o,   $(C_SRCS))
