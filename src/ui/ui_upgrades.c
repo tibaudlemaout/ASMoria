@@ -68,14 +68,14 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
     /* Header */
     renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_ACCENT,
         "[ UPGRADES ]    UP/DN navigate    ENTER buy    U close");
-    renderer_draw_hline(r, 1, COL_DIM);
+    renderer_draw_hline_partial(r, 1, 0, DIVIDER_COL, COL_DIM);
 
     /* Live stats row */
     snprintf(buf, sizeof(buf),
              "  Dwarf cap: %d    Hire cost: %d gold / %d food",
              dwarf_cap, hire_gold, hire_food);
     renderer_draw_text_grid(r, UI_COL_MARGIN, 2, COL_DIM, buf);
-    renderer_draw_hline(r, 3, COL_DIM);
+    renderer_draw_hline_partial(r, 3, 0, DIVIDER_COL, COL_DIM);
     row = 4;
 
     const char *last_cat = NULL;
@@ -143,7 +143,7 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
         if (row > 38) break;
     }
 
-    renderer_draw_hline(r, 39, COL_DIM);
+    renderer_draw_hline_partial(r, 39, 0, DIVIDER_COL, COL_DIM);
     renderer_draw_text_grid(r, UI_COL_MARGIN, 40, COL_DIM,
         "  [U] Back    [UP/DN] Navigate    [ENTER] Buy upgrade");
 }

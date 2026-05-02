@@ -126,7 +126,7 @@ void ui_draw_titlebar(Renderer *r, const GameState *state) {
     snprintf(buf, sizeof(buf), "Depth: %-4u   Tick: %llu",
              state->depth, (unsigned long long)state->tick);
     renderer_draw_text_grid(r, 20, UI_ROW_TITLE, COL_DIM, buf);
-    renderer_draw_hline(r, UI_ROW_TITLE + 1, COL_DIM);
+    renderer_draw_hline_partial(r, UI_ROW_TITLE + 1, 0, DIVIDER_COL, COL_DIM);
 }
 
 /* =========================================================
@@ -154,7 +154,7 @@ void ui_draw_resources(Renderer *r, const GameState *state) {
     snprintf(seg, sizeof(seg), "Mana:  %-8lld", (long long)state->resources.mana);
     renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_MANA, seg);
 
-    renderer_draw_hline(r, UI_ROW_RES + 3, COL_DIM);
+    renderer_draw_hline_partial(r, UI_ROW_RES + 3, 0, DIVIDER_COL, COL_DIM);
 }
 
 /* =========================================================
@@ -232,7 +232,7 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
  * Command bar
  * ========================================================= */
 void ui_draw_cmdbar(Renderer *r, const GameState *state) {
-    renderer_draw_hline(r, UI_ROW_CMDBAR - 1, COL_DIM);
+    renderer_draw_hline_partial(r, UI_ROW_CMDBAR - 1, 0, DIVIDER_COL, COL_DIM);
 
     char line1[128], line2[128];
 
