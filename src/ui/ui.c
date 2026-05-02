@@ -12,7 +12,7 @@ static const char *job_names[] = {
  * UI state
  * ========================================================= */
 int ui_selected_dwarf = -1;
-int ui_show_upgrades  = 0;
+int ui_show_upgrades  = 0;     /* -1 = none selected */
 static int scroll_offset = 0;
 
 void ui_log_scroll(int delta) {
@@ -76,15 +76,19 @@ static int wordwrap(const char *text, int line_w,
 
 /* =========================================================
  * Hit-test: which dwarf row did the user click?
+ * Returns 0-based dwarf index among alive dwarves that are
+ * rendered, or -1 if the click wasn't on a dwarf row.
  * ========================================================= */
 int ui_dwarf_at_pixel(Renderer *r, const GameState *state, int px, int py) {
+    /* clicks must be in the left panel */
     if (px >= DIVIDER_COL * r->glyph_w) return -1;
 
-    int first_row = UI_ROW_DWARVES + 2;
+    int first_row = UI_ROW_DWARVES + 2;   /* first data row */
     int click_row = py / r->glyph_h;
 
     if (click_row < first_row) return -1;
 
+    /* walk alive dwarves to find which one occupies that row */
     int row = first_row;
     for (int i = 0; i < MAX_DWARVES; i++) {
         if (!state->dwarves[i].alive) continue;
@@ -164,7 +168,7 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
     for (int i = 0; i < MAX_DWARVES; i++)
         if (state->dwarves[i].alive) alive++;
 
-    int bar_lv    = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_BARRACKS);
+    int bar_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_BARRACKS);
     int dwarf_cap = DWARF_CAP_BASE + bar_lv * DWARF_CAP_PER_LEVEL;
     snprintf(buf, sizeof(buf), "[ DWARVES  %d / %d ]", alive, dwarf_cap);
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES, COL_FG, buf);
@@ -230,12 +234,13 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
 
         char xp_bar[12];
         if (cur_lv >= MAX_JOB_LEVEL) {
+            /* maxed — solid bar */
             xp_bar[0] = '[';
             for (int x = 0; x < 8; x++) xp_bar[x+1] = '#';
             xp_bar[9] = ']'; xp_bar[10] = ' ';
-        } else {
-            int64_t span   = xp_next - xp_prev;
-            int64_t prog   = cur_xp  - xp_prev;
+            } else {
+            int64_t span  = xp_next - xp_prev;
+            int64_t prog  = cur_xp  - xp_prev;
             int     filled = (span > 0) ? (int)(prog * 8 / span) : 0;
             if (filled < 0) filled = 0;
             if (filled > 8) filled = 8;
@@ -243,46 +248,50 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
             for (int x = 0; x < 8; x++) xp_bar[x+1] = (x < filled) ? '#' : '.';
             xp_bar[9] = ']'; xp_bar[10] = ' ';
         }
-
+ 
+        /* TLv:N  Lv%d bar  xp/next */
         snprintf(buf, sizeof(buf), "T%d ", total_lv);
         renderer_draw_text_grid(r, bar_col, row, COL_DIM, buf);
         bar_col += 3;
-
+ 
         uint32_t lv_col = (cur_lv >= MAX_JOB_LEVEL) ? COL_ACCENT : COL_GOLD;
         snprintf(buf, sizeof(buf), "Lv%d", cur_lv);
         renderer_draw_text_grid(r, bar_col, row, lv_col, buf);
         bar_col += 3;
-
+ 
         renderer_draw_text_grid(r, bar_col, row, lv_col, xp_bar);
-        bar_col += 11;
-
-        if (cur_lv < MAX_JOB_LEVEL)
+        bar_col += 12;
+ 
+        if (cur_lv < MAX_JOB_LEVEL) {
             snprintf(buf, sizeof(buf), "%lld/%lld", (long long)cur_xp, (long long)xp_next);
-        else
+        } else {
             snprintf(buf, sizeof(buf), "MAX");
+        }
         renderer_draw_text_grid(r, bar_col, row, COL_DIM, buf);
-
+ 
         if (++row > UI_ROW_CMDBAR - 2) {
             renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM, "...");
             break;
         }
     }
 }
-
+ 
 /* =========================================================
  * Command bar
  * ========================================================= */
 void ui_draw_cmdbar(Renderer *r, const GameState *state) {
     renderer_draw_hline_partial(r, UI_ROW_CMDBAR - 1, 0, DIVIDER_COL, COL_DIM);
-
+ 
     char line1[128], line2[128];
-
+ 
+    /* Compute live hire cost */
     int rec_lv    = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_RECRUITERS);
     int hire_gold = HIRE_GOLD_BASE - rec_lv * HIRE_GOLD_DISCOUNT;
     int hire_food = HIRE_FOOD_BASE - rec_lv * HIRE_FOOD_DISCOUNT;
     if (hire_gold < 10) hire_gold = 10;
     if (hire_food < 5)  hire_food = 5;
-
+ 
+    /* Line 1: hire info */
     int can_hire = (state->resources.gold >= hire_gold &&
                     state->resources.food >= hire_food);
     snprintf(line1, sizeof(line1),
@@ -291,7 +300,8 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state) {
              can_hire ? "" : "  [need resources]");
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR,
                             can_hire ? COL_FG : COL_DIM, line1);
-
+ 
+    /* Line 2: job assignment (context-sensitive) */
     if (ui_selected_dwarf >= 0 && ui_selected_dwarf < MAX_DWARVES
         && state->dwarves[ui_selected_dwarf].alive) {
         const Dwarf *d = &state->dwarves[ui_selected_dwarf];
@@ -313,7 +323,7 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state) {
                                 COL_DIM, "Click a dwarf to select, then assign a job");
     }
 }
-
+ 
 /* =========================================================
  * Vertical divider
  * ========================================================= */
@@ -322,41 +332,41 @@ void ui_draw_divider(Renderer *r) {
     for (int row = 0; row < total_rows; row++)
         renderer_draw_text_grid(r, DIVIDER_COL, row, COL_DIM, "|");
 }
-
+ 
 /* =========================================================
  * Event log panel
  * ========================================================= */
 typedef struct { char text[128]; uint32_t color; } WrappedLine;
 static WrappedLine wlines[LOG_MAX_WRAPPED];
-
+ 
 void ui_draw_eventlog(Renderer *r, const GameState *state) {
     const EventLog *log = &state->event_log;
     int log_w = (WIN_W / r->glyph_w) - LOG_COL_START - 1;
     if (log_w < 10) log_w = 10;
     if (log_w > 127) log_w = 127;
-
+ 
     int total_wrapped = 0;
     int count = log->count;
-
+ 
     if (count > 0) {
         int oldest = ((int)log->head - count + EVENT_LOG_SIZE) % EVENT_LOG_SIZE;
         for (int i = 0; i < count && total_wrapped < LOG_MAX_WRAPPED; i++) {
             int slot = (oldest + i) % EVENT_LOG_SIZE;
             const EventRecord *e = &log->entries[slot];
-
+ 
             char who[16];
             if (e->dwarf_idx == 0xFF) who[0] = '\0';
             else snprintf(who, sizeof(who), "Dwarf #%d", e->dwarf_idx + 1);
-
+ 
             const char *tmpl = evt_get_template(e->code);
             char full[256];
             if (who[0]) snprintf(full, sizeof(full), tmpl, who);
             else        snprintf(full, sizeof(full), "%s", tmpl);
-
+ 
             char chunks[8][128];
             int nchunks = wordwrap(full, log_w, chunks, 8);
             uint32_t color = evt_color(e->severity);
-
+ 
             for (int c = 0; c < nchunks && total_wrapped < LOG_MAX_WRAPPED; c++) {
                 strncpy(wlines[total_wrapped].text, chunks[c], 127);
                 wlines[total_wrapped].text[127] = '\0';
@@ -366,11 +376,11 @@ void ui_draw_eventlog(Renderer *r, const GameState *state) {
             }
         }
     }
-
+ 
     int max_scroll = total_wrapped - LOG_VISIBLE_LINES;
     if (max_scroll < 0) max_scroll = 0;
     if (scroll_offset > max_scroll) scroll_offset = max_scroll;
-
+ 
     char header[64];
     if (scroll_offset > 0)
         snprintf(header, sizeof(header), "[ EVENT LOG ] ^ %d up (UP/DN)", scroll_offset);
@@ -378,16 +388,16 @@ void ui_draw_eventlog(Renderer *r, const GameState *state) {
         snprintf(header, sizeof(header), "[ EVENT LOG ]");
     renderer_draw_text_grid(r, LOG_COL_START, LOG_HEADER_ROW, COL_ACCENT, header);
     renderer_draw_hline(r, LOG_HEADER_ROW + 1, COL_DIM);
-
+ 
     if (total_wrapped == 0) {
         renderer_draw_text_grid(r, LOG_COL_START, LOG_START_ROW,
                                 COL_DIM, "The halls are quiet...");
         return;
     }
-
+ 
     int start_line = total_wrapped - LOG_VISIBLE_LINES - scroll_offset;
     if (start_line < 0) start_line = 0;
-
+ 
     int screen_row = LOG_START_ROW;
     for (int i = start_line;
          i < total_wrapped && screen_row < LOG_START_ROW + LOG_VISIBLE_LINES;
@@ -395,7 +405,7 @@ void ui_draw_eventlog(Renderer *r, const GameState *state) {
         renderer_draw_text_grid(r, LOG_COL_START, screen_row,
                                 wlines[i].color, wlines[i].text);
     }
-
+ 
     if (scroll_offset > 0)
         renderer_draw_text_grid(r, LOG_COL_START,
                                 LOG_START_ROW + LOG_VISIBLE_LINES,

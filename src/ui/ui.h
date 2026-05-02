@@ -4,7 +4,7 @@
 #include "../render/renderer.h"
 #include "../../include/asmoria.h"
 
-#define DIVIDER_COL        62
+#define DIVIDER_COL        78
 #define LOG_COL_START      (DIVIDER_COL + 2)
 #define LOG_HEADER_ROW     0
 #define LOG_START_ROW      2
