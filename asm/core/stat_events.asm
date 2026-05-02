@@ -107,16 +107,24 @@ asm_apply_stat_event:
     jmp     .done
 
 .xp_p50:
-    add     qword [r13 + DWARF_XP], 50
+    movzx   rcx, byte [r13 + DWARF_JOB]
+    shl     rcx, 3
+    add     qword [r13 + DWARF_JOB_XP + rcx], 50
     jmp     .done
 .xp_p30:
-    add     qword [r13 + DWARF_XP], 30
+    movzx   rcx, byte [r13 + DWARF_JOB]
+    shl     rcx, 3
+    add     qword [r13 + DWARF_JOB_XP + rcx], 30
     jmp     .done
 .xp_p25:
-    add     qword [r13 + DWARF_XP], 25
+    movzx   rcx, byte [r13 + DWARF_JOB]
+    shl     rcx, 3
+    add     qword [r13 + DWARF_JOB_XP + rcx], 25
     jmp     .done
 .xp_p20:
-    add     qword [r13 + DWARF_XP], 20
+    movzx   rcx, byte [r13 + DWARF_JOB]
+    shl     rcx, 3
+    add     qword [r13 + DWARF_JOB_XP + rcx], 20
     jmp     .done
 
     ; =======================================================

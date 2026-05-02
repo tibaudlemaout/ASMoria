@@ -124,7 +124,19 @@ asm_hire_dwarf:
     mov     byte  [r12 + DWARF_MORALE],   80
     mov     byte  [r12 + DWARF_FATIGUE],  0
     mov     byte  [r12 + DWARF_PREV_JOB], JOB_IDLE
-    mov     qword [r12 + DWARF_XP],       0
+
+    ; zero job_level[6]
+    mov     dword [r12 + DWARF_JOB_LEVEL],     0
+    mov     word  [r12 + DWARF_JOB_LEVEL + 4], 0
+
+    ; zero job_xp[6] (48 bytes)
+    xor     rax, rax
+    mov     [r12 + DWARF_JOB_XP +  0], rax
+    mov     [r12 + DWARF_JOB_XP +  8], rax
+    mov     [r12 + DWARF_JOB_XP + 16], rax
+    mov     [r12 + DWARF_JOB_XP + 24], rax
+    mov     [r12 + DWARF_JOB_XP + 32], rax
+    mov     [r12 + DWARF_JOB_XP + 40], rax
 
     ; queue milestone event
     mov     byte [rbx + GS_PENDING + PENDING_CODE],     0x42

@@ -7,6 +7,7 @@
 extern asm_tick_resources
 extern asm_tick_dwarves
 extern asm_tick_events
+extern asm_tick_xp
 extern asm_event_push
 
 section .text
@@ -14,9 +15,9 @@ section .text
 
 ; STACK:
 ;   entry   :  8 mod 16
-;   push rbp: 16         aligned
+;   push rbp: 16  aligned
 ;   push rbx: 24
-;   sub rsp,8: 32        aligned  <- all calls here
+;   sub rsp,8: 32  aligned
 asm_tick:
     push    rbp
     mov     rbp, rsp
@@ -27,10 +28,11 @@ asm_tick:
 
     inc     qword [rbx + GS_TICK]
 
+    ; 1. Dwarf morale/fatigue
     mov     rdi, rbx
     call    asm_tick_dwarves
 
-    ; flush pending event from dwarves subsystem
+    ; 2. Flush pending event from dwarves
     movzx   eax, byte [rbx + GS_PENDING + PENDING_CODE]
     cmp     al, 0xFF
     je      .no_pending
@@ -42,9 +44,27 @@ asm_tick:
     mov     byte [rbx + GS_PENDING + PENDING_CODE], 0xFF
 
 .no_pending:
+    ; 3. XP gain + level-up detection
+    mov     rdi, rbx
+    call    asm_tick_xp
+
+    ; 4. Flush pending event from XP (level-up)
+    movzx   eax, byte [rbx + GS_PENDING + PENDING_CODE]
+    cmp     al, 0xFF
+    je      .no_xp_pending
+    movzx   esi, byte [rbx + GS_PENDING + PENDING_CODE]
+    movzx   edx, byte [rbx + GS_PENDING + PENDING_SEVERITY]
+    movzx   ecx, byte [rbx + GS_PENDING + PENDING_DWARF]
+    mov     rdi, rbx
+    call    asm_event_push
+    mov     byte [rbx + GS_PENDING + PENDING_CODE], 0xFF
+
+.no_xp_pending:
+    ; 5. Resources (uses job levels for bonus yield)
     mov     rdi, rbx
     call    asm_tick_resources
 
+    ; 6. Flavour + stat events
     mov     rdi, rbx
     call    asm_tick_events
 

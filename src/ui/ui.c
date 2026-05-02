@@ -12,7 +12,7 @@ static const char *job_names[] = {
  * UI state
  * ========================================================= */
 int ui_selected_dwarf = -1;
-int ui_show_upgrades  = 0;     /* -1 = none selected */
+int ui_show_upgrades  = 0;
 static int scroll_offset = 0;
 
 void ui_log_scroll(int delta) {
@@ -76,19 +76,15 @@ static int wordwrap(const char *text, int line_w,
 
 /* =========================================================
  * Hit-test: which dwarf row did the user click?
- * Returns 0-based dwarf index among alive dwarves that are
- * rendered, or -1 if the click wasn't on a dwarf row.
  * ========================================================= */
 int ui_dwarf_at_pixel(Renderer *r, const GameState *state, int px, int py) {
-    /* clicks must be in the left panel */
     if (px >= DIVIDER_COL * r->glyph_w) return -1;
 
-    int first_row = UI_ROW_DWARVES + 2;   /* first data row */
+    int first_row = UI_ROW_DWARVES + 2;
     int click_row = py / r->glyph_h;
 
     if (click_row < first_row) return -1;
 
-    /* walk alive dwarves to find which one occupies that row */
     int row = first_row;
     for (int i = 0; i < MAX_DWARVES; i++) {
         if (!state->dwarves[i].alive) continue;
@@ -168,7 +164,7 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
     for (int i = 0; i < MAX_DWARVES; i++)
         if (state->dwarves[i].alive) alive++;
 
-    int bar_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_BARRACKS);
+    int bar_lv    = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_BARRACKS);
     int dwarf_cap = DWARF_CAP_BASE + bar_lv * DWARF_CAP_PER_LEVEL;
     snprintf(buf, sizeof(buf), "[ DWARVES  %d / %d ]", alive, dwarf_cap);
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES, COL_FG, buf);
@@ -180,7 +176,7 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
     }
 
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES + 1,
-                            COL_DIM, "#   Job        Morale      Fatigue     XP");
+                            COL_DIM, "#   Job        Morale      Fatigue     TLv Lv  Progress    XP");
 
     int row = UI_ROW_DWARVES + 2;
     for (int i = 0; i < MAX_DWARVES; i++) {
@@ -199,7 +195,15 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
         make_bar(mor_bar, d->morale,  100);
         make_bar(fat_bar, d->fatigue, 100);
 
-        /* Selection indicator */
+        /* Total level = sum of all job levels */
+        int total_lv = 0;
+        for (int j = 0; j < JOB_COUNT; j++)
+            total_lv += d->job_level[j];
+
+        /* Current job level and XP */
+        int cur_lv     = d->job_level[d->job];
+        int64_t cur_xp = d->job_xp[d->job];
+
         snprintf(buf, sizeof(buf), "%s%-3d %s",
                  is_selected ? ">" : " ", i + 1, job_label);
 
@@ -218,7 +222,44 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
         bar_col += 4;
         renderer_draw_text_grid(r, bar_col, row, fatigue_color(d->fatigue), fat_bar);
         bar_col += 12;
-        snprintf(buf, sizeof(buf), "XP:%-6lld", (long long)d->xp);
+
+        /* XP progress bar toward next level */
+        static const int64_t xp_thresholds[] = {500, 1500, 3500, 7500, 0};
+        int64_t xp_next = (cur_lv < MAX_JOB_LEVEL) ? xp_thresholds[cur_lv] : 0;
+        int64_t xp_prev = (cur_lv > 0)             ? xp_thresholds[cur_lv-1] : 0;
+
+        char xp_bar[12];
+        if (cur_lv >= MAX_JOB_LEVEL) {
+            xp_bar[0] = '[';
+            for (int x = 0; x < 8; x++) xp_bar[x+1] = '#';
+            xp_bar[9] = ']'; xp_bar[10] = ' ';
+        } else {
+            int64_t span   = xp_next - xp_prev;
+            int64_t prog   = cur_xp  - xp_prev;
+            int     filled = (span > 0) ? (int)(prog * 8 / span) : 0;
+            if (filled < 0) filled = 0;
+            if (filled > 8) filled = 8;
+            xp_bar[0] = '[';
+            for (int x = 0; x < 8; x++) xp_bar[x+1] = (x < filled) ? '#' : '.';
+            xp_bar[9] = ']'; xp_bar[10] = ' ';
+        }
+
+        snprintf(buf, sizeof(buf), "T%d ", total_lv);
+        renderer_draw_text_grid(r, bar_col, row, COL_DIM, buf);
+        bar_col += 3;
+
+        uint32_t lv_col = (cur_lv >= MAX_JOB_LEVEL) ? COL_ACCENT : COL_GOLD;
+        snprintf(buf, sizeof(buf), "Lv%d", cur_lv);
+        renderer_draw_text_grid(r, bar_col, row, lv_col, buf);
+        bar_col += 3;
+
+        renderer_draw_text_grid(r, bar_col, row, lv_col, xp_bar);
+        bar_col += 11;
+
+        if (cur_lv < MAX_JOB_LEVEL)
+            snprintf(buf, sizeof(buf), "%lld/%lld", (long long)cur_xp, (long long)xp_next);
+        else
+            snprintf(buf, sizeof(buf), "MAX");
         renderer_draw_text_grid(r, bar_col, row, COL_DIM, buf);
 
         if (++row > UI_ROW_CMDBAR - 2) {
@@ -236,24 +277,21 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state) {
 
     char line1[128], line2[128];
 
-    /* Compute live hire cost */
     int rec_lv    = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_RECRUITERS);
     int hire_gold = HIRE_GOLD_BASE - rec_lv * HIRE_GOLD_DISCOUNT;
     int hire_food = HIRE_FOOD_BASE - rec_lv * HIRE_FOOD_DISCOUNT;
     if (hire_gold < 10) hire_gold = 10;
     if (hire_food < 5)  hire_food = 5;
 
-    /* Line 1: hire info */
     int can_hire = (state->resources.gold >= hire_gold &&
                     state->resources.food >= hire_food);
     snprintf(line1, sizeof(line1),
-             "[H] Hire (%d gold, %d food)%s  [U] Upgrades",
+             "[H] Hire (%d gold, %d food)%s  [U] Upgrades  [F5] Save  [F9] Load",
              hire_gold, hire_food,
              can_hire ? "" : "  [need resources]");
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR,
                             can_hire ? COL_FG : COL_DIM, line1);
 
-    /* Line 2: job assignment (context-sensitive) */
     if (ui_selected_dwarf >= 0 && ui_selected_dwarf < MAX_DWARVES
         && state->dwarves[ui_selected_dwarf].alive) {
         const Dwarf *d = &state->dwarves[ui_selected_dwarf];

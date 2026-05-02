@@ -21,7 +21,7 @@ void game_init(GameState *state) {
     state->dwarves[0].morale   = 80;
     state->dwarves[0].fatigue  = 0;
     state->dwarves[0].prev_job = JOB_IDLE;
-    state->dwarves[0].xp       = 0;
+    
 }
 
 void game_update(GameState *state) {

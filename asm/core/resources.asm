@@ -1,17 +1,15 @@
 ; =========================================================
 ; asm/core/resources.asm - per-tick resource accumulation
 ;
-; Yields per working dwarf (before morale scale):
-;   Miner:    stone = 2 + pick_level
-;             gold  = 1 + pick_level  (separate, not halved)
-;   Lumberer: wood  = 3 + saw_level
-;   Farmer:   food  = 2 + irr_level
+; Yield = (base + upgrade_level + job_level) scaled by morale
 ;
-; Morale scaling applied after upgrade bonus:
-;   80-100 -> full
-;   50-79  -> 75%  (minimum 1 if base > 0)
-;   20-49  -> 50%  (minimum 1 if base > 0)
-;   0-19   -> 25%  (minimum 1 if base > 0)
+; Miner:    stone = 2 + pick_level + miner_job_level
+;           gold  = 1 + pick_level + miner_job_level
+; Lumberer: wood  = 3 + saw_level  + lumberer_job_level
+; Farmer:   food  = 2 + irr_level  + farmer_job_level
+;
+; Morale scaling: 80-100=full, 50-79=75%, 20-49=50%, 0-19=25%
+; Minimum yield of 1 if base > 0.
 ;
 ; STACK:
 ;   entry   :  8 mod 16
@@ -21,7 +19,6 @@
 ;   push r13: 40
 ;   push r14: 48  aligned
 ;   sub rsp,8: 56 -> 64  aligned  <- calls here
-;   5 pushes + sub rsp,8 -> aligned.
 ; =========================================================
 
 %include "core/offsets.inc"
@@ -29,23 +26,18 @@
 section .text
     global asm_tick_resources
 
-; ---------------------------------------------------------
-; apply_morale_scale(yield=rax, morale=cl) -> rax
-; Guarantees minimum yield of 1 if input yield > 0.
-; ---------------------------------------------------------
 apply_morale_scale:
     test    rax, rax
-    jz      .zero               ; 0 in -> 0 out
+    jz      .zero
     cmp     cl, 80
     jge     .full
     cmp     cl, 50
     jge     .three_quarters
     cmp     cl, 20
     jge     .half
-    ; 25%
     shr     rax, 2
     jnz     .done
-    mov     rax, 1              ; floor at 1
+    mov     rax, 1
     ret
 .half:
     shr     rax, 1
@@ -64,23 +56,13 @@ apply_morale_scale:
 .zero:
     ret
 
-; ---------------------------------------------------------
-; get_pick_level() / get_saw_level() / get_irr_level()
-; Inline helpers: extract nibble from r14 (tier1).
-; Return value in rax. Clobbers rcx.
-; ---------------------------------------------------------
-%macro GET_UPGR_LEVEL 1          ; %1 = upgrade id (0,1,2)
+%macro GET_UPGR_LEVEL 1
     mov     rax, r14
     mov     rcx, %1 * 4
     shr     rax, cl
     and     rax, 0xF
 %endmacro
 
-; ---------------------------------------------------------
-; asm_tick_resources(GameState *state [rdi])
-; r12 = state, rsi = current dwarf ptr, rbx = loop counter
-; r13 = morale, r14 = tier1
-; ---------------------------------------------------------
 asm_tick_resources:
     push    rbp
     mov     rbp, rsp
@@ -104,7 +86,7 @@ asm_tick_resources:
 
     movzx   eax, byte [rsi + DWARF_JOB]
     test    eax, eax
-    jz      .next               ; idle: no production
+    jz      .next
 
     movzx   r13d, byte [rsi + DWARF_MORALE]
     mov     r14, [r12 + GS_UPGR_TIER1]
@@ -118,15 +100,19 @@ asm_tick_resources:
     jmp     .next
 
 .do_miner:
-    ; stone: 2 + pick_level
+    ; stone: 2 + pick_level + miner_job_level
     GET_UPGR_LEVEL UPGR_PICK_QUALITY
+    movzx   rcx, byte [rsi + DWARF_JOB_LEVEL + JOB_MINER]
+    add     rax, rcx
     add     rax, 2
     mov     cl, r13b
     call    apply_morale_scale
     add     [r12 + GS_RESOURCES + RES_STONE], rax
 
-    ; gold: 1 + pick_level (same bonus, not halved)
+    ; gold: 1 + pick_level + miner_job_level
     GET_UPGR_LEVEL UPGR_PICK_QUALITY
+    movzx   rcx, byte [rsi + DWARF_JOB_LEVEL + JOB_MINER]
+    add     rax, rcx
     add     rax, 1
     mov     cl, r13b
     call    apply_morale_scale
@@ -134,8 +120,10 @@ asm_tick_resources:
     jmp     .next
 
 .do_lumberer:
-    ; wood: 3 + saw_level
+    ; wood: 3 + saw_level + lumberer_job_level
     GET_UPGR_LEVEL UPGR_SAW_QUALITY
+    movzx   rcx, byte [rsi + DWARF_JOB_LEVEL + JOB_LUMBERER]
+    add     rax, rcx
     add     rax, 3
     mov     cl, r13b
     call    apply_morale_scale
@@ -143,8 +131,10 @@ asm_tick_resources:
     jmp     .next
 
 .do_farmer:
-    ; food: 2 + irr_level
+    ; food: 2 + irr_level + farmer_job_level
     GET_UPGR_LEVEL UPGR_IRRIGATION
+    movzx   rcx, byte [rsi + DWARF_JOB_LEVEL + JOB_FARMER]
+    add     rax, rcx
     add     rax, 2
     mov     cl, r13b
     call    apply_morale_scale

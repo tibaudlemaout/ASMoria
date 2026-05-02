@@ -4,24 +4,24 @@
 #include <stdint.h>
 
 typedef struct {
-    int64_t gold;
-    int64_t stone;
-    int64_t wood;
-    int64_t food;
-    int64_t mana;
+    int64_t gold, stone, wood, food, mana;
 } Resources;
 
-#define MAX_DWARVES 64
+#define MAX_DWARVES     64
+#define JOB_COUNT       6       /* idle=0 miner=1 lumberer=2 farmer=3 guard=4 scholar=5 */
+#define MAX_JOB_LEVEL   5
 
 typedef struct {
-    uint8_t  alive;
-    uint8_t  job;
-    uint8_t  morale;
-    uint8_t  fatigue;
-    uint8_t  prev_job;
-    uint8_t  _pad[3];
-    int64_t  xp;
-} Dwarf;
+    uint8_t  alive;             /* +0x00 */
+    uint8_t  job;               /* +0x01 */
+    uint8_t  morale;            /* +0x02 */
+    uint8_t  fatigue;           /* +0x03 */
+    uint8_t  prev_job;          /* +0x04 */
+    uint8_t  job_level[6];      /* +0x05 : level per job (indexed by JOB_*) */
+    uint8_t  _pad;              /* +0x0B */
+    int32_t  _pad2;             /* +0x0C */
+    int64_t  job_xp[6];         /* +0x10 : xp per job */
+} Dwarf;                        /* size: 64 bytes */
 
 #define JOB_IDLE     0
 #define JOB_MINER    1
@@ -30,27 +30,21 @@ typedef struct {
 #define JOB_GUARD    4
 #define JOB_SCHOLAR  5
 
-/* Base hire costs — reduced by Recruiters upgrade */
+/* XP thresholds for each level (index = level, value = xp needed) */
+#define XP_LVL1     0
+#define XP_LVL2     500
+#define XP_LVL3     1500
+#define XP_LVL4     3500
+#define XP_LVL5     7500
+
+/* Hire costs */
 #define HIRE_GOLD_BASE  50
 #define HIRE_FOOD_BASE  20
-
-/* Keep old names as aliases for UI */
 #define HIRE_GOLD_COST  HIRE_GOLD_BASE
 #define HIRE_FOOD_COST  HIRE_FOOD_BASE
 
 /* =========================================================
  * Upgrade system
- *
- * Levels packed as 4-bit nibbles in Upgrades.tier1:
- *   bits [0..3]  = PICK_QUALITY  (tools,     max 3)
- *   bits [4..7]  = SAW_QUALITY   (tools,     max 3)
- *   bits [8..11] = IRRIGATION    (tools,     max 3)
- *   bits [12..15]= BARRACKS      (workforce, max 3)
- *   bits [16..19]= RECRUITERS    (workforce, max 3)
- *
- * Cost for next level:
- *   Tools:     gold = 100 * next,  stone = 50 * next
- *   Workforce: gold = 150 * next,  stone = 75 * next
  * ========================================================= */
 #define UPGR_PICK_QUALITY   0
 #define UPGR_SAW_QUALITY    1
@@ -58,39 +52,24 @@ typedef struct {
 #define UPGR_BARRACKS       3
 #define UPGR_RECRUITERS     4
 #define UPGR_COUNT          5
-
 #define UPGR_MAX_TOOLS      3
 #define UPGR_MAX_WORKFORCE  3
-
-/* Extract level of upgrade id from tier1 */
 #define UPGR_LEVEL(tier1, id)  (((tier1) >> ((id) * 4)) & 0xF)
-
-/* Starting dwarf cap (Barracks Lv0) */
-#define DWARF_CAP_BASE      16
-#define DWARF_CAP_PER_LEVEL 16
-
-/* Hire cost reduction per Recruiters level */
-#define HIRE_GOLD_DISCOUNT  10
-#define HIRE_FOOD_DISCOUNT   5
-
-/* Cost bases */
 #define UPGR_COST_GOLD_TOOLS    100
 #define UPGR_COST_STONE_TOOLS    50
 #define UPGR_COST_GOLD_WORK     150
 #define UPGR_COST_STONE_WORK     75
+#define DWARF_CAP_BASE      16
+#define DWARF_CAP_PER_LEVEL 16
+#define HIRE_GOLD_DISCOUNT  10
+#define HIRE_FOOD_DISCOUNT   5
 
-typedef struct {
-    uint64_t tier1;
-    uint64_t tier2;
-} Upgrades;
-
+typedef struct { uint64_t tier1, tier2; } Upgrades;
 typedef struct { uint64_t seed; } RngState;
 
 typedef struct {
-    uint8_t  code;
-    uint8_t  severity;
-    uint8_t  dwarf_idx;
-    uint8_t  _pad[5];
+    uint8_t code, severity, dwarf_idx;
+    uint8_t _pad[5];
 } PendingEvent;
 
 #define EVT_FLAVOUR     0
@@ -102,29 +81,26 @@ typedef struct {
 
 typedef struct {
     uint64_t tick;
-    uint8_t  code;
-    uint8_t  severity;
-    uint8_t  dwarf_idx;
+    uint8_t  code, severity, dwarf_idx;
     uint8_t  _pad[5];
 } EventRecord;
 
 typedef struct {
     EventRecord entries[EVENT_LOG_SIZE];
-    uint8_t     head;
-    uint8_t     count;
+    uint8_t     head, count;
     uint8_t     _pad[6];
 } EventLog;
 
 typedef struct {
     /* offset 0x0000 */ Resources    resources;
     /* offset 0x0028 */ Dwarf        dwarves[MAX_DWARVES];
-    /* offset 0x0428 */ Upgrades     upgrades;
-    /* offset 0x0438 */ RngState     rng;
-    /* offset 0x0440 */ uint64_t     tick;
-    /* offset 0x0448 */ uint32_t     depth;
-    /* offset 0x044C */ uint32_t     flags;
-    /* offset 0x0450 */ PendingEvent pending;
-    /* offset 0x0458 */ EventLog     event_log;
+    /* offset 0x1028 */ Upgrades     upgrades;
+    /* offset 0x1038 */ RngState     rng;
+    /* offset 0x1040 */ uint64_t     tick;
+    /* offset 0x1048 */ uint32_t     depth;
+    /* offset 0x104C */ uint32_t     flags;
+    /* offset 0x1050 */ PendingEvent pending;
+    /* offset 0x1058 */ EventLog     event_log;
 } GameState;
 
 extern void     asm_tick(GameState *state);
@@ -137,5 +113,8 @@ extern int64_t  asm_hire_dwarf(GameState *state);
 extern int64_t  asm_assign_job(GameState *state, uint8_t dwarf_idx,
                                uint8_t job);
 extern int64_t  asm_buy_upgrade(GameState *state, uint8_t upgrade_id);
+extern uint64_t asm_state_checksum(const void *data, uint64_t len);
+extern int64_t  asm_save_game(const char *path, const GameState *state);
+extern int64_t  asm_load_game(const char *path, GameState *state);
 
 #endif /* ASMORIA_H */

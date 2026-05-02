@@ -96,7 +96,7 @@ static const char *evt_milestone[16] = {
     /* 0x40 */ "The halls grow deeper. Depth increased!",
     /* 0x41 */ "A new upgrade has been unlocked.",
     /* 0x42 */ "The first dwarf joins the workforce.",
-    /* 0x43 */ "The forge is lit for the first time.",
+    /* 0x43 */ "%s has mastered a new level of their craft!",
     /* 0x44 */ "A grand hall has been carved out.",
     /* 0x45 */ "The treasury overflows with gold.",
     /* 0x46 */ "The dwarves reach a new stratum of rock.",

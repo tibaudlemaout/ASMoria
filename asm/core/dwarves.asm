@@ -109,8 +109,10 @@ asm_tick_dwarves:
     ; IDLE (player-set or force-resting)
     ; =======================================================
 .idle:
-    ; drain fatigue for all idle dwarves
-    sub     r15d, 2
+    ; drain fatigue — base 2 + idle_level bonus
+    movzx   eax, byte [r12 + DWARF_JOB_LEVEL + JOB_IDLE]
+    add     eax, 2
+    sub     r15d, eax
     jge     .check_return
     xor     r15d, r15d
 
