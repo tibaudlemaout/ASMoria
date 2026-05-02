@@ -78,15 +78,30 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
         "[ UPGRADES ]    UP/DN navigate    ENTER buy    U close");
     renderer_draw_hline_partial(r, 1, 0, DIVIDER_COL, COL_DIM);
 
+    /* Resources row */
+    char seg[32];
+    int rcol = UI_COL_MARGIN;
+    snprintf(seg, sizeof(seg), "Gold:%-6lld  ", (long long)state->resources.gold);
+    renderer_draw_text_grid(r, rcol, 2, COL_GOLD, seg); rcol += (int)strlen(seg);
+    snprintf(seg, sizeof(seg), "Stone:%-6lld  ", (long long)state->resources.stone);
+    renderer_draw_text_grid(r, rcol, 2, COL_STONE, seg); rcol += (int)strlen(seg);
+    snprintf(seg, sizeof(seg), "Wood:%-6lld  ", (long long)state->resources.wood);
+    renderer_draw_text_grid(r, rcol, 2, COL_WOOD, seg); rcol += (int)strlen(seg);
+    snprintf(seg, sizeof(seg), "Food:%-6lld  ", (long long)state->resources.food);
+    renderer_draw_text_grid(r, rcol, 2, COL_FOOD, seg); rcol += (int)strlen(seg);
+    snprintf(seg, sizeof(seg), "Mana:%-6lld", (long long)state->resources.mana);
+    renderer_draw_text_grid(r, rcol, 2, COL_MANA, seg);
+
+    /* Status row */
     snprintf(buf, sizeof(buf),
              "  Cap: %d  Hire: %dg/%df  Guards: %s  Scholars: %s  Mana/tick: %d",
              dwarf_cap, hire_gold, hire_food,
              wt_lv >= 1 ? "unlocked" : "locked",
              rh_lv >= 1 ? "unlocked" : "locked",
              mw_lv * 2);
-    renderer_draw_text_grid(r, UI_COL_MARGIN, 2, COL_DIM, buf);
-    renderer_draw_hline_partial(r, 3, 0, DIVIDER_COL, COL_DIM);
-    row = 4;
+    renderer_draw_text_grid(r, UI_COL_MARGIN, 3, COL_DIM, buf);
+    renderer_draw_hline_partial(r, 4, 0, DIVIDER_COL, COL_DIM);
+    row = 5;
 
     const char *last_cat = NULL;
 

@@ -87,11 +87,23 @@ int main(void) {
 
                         case SDLK_UP:
                             if (ui_show_upgrades) ui_upgr_move(-1);
-                            else                  ui_log_scroll(+1);
+                            else                  ui_dwarf_select(-1);
                             break;
                         case SDLK_DOWN:
                             if (ui_show_upgrades) ui_upgr_move(+1);
-                            else                  ui_log_scroll(-1);
+                            else                  ui_dwarf_select(+1);
+                            break;
+                        case SDLK_LEFT:
+                            if (!ui_show_upgrades) ui_dwarf_scroll(-1);
+                            break;
+                        case SDLK_RIGHT:
+                            if (!ui_show_upgrades) ui_dwarf_scroll(+1);
+                            break;
+                        case SDLK_PAGEUP:
+                            if (!ui_show_upgrades) ui_log_scroll(+3);
+                            break;
+                        case SDLK_PAGEDOWN:
+                            if (!ui_show_upgrades) ui_log_scroll(-3);
                             break;
 
                         case SDLK_RETURN:

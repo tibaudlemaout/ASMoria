@@ -13,7 +13,45 @@ static const char *job_names[] = {
  * ========================================================= */
 int ui_selected_dwarf = -1;
 int ui_show_upgrades  = 0;     /* -1 = none selected */
-static int scroll_offset = 0;
+static int scroll_offset      = 0;
+static int dwarf_scroll_offset = 0;
+ 
+void ui_dwarf_scroll(int delta) {
+    dwarf_scroll_offset += delta;
+    if (dwarf_scroll_offset < 0) dwarf_scroll_offset = 0;
+}
+ 
+/* Alive dwarf index cache — rebuilt each draw call */
+static int  alive_list[MAX_DWARVES];
+static int  alive_list_count = 0;
+ 
+void ui_dwarf_select(int delta) {
+    if (alive_list_count == 0) return;
+ 
+    /* Find current position in alive list */
+    int pos = -1;
+    for (int i = 0; i < alive_list_count; i++) {
+        if (alive_list[i] == ui_selected_dwarf) { pos = i; break; }
+    }
+ 
+    if (pos < 0) {
+        /* Not in list — select first or last */
+        pos = (delta > 0) ? 0 : alive_list_count - 1;
+    } else {
+        pos += delta;
+        if (pos < 0)                  pos = alive_list_count - 1;
+        if (pos >= alive_list_count)  pos = 0;
+    }
+ 
+    ui_selected_dwarf = alive_list[pos];
+ 
+    /* Auto-scroll to keep selection visible */
+    int max_visible = UI_ROW_CMDBAR - 2 - (UI_ROW_DWARVES + 2);
+    if (pos < dwarf_scroll_offset)
+        dwarf_scroll_offset = pos;
+    if (pos >= dwarf_scroll_offset + max_visible)
+        dwarf_scroll_offset = pos - max_visible + 1;
+}
  
 void ui_log_scroll(int delta) {
     scroll_offset += delta;
@@ -90,10 +128,12 @@ int ui_dwarf_at_pixel(Renderer *r, const GameState *state, int px, int py) {
  
     /* walk alive dwarves to find which one occupies that row */
     int row = first_row;
+    int skipped = 0;
     for (int i = 0; i < MAX_DWARVES; i++) {
         if (!state->dwarves[i].alive) continue;
+        if (skipped < dwarf_scroll_offset) { skipped++; continue; }
         if (row == click_row) return i;
-        if (++row > 36) break;
+        if (++row > UI_ROW_CMDBAR - 2) break;
     }
     return -1;
 }
@@ -172,10 +212,9 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
  
     int bar_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_BARRACKS);
     int dwarf_cap = DWARF_CAP_BASE + bar_lv * DWARF_CAP_PER_LEVEL;
-    snprintf(buf, sizeof(buf), "[ DWARVES  %d / %d ]", alive, dwarf_cap);
-    renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES, COL_FG, buf);
- 
     if (alive == 0) {
+        snprintf(buf, sizeof(buf), "[ DWARVES  0 / %d ]", dwarf_cap);
+        renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES, COL_FG, buf);
         renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES + 1,
                                 COL_DIM, "Your halls are empty. Press H to hire.");
         return;
@@ -184,10 +223,37 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES + 1,
                             COL_DIM, "Name         Job        Morale      Fatigue     TLv Lv  Progress    XP");
  
+    /* Rebuild alive list cache for keyboard navigation */
+    alive_list_count = 0;
+    for (int i = 0; i < MAX_DWARVES; i++)
+        if (state->dwarves[i].alive) alive_list[alive_list_count++] = i;
+    int alive_count = alive_list_count;
+ 
+    /* Clamp scroll offset */
+    int max_visible = UI_ROW_CMDBAR - 2 - (UI_ROW_DWARVES + 2);
+    int max_dscroll = alive_count - max_visible;
+    if (max_dscroll < 0) max_dscroll = 0;
+    if (dwarf_scroll_offset > max_dscroll) dwarf_scroll_offset = max_dscroll;
+ 
+    /* Scroll indicator in header */
+    if (dwarf_scroll_offset > 0 || alive_count > max_visible) {
+        snprintf(buf, sizeof(buf), "[ DWARVES  %d / %d ]  PgUp/PgDn to scroll (%d-%d/%d)",
+                 alive, dwarf_cap,
+                 dwarf_scroll_offset + 1,
+                 dwarf_scroll_offset + max_visible < alive_count
+                     ? dwarf_scroll_offset + max_visible : alive_count,
+                 alive_count);
+    } else {
+        snprintf(buf, sizeof(buf), "[ DWARVES  %d / %d ]", alive, dwarf_cap);
+    }
+    renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES, COL_FG, buf);
+ 
     int row = UI_ROW_DWARVES + 2;
+    int skipped = 0;
     for (int i = 0; i < MAX_DWARVES; i++) {
         const Dwarf *d = &state->dwarves[i];
         if (!d->alive) continue;
+        if (skipped < dwarf_scroll_offset) { skipped++; continue; }
  
         int is_selected = (i == ui_selected_dwarf);
  
@@ -324,7 +390,7 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state) {
         }
     } else {
         renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR + 1,
-                                COL_DIM, "Click a dwarf to select, then assign a job");
+                                COL_DIM, "UP/DN select dwarf  LEFT/RIGHT scroll list  PgUp/PgDn scroll log");
     }
 }
  

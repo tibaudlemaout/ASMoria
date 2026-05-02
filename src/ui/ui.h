@@ -31,5 +31,7 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state);
 
 int  ui_dwarf_at_pixel(Renderer *r, const GameState *state, int x, int y);
 void ui_log_scroll(int delta);
+void ui_dwarf_scroll(int delta);  /* scroll dwarf list left/right */
+void ui_dwarf_select(int delta);  /* move selection up(-1)/down(+1) */
 
 #endif /* UI_H */
