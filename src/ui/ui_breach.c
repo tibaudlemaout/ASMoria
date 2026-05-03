@@ -261,13 +261,20 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
     }
 
     /* -------------------------------------------------------
-     * Result phase
+     * Result phase or unknown state — always show something
      * ----------------------------------------------------- */
-    if (raid->active == RAID_RESULT) {
-        renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM,
-            "The raid has concluded.");
-        renderer_draw_hline_partial(r, 41, 0, _DIVIDER_COL, COL_DIM);
-        renderer_draw_text_grid(r, _UI_COL_MARGIN, 42, COL_DIM,
-            "  [B] Close");
+    renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM,
+        "The raid has concluded. Press [B] to close.");
+    row++;
+    if (raid->next_raid_tick > 0) {
+        uint64_t ticks_left = raid->next_raid_tick > state->tick
+            ? raid->next_raid_tick - state->tick : 0;
+        snprintf(buf, sizeof(buf),
+                 "Next raid warning in ~%llu ticks (~%llu seconds)",
+                 (unsigned long long)ticks_left,
+                 (unsigned long long)(ticks_left / 2));
+        renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM, buf);
     }
+    renderer_draw_hline_partial(r, 41, 0, _DIVIDER_COL, COL_DIM);
+    renderer_draw_text_grid(r, _UI_COL_MARGIN, 42, COL_DIM, "  [B] Close");
 }

@@ -69,8 +69,12 @@ int main(void) {
                             break;
 
                         case SDLK_b:
-                            if (!ui_show_upgrades && !ui_show_research)
+                            if (!ui_show_upgrades && !ui_show_research) {
                                 ui_show_breach = !ui_show_breach;
+                                /* Clear RESULT state when player dismisses */
+                                if (!ui_show_breach && state.raid.active == RAID_RESULT)
+                                    state.raid.active = RAID_NONE;
+                            }
                             break;
 
                         /* Manual save */
