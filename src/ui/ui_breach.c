@@ -120,9 +120,11 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
         renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM,
             "No raid in progress. The deep is calm... for now.");
         row++;
-        if (raid->next_raid_tick > 0) {
-            uint64_t ticks_left = raid->next_raid_tick > state->tick
-                ? raid->next_raid_tick - state->tick : 0;
+        {
+            uint64_t next = raid->next_raid_tick;
+            if (next == 0 || next < state->tick || next > state->tick + 100000ULL)
+                next = state->tick + RAID_FIRST_TICK;
+            uint64_t ticks_left = next - state->tick;
             snprintf(buf, sizeof(buf),
                      "Next warning in ~%llu ticks (~%llu seconds)",
                      (unsigned long long)ticks_left,
@@ -263,16 +265,20 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
     /* -------------------------------------------------------
      * Result phase or unknown state — always show something
      * ----------------------------------------------------- */
-    renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM,
-        "The raid has concluded. Press [B] to close.");
+    const char *result_msg = (raid->active == RAID_RESULT)
+        ? "The raid has concluded. Press [B] to close."
+        : "No active raid.";
+    renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM, result_msg);
     row++;
-    if (raid->next_raid_tick > 0) {
-        uint64_t ticks_left = raid->next_raid_tick > state->tick
-            ? raid->next_raid_tick - state->tick : 0;
+    {
+        uint64_t next2 = raid->next_raid_tick;
+        if (next2 == 0 || next2 < state->tick || next2 > state->tick + 100000ULL)
+            next2 = state->tick + RAID_FIRST_TICK;
+        uint64_t ticks_left2 = next2 - state->tick;
         snprintf(buf, sizeof(buf),
-                 "Next raid warning in ~%llu ticks (~%llu seconds)",
-                 (unsigned long long)ticks_left,
-                 (unsigned long long)(ticks_left / 2));
+                 "Next warning in ~%llu ticks (~%llu seconds)",
+                 (unsigned long long)ticks_left2,
+                 (unsigned long long)(ticks_left2 / 2));
         renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM, buf);
     }
     renderer_draw_hline_partial(r, 41, 0, _DIVIDER_COL, COL_DIM);
