@@ -120,16 +120,29 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
         renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM,
             "No raid in progress. The deep is calm... for now.");
         row++;
-        {
-            uint64_t next = raid->next_raid_tick;
-            if (next == 0 || next < state->tick || next > state->tick + 100000ULL)
-                next = state->tick + RAID_FIRST_TICK;
-            uint64_t ticks_left = next - state->tick;
+        /* Compute ticks_left safely — guard against garbage values */
+        uint64_t nrt = raid->next_raid_tick;
+        uint64_t cur = state->tick;
+        uint64_t ticks_left;
+        if (nrt == 0) {
+            /* Not yet initialised — show RAID_FIRST_TICK as estimate */
+            ticks_left = RAID_FIRST_TICK;
+        } else if (nrt > cur && nrt - cur < 10000ULL) {
+            /* Sane future value */
+            ticks_left = nrt - cur;
+        } else {
+            /* Past or garbage — imminent */
+            ticks_left = 0;
+        }
+        if (ticks_left > 0) {
             snprintf(buf, sizeof(buf),
                      "Next warning in ~%llu ticks (~%llu seconds)",
                      (unsigned long long)ticks_left,
                      (unsigned long long)(ticks_left / 2));
             renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM, buf);
+        } else {
+            renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM,
+                "Raid warning imminent...");
         }
         renderer_draw_hline_partial(r, 41, 0, _DIVIDER_COL, COL_DIM);
         renderer_draw_text_grid(r, _UI_COL_MARGIN, 42, COL_DIM, "  [B] Close");
@@ -271,15 +284,17 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
     renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM, result_msg);
     row++;
     {
-        uint64_t next2 = raid->next_raid_tick;
-        if (next2 == 0 || next2 < state->tick || next2 > state->tick + 100000ULL)
-            next2 = state->tick + RAID_FIRST_TICK;
-        uint64_t ticks_left2 = next2 - state->tick;
-        snprintf(buf, sizeof(buf),
-                 "Next warning in ~%llu ticks (~%llu seconds)",
-                 (unsigned long long)ticks_left2,
-                 (unsigned long long)(ticks_left2 / 2));
-        renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM, buf);
+        uint64_t nrt2 = raid->next_raid_tick;
+        uint64_t cur2 = state->tick;
+        uint64_t tl2 = (nrt2 > cur2 && nrt2 - cur2 < 10000ULL)
+                      ? nrt2 - cur2 : 0;
+        if (tl2 > 0) {
+            snprintf(buf, sizeof(buf),
+                     "Next warning in ~%llu ticks (~%llu seconds)",
+                     (unsigned long long)tl2,
+                     (unsigned long long)(tl2 / 2));
+            renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM, buf);
+        }
     }
     renderer_draw_hline_partial(r, 41, 0, _DIVIDER_COL, COL_DIM);
     renderer_draw_text_grid(r, _UI_COL_MARGIN, 42, COL_DIM, "  [B] Close");

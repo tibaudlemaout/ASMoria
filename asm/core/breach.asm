@@ -78,8 +78,10 @@ asm_tick_breach:
     test    rax, rax
     jnz     .check_time
 
-    ; first run — initialise next_raid_tick
-    mov     qword [r12 + RAID_NEXT_TICK], RAID_FIRST_TICK
+    ; first run — initialise next_raid_tick relative to current tick
+    mov     rax, [rbx + GS_TICK]
+    add     rax, RAID_FIRST_TICK
+    mov     [r12 + RAID_NEXT_TICK], rax
     jmp     .done
 
 .check_time:
@@ -282,6 +284,11 @@ asm_tick_breach:
     ; -------------------------------------------------------
 .fire_warning:
     ; compute threat: 1 + raids_completed/3 (cap 5)
+    ; Only fire if not already active
+    movzx   eax, byte [r12 + RAID_ACTIVE]
+    test    al, al
+    jnz     .fw_ret                     ; already active, skip
+
     mov     eax, [r12 + RAID_COMPLETED]
     xor     edx, edx
     mov     ecx, 3
@@ -299,6 +306,7 @@ asm_tick_breach:
     mov     rdx, EVT_NEGATIVE
     mov     rcx, 0xFF
     call    asm_event_push
+.fw_ret:
     ret
 
 .start_combat:

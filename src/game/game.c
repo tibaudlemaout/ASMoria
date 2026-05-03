@@ -21,7 +21,7 @@ void game_init(GameState *state) {
     state->raid.enemy_hp       = 0;
     state->raid.enemy_hp_max   = 0;
     state->raid.enemy_atk      = 0;
-    state->raid.next_raid_tick = RAID_FIRST_TICK;
+    state->raid.next_raid_tick = 0; /* breach.asm sets this on first tick */
     state->raid.combat_start_tick = 0;
     state->raid.last_combat_tick  = 0;
     state->raid.reward_gold    = 0;
@@ -42,10 +42,29 @@ void game_update(GameState *state) {
         save_game(state);
 }
 
+static void sanitise_raid(GameState *state) {
+    Raid *raid = &state->raid;
+    /* If next_raid_tick looks garbage (> current_tick + 10000), reset it */
+    if (raid->active == RAID_NONE || raid->active > RAID_RESULT) {
+        raid->active      = RAID_NONE;
+        raid->threat      = 0;
+        raid->guard_count = 0;
+        /* Reset next_raid_tick to a sane value */
+        if (raid->next_raid_tick == 0 ||
+            raid->next_raid_tick > state->tick + 10000ULL ||
+            raid->next_raid_tick < state->tick) {
+            raid->next_raid_tick = 0; /* breach.asm will init on first tick */
+        }
+        raid->raids_completed = (raid->raids_completed < 100)
+                                ? raid->raids_completed : 0;
+    }
+}
+
 void game_load_or_init(GameState *state) {
     SaveResult r = load_game(state);
 
     if (r == SAVE_OK) {
+        sanitise_raid(state);
         asm_event_push(state, 0x4B, EVT_MILESTONE, 0xFF);
         return;
     }
