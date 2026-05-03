@@ -133,16 +133,18 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
         return;
     }
 
-    /* Threat level */
-    snprintf(buf, sizeof(buf), "Threat Level %d — %s",
-             raid->threat, get_enemy_name(raid->threat));
-    renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_ACCENT, buf);
-    row += 2;
-
     /* -------------------------------------------------------
      * Warning phase
      * ----------------------------------------------------- */
     if (raid->active == RAID_WARNING) {
+        /* Threat level */
+        int show_threat1 = raid->threat;
+        if (show_threat1 < 1) show_threat1 = 1;
+        if (show_threat1 > 5) show_threat1 = 5;
+        snprintf(buf, sizeof(buf), "Threat Level %d — %s",
+                 show_threat1, get_enemy_name(show_threat1));
+        renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_ACCENT, buf);
+        row += 2;
         /* Sprite (dimmed during warning) */
         const char **sprite = get_sprite(raid->threat);
         for (int i = 0; i < 5; i++) {
@@ -177,6 +179,14 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
      * Combat phase
      * ----------------------------------------------------- */
     if (raid->active == RAID_COMBAT) {
+        /* Threat level */
+        int show_threat2 = raid->threat;
+        if (show_threat2 < 1) show_threat2 = 1;
+        if (show_threat2 > 5) show_threat2 = 5;
+        snprintf(buf, sizeof(buf), "Threat Level %d — %s",
+                 show_threat2, get_enemy_name(show_threat2));
+        renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_ACCENT, buf);
+        row += 2;
         /* Enemy sprite — flash white on damage */
         const char **sprite = get_sprite(raid->threat);
         uint32_t sprite_col = (flash_ticks > 0) ? 0xFFFFFFFF : 0xFF4444FF;

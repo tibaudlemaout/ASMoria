@@ -15,7 +15,17 @@ void game_init(GameState *state) {
     state->resources.food  = 20;
     state->depth           = 1;
     state->pending.code      = 0xFF;
+    state->raid.active         = RAID_NONE;
+    state->raid.threat         = 0;
+    state->raid.guard_count    = 0;
+    state->raid.enemy_hp       = 0;
+    state->raid.enemy_hp_max   = 0;
+    state->raid.enemy_atk      = 0;
     state->raid.next_raid_tick = RAID_FIRST_TICK;
+    state->raid.combat_start_tick = 0;
+    state->raid.last_combat_tick  = 0;
+    state->raid.reward_gold    = 0;
+    state->raid.raids_completed = 0;
 
     state->dwarves[0].alive    = 1;
     state->dwarves[0].job      = JOB_MINER;
