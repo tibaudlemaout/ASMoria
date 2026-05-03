@@ -105,10 +105,11 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
         raid->active == RAID_WARNING ? "  !! WARNING — ASSIGN GUARDS !!" :
         raid->active == RAID_COMBAT  ? "  !! COMBAT IN PROGRESS !!"      :
         raid->active == RAID_RESULT  ? "  !! RAID RESOLVED !!"           :
-                                       "  The tunnels are quiet.";
+                                       "";
 
     renderer_draw_text_grid(r, _UI_COL_MARGIN, row, header_col, "[ THE BREACH ]");
-    renderer_draw_text_grid(r, _UI_COL_MARGIN + 15, row, header_col, phase_str);
+    if (phase_str[0])
+        renderer_draw_text_grid(r, _UI_COL_MARGIN + 15, row, header_col, phase_str);
     renderer_draw_hline_partial(r, 1, 0, _DIVIDER_COL, COL_DIM);
     row = 2;
 
