@@ -24,7 +24,6 @@
 %define SAVE_VERSION    3
 %define SAVE_HDR_SIZE   16
 %define CHECKSUM_SIZE   8
-%define GS_SIZE         5216
 
 %define SAVE_OK          0
 %define SAVE_ERR_OPEN    1
