@@ -175,7 +175,45 @@
 %define RAID_COMBAT_INTERVAL 5
 %define RAID_TIMER          300
 
-%undef GS_SIZE
+; --- Prestige system ---
+%define GS_PRESTIGE         0x14D8
+%define PRESTIGE_HONOR      0x00
+%define PRESTIGE_TOTAL_HON  0x04
+%define PRESTIGE_COUNT      0x08
+%define PRESTIGE_PAD        0x0C
+%define PRESTIGE_NODES      0x10
+%define PRESTIGE_RESOURCES  0x18
 
-; save.asm GS_SIZE must match sizeof(GameState)
-%define GS_SIZE             5336
+%define PNODE_YIELD_1       0
+%define PNODE_YIELD_2       1
+%define PNODE_YIELD_3       2
+%define PNODE_START_GOLD_1  3
+%define PNODE_START_GOLD_2  4
+%define PNODE_START_STONE   5
+%define PNODE_FOOD_TICK     6
+%define PNODE_WOOD_TICK     7
+%define PNODE_START_DWF_2   8
+%define PNODE_START_DWF_3   9
+%define PNODE_START_DWF_4   10
+%define PNODE_HIRE_10       11
+%define PNODE_HIRE_25       12
+%define PNODE_START_PICK    13
+%define PNODE_START_SAW     14
+%define PNODE_START_IRR     15
+%define PNODE_START_BARR    16
+%define PNODE_RUNE_10       17
+%define PNODE_RUNE_25       18
+%define PNODE_START_MANA    19
+%define PNODE_START_RUNE_H  20
+%define PNODE_MANA_TICK_1   21
+%define PNODE_MANA_TICK_2   22
+%define PNODE_START_SCHOLAR 23
+%define PNODE_COUNT         24
+
+%define PRESTIGE_MIN_TICKS      1000
+%define PRESTIGE_MIN_RAIDS      1
+%define PRESTIGE_MIN_RUNES      3
+%define PRESTIGE_MIN_RESOURCES  10000
+
+%undef GS_SIZE
+%define GS_SIZE             5368

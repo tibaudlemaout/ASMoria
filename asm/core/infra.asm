@@ -137,6 +137,28 @@ asm_tick_infra:
     dec     rcx
     jmp     .xp_loop
 
+    ; -------------------------------------------------------
+    ; Prestige bonuses: passive food/wood ticks
+    ; -------------------------------------------------------
+    mov     rax, [rbx + GS_PRESTIGE + PRESTIGE_NODES]
+
+    bt      rax, PNODE_FOOD_TICK
+    jnc     .no_food_tick
+    add     qword [rbx + GS_RESOURCES + RES_FOOD], 1
+.no_food_tick:
+    bt      rax, PNODE_WOOD_TICK
+    jnc     .no_wood_tick
+    add     qword [rbx + GS_RESOURCES + RES_WOOD], 1
+.no_wood_tick:
+    bt      rax, PNODE_MANA_TICK_1
+    jnc     .no_mana_p1
+    add     qword [rbx + GS_RESOURCES + RES_MANA], 1
+.no_mana_p1:
+    bt      rax, PNODE_MANA_TICK_2
+    jnc     .no_mana_p2
+    add     qword [rbx + GS_RESOURCES + RES_MANA], 1
+.no_mana_p2:
+
 .done:
     pop     rbx
     pop     rbp

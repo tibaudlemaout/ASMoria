@@ -73,7 +73,6 @@ void ui_draw_research(Renderer *r, const GameState *state) {
         int stacks    = (int)RUNE_LEVEL(state->upgrades.tier2, i);
         int maxed     = (stacks >= ru->max_stacks);
         int sel       = (i == ui_research_cursor);
-        int can_afford = !maxed && state->resources.mana >= (ru->mana_cost * (stacks + 1));
 
         char bar[10];
         bar[0] = '[';

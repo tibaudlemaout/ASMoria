@@ -130,6 +130,60 @@ typedef struct {
 #define RESEARCH_UNLOCKED(tier1) (UPGR_LEVEL(tier1, UPGR_RUNE_HALLS) >= 5)
 
 /* =========================================================
+ * Prestige system — Clan Honor & Ancestor Tree
+ * ========================================================= */
+
+/* Node IDs — bitmask in PrestigeState.nodes */
+/* Ancestor's Blessing (resource) */
+#define PNODE_YIELD_1        0   /* +2% yield          cost 1 */
+#define PNODE_YIELD_2        1   /* +4% yield          cost 2, req YIELD_1 */
+#define PNODE_YIELD_3        2   /* +6% yield          cost 3, req YIELD_2 */
+#define PNODE_START_GOLD_1   3   /* start +50 gold     cost 1, req YIELD_1 */
+#define PNODE_START_GOLD_2   4   /* start +100 gold    cost 2, req START_GOLD_1 */
+#define PNODE_START_STONE    5   /* start +50 stone    cost 1, req START_GOLD_1 */
+#define PNODE_FOOD_TICK      6   /* +1 food/tick       cost 2, req START_GOLD_1 */
+#define PNODE_WOOD_TICK      7   /* +1 wood/tick       cost 2, req FOOD_TICK */
+
+/* Legendary Beards (workforce) */
+#define PNODE_START_DWF_2    8   /* start 2 dwarves    cost 1 */
+#define PNODE_START_DWF_3    9   /* start 3 dwarves    cost 2, req DWF_2 */
+#define PNODE_START_DWF_4   10   /* start 4 dwarves    cost 3, req DWF_3 */
+#define PNODE_HIRE_10       11   /* hire cost -10%     cost 1, req DWF_2 */
+#define PNODE_HIRE_25       12   /* hire cost -25%     cost 2, req HIRE_10 */
+#define PNODE_START_PICK    13   /* start Lv1 Pick     cost 1, req HIRE_10 */
+#define PNODE_START_SAW     14   /* start Lv1 Saw      cost 1, req START_PICK */
+#define PNODE_START_IRR     15   /* start Lv1 Irr.     cost 1, req START_SAW */
+#define PNODE_START_BARR    16   /* start Barracks Lv1 cost 2, req DWF_3 */
+
+/* Clan Reputation (research) */
+#define PNODE_RUNE_10       17   /* rune cost -10%     cost 1 */
+#define PNODE_RUNE_25       18   /* rune cost -25%     cost 2, req RUNE_10 */
+#define PNODE_START_MANA    19   /* start +100 mana    cost 1, req RUNE_10 */
+#define PNODE_START_RUNE_H  20   /* start Rune Halls 1 cost 2, req START_MANA */
+#define PNODE_MANA_TICK_1   21   /* +1 mana/tick       cost 2, req START_MANA */
+#define PNODE_MANA_TICK_2   22   /* +2 mana/tick       cost 3, req MANA_TICK_1 */
+#define PNODE_START_SCHOLAR 23   /* Scholar from start cost 2, req START_RUNE_H */
+#define PNODE_COUNT         24
+
+#define PNODE_BIT(n)        (1ULL << (n))
+#define PNODE_UNLOCKED(nodes, n) (((nodes) >> (n)) & 1)
+
+/* Prestige requirements */
+#define PRESTIGE_MIN_TICKS      1000
+#define PRESTIGE_MIN_RAIDS      1
+#define PRESTIGE_MIN_RUNES      3
+#define PRESTIGE_MIN_RESOURCES  10000
+
+typedef struct {
+    uint32_t honor;             /* unspent honor                    */
+    uint32_t total_honor;       /* all-time honor earned            */
+    uint32_t total_prestiges;   /* number of times prestiged        */
+    uint32_t _pad;
+    uint64_t nodes;             /* bitmask of purchased nodes       */
+    uint64_t total_resources;   /* lifetime resources for honor calc*/
+} PrestigeState;
+
+/* =========================================================
  * Raid / Breach system
  * ========================================================= */
 #define RAID_NONE       0   /* no raid active              */
@@ -200,6 +254,7 @@ typedef struct {
     /* offset 0x1050 */ PendingEvent pending;
     /* offset 0x1058 */ EventLog     event_log;
     /* offset 0x1060 */ Raid         raid;
+    PrestigeState prestige;
 } GameState;
 
 extern void     asm_tick(GameState *state);
@@ -213,6 +268,9 @@ extern int64_t  asm_assign_job(GameState *state, uint8_t dwarf_idx,
                                uint8_t job);
 extern const char *asm_get_dwarf_name(uint8_t idx);
 extern void     asm_tick_breach(GameState *state);
+extern int64_t  asm_buy_pnode(GameState *state, uint8_t node_id);
+extern int64_t  asm_do_prestige(GameState *state);
+extern int64_t  asm_can_prestige(GameState *state);
 extern void     asm_breach_retreat(GameState *state);
 extern int64_t  asm_feed_dwarf(GameState *state, uint8_t dwarf_idx);
 extern int64_t  asm_buy_rune(GameState *state, uint8_t rune_id);

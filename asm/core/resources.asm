@@ -73,6 +73,36 @@ apply_plenty:
     ret
 
 ; ---------------------------------------------------------
+; apply_prestige_yield(yield=rax, prestige_nodes=r14_saved) -> rax
+; +2% per YIELD node unlocked (nodes in [r12 + GS_PRESTIGE + PRESTIGE_NODES])
+; ---------------------------------------------------------
+apply_prestige_yield:
+    push    rcx
+    push    rdx
+    mov     rcx, [r12 + GS_PRESTIGE + PRESTIGE_NODES]
+    ; count YIELD nodes (bits 0,1,2)
+    xor     edx, edx
+    bt      rcx, PNODE_YIELD_1
+    adc     edx, 0
+    bt      rcx, PNODE_YIELD_2
+    adc     edx, 0
+    bt      rcx, PNODE_YIELD_3
+    adc     edx, 0
+    test    edx, edx
+    jz      .no_prestige_yield
+    ; yield * (100 + stacks*2) / 100
+    imul    edx, 2
+    add     edx, 100
+    imul    rax, rdx
+    xor     rdx, rdx
+    mov     rcx, 100
+    div     rcx
+.no_prestige_yield:
+    pop     rdx
+    pop     rcx
+    ret
+
+; ---------------------------------------------------------
 ; GET_UPGR_LEVEL macro: extracts nibble from r14 (tier1)
 ; result in rax, clobbers rcx
 ; ---------------------------------------------------------
@@ -132,7 +162,9 @@ asm_tick_resources:
     mov     cl, r13b
     call    apply_morale_scale
     call    apply_plenty
+    call    apply_prestige_yield
     add     [r12 + GS_RESOURCES + RES_STONE], rax
+    add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
 
     ; gold: 1 + pick_level + miner_job_level
     GET_UPGR_LEVEL UPGR_PICK_QUALITY
@@ -142,7 +174,9 @@ asm_tick_resources:
     mov     cl, r13b
     call    apply_morale_scale
     call    apply_plenty
+    call    apply_prestige_yield
     add     [r12 + GS_RESOURCES + RES_GOLD], rax
+    add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
     jmp     .next
 
 .do_lumberer:
@@ -154,7 +188,9 @@ asm_tick_resources:
     mov     cl, r13b
     call    apply_morale_scale
     call    apply_plenty
+    call    apply_prestige_yield
     add     [r12 + GS_RESOURCES + RES_WOOD], rax
+    add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
     jmp     .next
 
 .do_farmer:
@@ -166,7 +202,9 @@ asm_tick_resources:
     mov     cl, r13b
     call    apply_morale_scale
     call    apply_plenty
+    call    apply_prestige_yield
     add     [r12 + GS_RESOURCES + RES_FOOD], rax
+    add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
 
 .next:
     add     rsi, SIZEOF_DWARF

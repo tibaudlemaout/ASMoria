@@ -1,6 +1,7 @@
 #include "ui_upgrades.h"
 #include "ui_research.h"
 #include "ui_breach.h"
+#include "ui_prestige.h"
 #include "ui.h"
 #include "events_text.h"
 #include <stdio.h>
@@ -17,6 +18,7 @@ int ui_selected_dwarf = -1;
 int ui_show_upgrades  = 0;     /* -1 = none selected */
 int ui_show_research  = 0;     /* -1 = none selected */
 int ui_show_breach    = 0;     /* -1 = none selected */
+int ui_show_prestige   = 0;     /* -1 = none selected */
 static int scroll_offset      = 0;
 static int dwarf_scroll_offset = 0;
  
@@ -160,6 +162,12 @@ void ui_draw_all(Renderer *r, const GameState *state) {
     }
     if (ui_show_breach) {
         ui_draw_breach(r, state);
+        ui_draw_divider(r);
+        ui_draw_eventlog(r, state);
+        return;
+    }
+    if (ui_show_prestige) {
+        ui_draw_prestige(r, state);
         ui_draw_divider(r);
         ui_draw_eventlog(r, state);
         return;
@@ -392,7 +400,7 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state) {
         state->raid.active == RAID_WARNING ? COL_GOLD   : COL_DIM;
  
     snprintf(line1, sizeof(line1),
-             "[H] Hire (%d gold, %d food)%s  [U] Upgrades  [R] Research%s  [F5] Save  [F9] Load",
+             "[H] Hire (%d gold, %d food)%s  [U] Upgrades  [R] Research  [P] Prestige%s  [F5] Save  [F9] Load",
              hire_gold, hire_food,
              can_hire ? "" : "  [need resources]",
              breach_hint);

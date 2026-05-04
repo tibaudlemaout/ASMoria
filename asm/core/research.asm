@@ -75,6 +75,28 @@ asm_buy_rune:
     inc     rax                         ; rax = stack + 1
     imul    r15, rax                    ; r15 = base * (stack + 1)
 
+    ; prestige rune discount
+    mov     rax, [rbx + GS_PRESTIGE + PRESTIGE_NODES]
+    bt      rax, PNODE_RUNE_25
+    jnc     .check_rune10
+    imul    r15, 75
+    xor     rdx, rdx
+    mov     rax, r15
+    mov     rcx, 100
+    div     rcx
+    mov     r15, rax
+    jmp     .rune_discount_done
+.check_rune10:
+    bt      rax, PNODE_RUNE_10
+    jnc     .rune_discount_done
+    imul    r15, 90
+    xor     rdx, rdx
+    mov     rax, r15
+    mov     rcx, 100
+    div     rcx
+    mov     r15, rax
+.rune_discount_done:
+
     ; check mana
     cmp     [rbx + GS_RESOURCES + RES_MANA], r15
     jl      .fail

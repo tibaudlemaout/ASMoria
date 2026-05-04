@@ -19,7 +19,7 @@
  * ========================================================= */
 
 #define SAVE_MAGIC          0x41534D52u
-#define SAVE_VERSION        2u
+#define SAVE_VERSION        3u
 #define SAVE_PATH           "asmoria.sav"
 #define AUTOSAVE_INTERVAL   300
 

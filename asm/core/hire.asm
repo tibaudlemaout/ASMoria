@@ -87,6 +87,40 @@ asm_hire_dwarf:
     imul    rax, 2
     add     r13, rax                    ; food += alive * 2
 
+    ; prestige hire discount
+    mov     rax, [rbx + GS_PRESTIGE + PRESTIGE_NODES]
+    bt      rax, PNODE_HIRE_25
+    jnc     .check_hire_10
+    ; -25%: multiply by 75/100
+    imul    r14, 75
+    xor     rdx, rdx
+    mov     rax, r14
+    mov     rcx, 100
+    div     rcx
+    mov     r14, rax
+    imul    r13, 75
+    mov     rax, r13
+    xor     rdx, rdx
+    div     rcx
+    mov     r13, rax
+    jmp     .hire_discount_done
+.check_hire_10:
+    bt      rax, PNODE_HIRE_10
+    jnc     .hire_discount_done
+    ; -10%: multiply by 90/100
+    imul    r14, 90
+    xor     rdx, rdx
+    mov     rax, r14
+    mov     rcx, 100
+    div     rcx
+    mov     r14, rax
+    imul    r13, 90
+    mov     rax, r13
+    xor     rdx, rdx
+    div     rcx
+    mov     r13, rax
+.hire_discount_done:
+
     cmp     r14, 10
     jge     .gold_ok
     mov     r14, 10

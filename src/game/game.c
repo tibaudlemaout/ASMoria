@@ -25,7 +25,13 @@ void game_init(GameState *state) {
     state->raid.combat_start_tick = 0;
     state->raid.last_combat_tick  = 0;
     state->raid.reward_gold    = 0;
-    state->raid.raids_completed = 0;
+    state->raid.raids_completed  = 0;
+
+    state->prestige.honor           = 0;
+    state->prestige.total_honor     = 0;
+    state->prestige.total_prestiges = 0;
+    state->prestige.nodes           = 0;
+    state->prestige.total_resources = 0;
 
     state->dwarves[0].alive    = 1;
     state->dwarves[0].job      = JOB_MINER;

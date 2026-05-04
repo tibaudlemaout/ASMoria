@@ -21,7 +21,7 @@
 %define FILE_MODE   420         ; 0644
 
 %define SAVE_MAGIC      0x41534D52
-%define SAVE_VERSION    2
+%define SAVE_VERSION    3
 %define SAVE_HDR_SIZE   16
 %define CHECKSUM_SIZE   8
 %define GS_SIZE         5216
