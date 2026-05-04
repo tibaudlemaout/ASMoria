@@ -141,34 +141,7 @@ asm_can_prestige:
     cmp     qword [rbx + GS_PRESTIGE + PRESTIGE_RESOURCES], PRESTIGE_MIN_RESOURCES
     jl      .no
 
-    ; count runes inscribed >= PRESTIGE_MIN_RUNES
-    mov     rax, [rbx + GS_UPGR_TIER2]
-    xor     ecx, ecx
-    xor     edx, edx
-.rune_loop:
-    cmp     edx, RUNE_COUNT
-    jge     .rune_done
-    mov     r8, rax
-    shl     r8, cl ; actually need to shift by d*4
-    ; simpler: extract each nibble
-    push    rax
-    push    rdx
-    mov     rcx, rdx
-    shl     rcx, 2
-    shr     rax, cl
-    and     rax, 0xF
-    test    rax, rax
-    jz      .rune_next_inner
-    inc     ecx
-    ; ecx temporarily used as counter — save to r9
-.rune_next_inner:
-    pop     rdx
-    pop     rax
-    inc     edx
-    jmp     .rune_loop
-
-.rune_done:
-    ; simpler approach — just count non-zero nibbles in tier2
+    ; count runes inscribed — count non-zero nibbles in tier2
     mov     rax, [rbx + GS_UPGR_TIER2]
     xor     ecx, ecx
     mov     edx, RUNE_COUNT

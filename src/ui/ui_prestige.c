@@ -79,12 +79,20 @@ void ui_draw_prestige(Renderer *r, const GameState *state) {
     /* Prestige eligibility */
     int can = (int)asm_can_prestige((GameState *)state);
     uint64_t res_k = p->total_resources / 1000;
+    /* Count runes inscribed */
+    int rune_count = 0;
+    uint64_t tier2 = state->upgrades.tier2;
+    for (int ri = 0; ri < RUNE_COUNT; ri++) {
+        if (tier2 & 0xF) rune_count++;
+        tier2 >>= 4;
+    }
     snprintf(buf, sizeof(buf),
-             "  Resources: %lluK / 10K  |  Raids: %d / 1  |  Ticks: %llu / 1000%s",
+             "  Resources: %lluK / 10K  |  Raids: %d / 1  |  Runes: %d / 3  |  Ticks: %llu / 1000%s",
              (unsigned long long)res_k,
              state->raid.raids_completed,
+             rune_count,
              (unsigned long long)state->tick,
-             can ? "  [PRESTIGE AVAILABLE — press ENTER on Seal]" : "");
+             can ? "  [PRESTIGE READY]" : "");
     renderer_draw_text_grid(r, _UI_COL_MARGIN, 3, can ? COL_FOOD : COL_DIM, buf);
     renderer_draw_hline_partial(r, 4, 0, _DIVIDER_COL, COL_DIM);
     row = 5;
