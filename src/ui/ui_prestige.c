@@ -55,8 +55,8 @@ static const char *branch_names[] = {
 
 void ui_prestige_move(int delta) {
     ui_prestige_cursor += delta;
-    if (ui_prestige_cursor < 0)            ui_prestige_cursor = PNODE_COUNT - 1;
-    if (ui_prestige_cursor >= PNODE_COUNT) ui_prestige_cursor = 0;
+    if (ui_prestige_cursor < 0)             ui_prestige_cursor = PNODE_COUNT; /* wrap to Seal */
+    if (ui_prestige_cursor > PNODE_COUNT)   ui_prestige_cursor = 0;
 }
 
 int ui_prestige_selected(void) { return ui_prestige_cursor; }
@@ -130,8 +130,9 @@ void ui_draw_prestige(Renderer *r, const GameState *state) {
         row++;
         renderer_draw_hline_partial(r, row, 0, _DIVIDER_COL, COL_DIM);
         row++;
+        int seal_sel = (ui_prestige_cursor == PNODE_COUNT);
         snprintf(buf, sizeof(buf), "%s [SEAL THE CHRONICLES]  Prestige now — earn honor, reset run",
-                 (ui_prestige_cursor == PNODE_COUNT) ? ">" : " ");
+                 seal_sel ? ">" : " ");
         renderer_draw_text_grid(r, _UI_COL_MARGIN, row,
                                 can ? 0xFF4444FF : COL_DIM, buf);
     }
