@@ -367,12 +367,15 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
 void ui_draw_cmdbar(Renderer *r, const GameState *state) {
     renderer_draw_hline_partial(r, UI_ROW_CMDBAR - 1, 0, DIVIDER_COL, COL_DIM);
  
-    char line1[128], line2[128];
+    char line1[256], line2[128];
  
     /* Compute live hire cost */
     int rec_lv    = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_RECRUITERS);
-    int hire_gold = HIRE_GOLD_BASE - rec_lv * HIRE_GOLD_DISCOUNT;
-    int hire_food = HIRE_FOOD_BASE - rec_lv * HIRE_FOOD_DISCOUNT;
+    int alive_cnt = 0;
+    for (int i = 0; i < MAX_DWARVES; i++)
+        if (state->dwarves[i].alive) alive_cnt++;
+    int hire_gold = HIRE_GOLD_BASE - rec_lv * HIRE_GOLD_DISCOUNT + alive_cnt * 5;
+    int hire_food = HIRE_FOOD_BASE - rec_lv * HIRE_FOOD_DISCOUNT + alive_cnt * 2;
     if (hire_gold < 10) hire_gold = 10;
     if (hire_food < 5)  hire_food = 5;
  

@@ -16,6 +16,11 @@
 
 %include "core/offsets.inc"
 
+section .data
+; Barracks cost tables (indexed by current level 0-2)
+barracks_gold_cost:  dd 200, 400, 700
+barracks_stone_cost: dd 100, 200, 350
+
 section .text
     global asm_buy_upgrade
 
@@ -100,13 +105,41 @@ asm_buy_upgrade:
     imul    rax, r15
     cmp     [rbx + GS_RESOURCES + RES_STONE], rax
     jl      .fail
+    mov     rax, UPGR_COST_WOOD_TOOLS
+    imul    rax, r15
+    cmp     [rbx + GS_RESOURCES + RES_WOOD], rax
+    jl      .fail
     sub     [rbx + GS_RESOURCES + RES_GOLD],  r14
     mov     rax, UPGR_COST_STONE_TOOLS
     imul    rax, r15
     sub     [rbx + GS_RESOURCES + RES_STONE], rax
+    mov     rax, UPGR_COST_WOOD_TOOLS
+    imul    rax, r15
+    sub     [rbx + GS_RESOURCES + RES_WOOD],  rax
     jmp     .write_level
 
 .cost_workforce:
+    ; Barracks (id=3): exponential cost 200/400/700
+    ; Recruiters (id=4): linear cost
+    cmp     r12, UPGR_BARRACKS
+    jne     .cost_workforce_linear
+
+    ; Barracks exponential gold cost table
+    lea     rax, [rel barracks_gold_cost]
+    mov     r14d, [rax + r13*4]         ; r13 = current level (0-based next)
+    cmp     [rbx + GS_RESOURCES + RES_GOLD], r14
+    jl      .fail
+    lea     rax, [rel barracks_stone_cost]
+    mov     ecx, [rax + r13*4]
+    cmp     [rbx + GS_RESOURCES + RES_STONE], rcx
+    jl      .fail
+    sub     [rbx + GS_RESOURCES + RES_GOLD],  r14
+    lea     rax, [rel barracks_stone_cost]
+    movsx   rcx, dword [rax + r13*4]
+    sub     [rbx + GS_RESOURCES + RES_STONE], rcx
+    jmp     .write_level
+
+.cost_workforce_linear:
     mov     r14, UPGR_COST_GOLD_WORK
     imul    r14, r15
     cmp     [rbx + GS_RESOURCES + RES_GOLD], r14

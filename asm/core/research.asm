@@ -68,9 +68,12 @@ asm_buy_rune:
     cmp     r13, r14
     jge     .fail
 
-    ; get mana cost
+    ; get mana cost — scales with current stack: base * (stack + 1)
     lea     rax, [rel rune_costs]
-    mov     r15, [rax + r12 * 8]        ; r15 = mana cost
+    mov     r15, [rax + r12 * 8]        ; r15 = base mana cost
+    mov     rax, r13
+    inc     rax                         ; rax = stack + 1
+    imul    r15, rax                    ; r15 = base * (stack + 1)
 
     ; check mana
     cmp     [rbx + GS_RESOURCES + RES_MANA], r15

@@ -23,7 +23,7 @@ static const RuneInfo runes[RUNE_COUNT] = {
     { "Rune of Swiftness", "+1 XP/tick for all working dwarves",      RUNE_MAX_SMALL, RUNE_COST_SWIFTNESS  },
     { "Rune of Warding",   "-1 morale damage from negative events",   RUNE_MAX_LARGE, RUNE_COST_WARDING    },
     { "Rune of Kinship",   "-2 ticks from morale idle recovery rate", RUNE_MAX_LARGE, RUNE_COST_KINSHIP    },
-    { "Rune of the Deep",  "Unlocks depth progression",               RUNE_MAX_LARGE, RUNE_COST_DEEP       },
+    { "Rune of the Deep",  "Future: unlocks deep tunnels (coming soon)", RUNE_MAX_LARGE, RUNE_COST_DEEP       },
 };
 
 void ui_research_move(int delta) {
@@ -73,7 +73,7 @@ void ui_draw_research(Renderer *r, const GameState *state) {
         int stacks    = (int)RUNE_LEVEL(state->upgrades.tier2, i);
         int maxed     = (stacks >= ru->max_stacks);
         int sel       = (i == ui_research_cursor);
-        int can_afford = !maxed && state->resources.mana >= ru->mana_cost;
+        int can_afford = !maxed && state->resources.mana >= (ru->mana_cost * (stacks + 1));
 
         char bar[10];
         bar[0] = '[';
@@ -92,12 +92,15 @@ void ui_draw_research(Renderer *r, const GameState *state) {
         renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM, buf);
         row++;
 
+        int scaled_cost = ru->mana_cost * (stacks + 1);
+        int can_afford2  = !maxed && state->resources.mana >= scaled_cost;
         if (maxed) {
             renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_FOOD, "    [FULLY INSCRIBED]");
         } else {
-            snprintf(buf, sizeof(buf), "    Cost: %d mana", ru->mana_cost);
+            snprintf(buf, sizeof(buf), "    Cost: %d mana  (base %d x stack %d)",
+                     scaled_cost, ru->mana_cost, stacks + 1);
             renderer_draw_text_grid(r, _UI_COL_MARGIN, row,
-                                    can_afford ? COL_MANA : COL_DIM, buf);
+                                    can_afford2 ? COL_MANA : COL_DIM, buf);
         }
         row++;
         row++; /* spacer */

@@ -50,7 +50,7 @@ asm_tick_upkeep:
     mov     r9d, [rbx + GS_FLAGS]       ; r9 = current flags
 
     ; -------------------------------------------------------
-    ; Watch Tower upkeep: level * 1 wood/tick
+    ; Watch Tower upkeep: level * 2 wood/tick
     ; -------------------------------------------------------
     mov     rax, r8
     shr     rax, (UPGR_WATCH_TOWER * 4)
@@ -59,6 +59,7 @@ asm_tick_upkeep:
     jz      .wt_skip
 
     ; cost = level wood
+    shl     rax, 1                      ; * 2
     cmp     [rbx + GS_RESOURCES + RES_WOOD], rax
     jl      .wt_degrade
 
@@ -83,7 +84,7 @@ asm_tick_upkeep:
 
 .wt_skip:
     ; -------------------------------------------------------
-    ; Rune Halls upkeep: level * 1 mana/tick
+    ; Rune Halls upkeep: level * 2 mana/tick
     ; -------------------------------------------------------
     mov     rax, r8
     shr     rax, (UPGR_RUNE_HALLS * 4)
@@ -91,6 +92,7 @@ asm_tick_upkeep:
     test    rax, rax
     jz      .rh_skip
 
+    shl     rax, 1                      ; * 2
     cmp     [rbx + GS_RESOURCES + RES_MANA], rax
     jl      .rh_degrade
 
@@ -121,7 +123,7 @@ asm_tick_upkeep:
 
 .rh_skip:
     ; -------------------------------------------------------
-    ; Mana Well upkeep: level * 1 stone/tick
+    ; Mana Well upkeep: level * 3 stone/tick
     ; -------------------------------------------------------
     mov     rax, r8
     shr     rax, (UPGR_MANA_WELL * 4)
@@ -129,6 +131,7 @@ asm_tick_upkeep:
     test    rax, rax
     jz      .mw_skip
 
+    imul    rax, 3                      ; * 3
     cmp     [rbx + GS_RESOURCES + RES_STONE], rax
     jl      .mw_degrade
 

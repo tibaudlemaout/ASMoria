@@ -102,6 +102,7 @@
 
 %define UPGR_COST_GOLD_TOOLS    100
 %define UPGR_COST_STONE_TOOLS    50
+%define UPGR_COST_WOOD_TOOLS     30
 %define UPGR_COST_GOLD_WORK     150
 %define UPGR_COST_STONE_WORK     75
 %define UPGR_COST_GOLD_WATCH    200
@@ -111,6 +112,10 @@
 %define UPGR_COST_MANA_RUNE      10
 %define UPGR_COST_GOLD_MANA     200
 %define UPGR_COST_STONE_MANA     50
+
+%define UPKEEP_WATCH_WOOD         2
+%define UPKEEP_RUNE_MANA          2
+%define UPKEEP_MANA_STONE         3
 
 %define DWARF_CAP_BASE      16
 %define DWARF_CAP_PER_LEVEL 16

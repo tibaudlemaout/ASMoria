@@ -72,11 +72,12 @@ typedef struct {
 #define UPGR_LEVEL(tier1, id)  (((tier1) >> ((id) * 4)) & 0xF)
 
 /* Tool costs */
-#define UPGR_COST_GOLD_TOOLS    100
-#define UPGR_COST_STONE_TOOLS    50
+#define UPGR_COST_GOLD_TOOLS    150
+#define UPGR_COST_STONE_TOOLS    75
+#define UPGR_COST_WOOD_TOOLS     30
 /* Workforce costs */
-#define UPGR_COST_GOLD_WORK     150
-#define UPGR_COST_STONE_WORK     75
+#define UPGR_COST_GOLD_WORK     200
+#define UPGR_COST_STONE_WORK    100
 /* Infrastructure costs */
 #define UPGR_COST_GOLD_WATCH    200
 #define UPGR_COST_STONE_WATCH   150
@@ -88,7 +89,7 @@ typedef struct {
 
 /* Workforce constants */
 #define DWARF_CAP_BASE      16
-#define DWARF_CAP_PER_LEVEL 16
+#define DWARF_CAP_PER_LEVEL  8
 #define HIRE_GOLD_DISCOUNT  10
 #define HIRE_FOOD_DISCOUNT   5
 
@@ -116,12 +117,12 @@ typedef struct {
 #define RUNE_MAX_SMALL   5   /* Endurance, Plenty, Swiftness        */
 #define RUNE_MAX_LARGE   3   /* Warding, Kinship, Deep              */
 
-#define RUNE_COST_ENDURANCE   50
-#define RUNE_COST_PLENTY      75
-#define RUNE_COST_SWIFTNESS   60
-#define RUNE_COST_WARDING    100
-#define RUNE_COST_KINSHIP     80
-#define RUNE_COST_DEEP       150
+#define RUNE_COST_ENDURANCE  150
+#define RUNE_COST_PLENTY     200
+#define RUNE_COST_SWIFTNESS  175
+#define RUNE_COST_WARDING    250
+#define RUNE_COST_KINSHIP    200
+#define RUNE_COST_DEEP       400
 
 #define RUNE_LEVEL(tier2, id)  (((tier2) >> ((id) * 4)) & 0xF)
 

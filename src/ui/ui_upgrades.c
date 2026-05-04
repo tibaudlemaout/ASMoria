@@ -131,11 +131,13 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
         int cost_gold  = u->cost_gold  * next;
         int cost_stone = u->cost_stone * next;
         int cost_mana  = (u->cost_mana > 0 && next >= 2) ? u->cost_mana * next : 0;
+        int cost_wood  = (i < 3) ? UPGR_COST_WOOD_TOOLS * next : 0;
 
         int can_afford = !maxed
             && state->resources.gold  >= cost_gold
             && state->resources.stone >= cost_stone
-            && state->resources.mana  >= cost_mana;
+            && state->resources.mana  >= cost_mana
+            && (cost_wood == 0 || state->resources.wood >= cost_wood);
 
         /* Check degraded flag for this building */
         int is_degraded = 0;
@@ -173,6 +175,9 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
             if (cost_mana > 0)
                 snprintf(buf, sizeof(buf), "    Cost: %d gold  %d stone  %d mana",
                          cost_gold, cost_stone, cost_mana);
+            else if (cost_wood > 0)
+                snprintf(buf, sizeof(buf), "    Cost: %d gold  %d stone  %d wood",
+                         cost_gold, cost_stone, cost_wood);
             else
                 snprintf(buf, sizeof(buf), "    Cost: %d gold  %d stone",
                          cost_gold, cost_stone);

@@ -52,24 +52,46 @@ asm_hire_dwarf:
     shr     rax, (UPGR_RECRUITERS * 4)
     and     rax, 0xF                    ; rax = recruiters level
 
-    ; gold cost
+    ; gold cost = base - discount + alive*5
     mov     r13, rax
     imul    r13, HIRE_GOLD_DISCOUNT
     mov     r14, HIRE_GOLD_BASE
-    sub     r14, r13                    ; r14 = gold cost
-    cmp     r14, 10                     ; floor at 10
-    jge     .gold_ok
-    mov     r14, 10
-.gold_ok:
+    sub     r14, r13                    ; r14 = base gold cost after discount
 
-    ; food cost (recompute recruiter level from rax still valid? no, rax clobbered)
+    ; food cost — recompute recruiter level
     mov     rax, [rbx + GS_UPGR_TIER1]
     shr     rax, (UPGR_RECRUITERS * 4)
     and     rax, 0xF
     imul    rax, HIRE_FOOD_DISCOUNT
     mov     r13, HIRE_FOOD_BASE
-    sub     r13, rax                    ; r13 = food cost
-    cmp     r13, 5                      ; floor at 5
+    sub     r13, rax                    ; r13 = base food cost after discount
+
+    ; count alive dwarves for surcharge (quick pre-scan)
+    lea     rax, [rbx + GS_DWARVES]
+    xor     r9d, r9d
+    mov     rcx, MAX_DWARVES
+.pre_count:
+    test    rcx, rcx
+    jz      .pre_count_done
+    movzx   edx, byte [rax + DWARF_ALIVE]
+    add     r9d, edx
+    add     rax, SIZEOF_DWARF
+    dec     rcx
+    jmp     .pre_count
+.pre_count_done:
+    ; r9 = alive count — add surcharge
+    mov     rax, r9
+    imul    rax, 5
+    add     r14, rax                    ; gold += alive * 5
+    mov     rax, r9
+    imul    rax, 2
+    add     r13, rax                    ; food += alive * 2
+
+    cmp     r14, 10
+    jge     .gold_ok
+    mov     r14, 10
+.gold_ok:
+    cmp     r13, 5
     jge     .food_ok
     mov     r13, 5
 .food_ok:
