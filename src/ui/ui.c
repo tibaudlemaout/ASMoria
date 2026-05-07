@@ -18,7 +18,7 @@ int ui_selected_dwarf = -1;
 int ui_show_upgrades  = 0;     /* -1 = none selected */
 int ui_show_research  = 0;     /* -1 = none selected */
 int ui_show_breach    = 0;     /* -1 = none selected */
-int ui_show_prestige   = 0;     /* -1 = none selected */
+int ui_show_prestige  = 0;     /* -1 = none selected */
 static int scroll_offset      = 0;
 static int dwarf_scroll_offset = 0;
  
@@ -188,9 +188,14 @@ void ui_draw_titlebar(Renderer *r, const GameState *state) {
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_TITLE,
                             COL_ACCENT, "ASMoria");
     int degraded = state->flags & (FLAG_WATCH_DEGRADED|FLAG_RUNE_DEGRADED|FLAG_MANA_DEGRADED);
-    snprintf(buf, sizeof(buf), "Depth: %-4u   Tick: %llu%s",
-             state->depth, (unsigned long long)state->tick,
-             degraded ? "   [!] BUILDING DEGRADED" : "");
+    /* Depth dig availability */
+    uint32_t deep_stacks = (uint32_t)((state->upgrades.tier2 >> (RUNE_DEEP * 4)) & 0xF);
+    int can_dig = (state->depth < DEPTH_MAX) && (state->depth <= deep_stacks);
+    snprintf(buf, sizeof(buf), "Depth: %u/%u   Tick: %llu%s%s",
+             state->depth, (uint32_t)(deep_stacks + 1 < DEPTH_MAX ? deep_stacks + 1 : DEPTH_MAX),
+             (unsigned long long)state->tick,
+             can_dig ? "  [D] Dig Deeper" : "",
+             degraded ? "  [!] DEGRADED" : "");
     renderer_draw_text_grid(r, 20, UI_ROW_TITLE, degraded ? 0xFF4444FF : COL_DIM, buf);
     renderer_draw_hline_partial(r, UI_ROW_TITLE + 1, 0, DIVIDER_COL, COL_DIM);
 }
@@ -220,7 +225,30 @@ void ui_draw_resources(Renderer *r, const GameState *state) {
     snprintf(seg, sizeof(seg), "Mana:  %-8lld", (long long)state->resources.mana);
     renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_MANA, seg);
  
-    renderer_draw_hline_partial(r, UI_ROW_RES + 3, 0, DIVIDER_COL, COL_DIM);
+    /* Depth resources — only show if unlocked */
+    if (state->depth >= 2) {
+        col = UI_COL_MARGIN;
+        snprintf(seg, sizeof(seg), "Iron:  %-8lld  ", (long long)state->resources.iron_ore);
+        renderer_draw_text_grid(r, col, UI_ROW_RES + 3, 0xFF8888FF, seg);
+        col += (int)strlen(seg);
+        if (state->depth >= 3) {
+            snprintf(seg, sizeof(seg), "Gems:  %-8lld  ", (long long)state->resources.gems);
+            renderer_draw_text_grid(r, col, UI_ROW_RES + 3, 0xAAFFAAFF, seg);
+            col += (int)strlen(seg);
+        }
+        if (state->depth >= 4) {
+            snprintf(seg, sizeof(seg), "Relics:%-8lld  ", (long long)state->resources.relics);
+            renderer_draw_text_grid(r, col, UI_ROW_RES + 3, COL_ACCENT, seg);
+            col += (int)strlen(seg);
+        }
+        if (state->depth >= 5) {
+            snprintf(seg, sizeof(seg), "Crystals:%-6lld", (long long)state->resources.crystals);
+            renderer_draw_text_grid(r, col, UI_ROW_RES + 3, COL_MANA, seg);
+        }
+    }
+ 
+    int sep_row = (state->depth >= 2) ? UI_ROW_RES + 4 : UI_ROW_RES + 3;
+    renderer_draw_hline_partial(r, sep_row, 0, DIVIDER_COL, COL_DIM);
 }
  
 /* =========================================================

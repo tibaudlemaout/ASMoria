@@ -4,7 +4,15 @@
 #include <stdint.h>
 
 typedef struct {
-    int64_t gold, stone, wood, food, mana;
+    int64_t gold;
+    int64_t stone;
+    int64_t wood;
+    int64_t food;
+    int64_t mana;
+    int64_t iron_ore;   /* depth 2+ */
+    int64_t gems;       /* depth 3+ */
+    int64_t relics;     /* depth 4+ */
+    int64_t crystals;   /* depth 5+ */
 } Resources;
 
 #define MAX_DWARVES     64
@@ -36,6 +44,17 @@ typedef struct {
 #define XP_LVL3     1500
 #define XP_LVL4     3500
 #define XP_LVL5     7500
+
+/* Depth unlock costs */
+#define DEPTH2_COST_STONE   500
+#define DEPTH2_COST_GOLD    300
+#define DEPTH3_COST_STONE  1500
+#define DEPTH3_COST_GOLD   1000
+#define DEPTH4_COST_STONE  3000
+#define DEPTH4_COST_GOLD   2500
+#define DEPTH5_COST_STONE  6000
+#define DEPTH5_COST_GOLD   5000
+#define DEPTH_MAX           5
 
 /* Feed costs */
 #define FEED_FOOD_COST        10
@@ -250,6 +269,7 @@ typedef struct {
     /* offset 0x1038 */ RngState     rng;
     /* offset 0x1040 */ uint64_t     tick;
     /* offset 0x1048 */ uint32_t     depth;
+    /* offset 0x104C */ uint32_t     depth_xp;   /* progress toward next depth */
     /* offset 0x104C */ uint32_t     flags;
     /* offset 0x1050 */ PendingEvent pending;
     /* offset 0x1058 */ EventLog     event_log;
@@ -272,6 +292,7 @@ extern int64_t  asm_buy_pnode(GameState *state, uint8_t node_id);
 extern int64_t  asm_do_prestige(GameState *state);
 extern int64_t  asm_can_prestige(GameState *state);
 extern void     asm_breach_retreat(GameState *state);
+extern int64_t  asm_dig_deeper(GameState *state);
 extern int64_t  asm_feed_dwarf(GameState *state, uint8_t dwarf_idx);
 extern int64_t  asm_buy_rune(GameState *state, uint8_t rune_id);
 extern int64_t  asm_buy_upgrade(GameState *state, uint8_t upgrade_id);

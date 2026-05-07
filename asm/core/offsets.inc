@@ -1,14 +1,19 @@
 ; =========================================================
 ; offsets.inc - GameState field offsets for NASM modules
-; Verified against GCC with new per-job XP Dwarf layout
+; Verified against GCC offsetof() — sizeof(GameState) = 5408
 ; =========================================================
 
+; --- Resources struct offsets (sizeof = 72) ---
 %define RES_GOLD            0x00
 %define RES_STONE           0x08
 %define RES_WOOD            0x10
 %define RES_FOOD            0x18
 %define RES_MANA            0x20
-%define SIZEOF_RESOURCES    0x28
+%define RES_IRON_ORE        0x28    ; depth 2+
+%define RES_GEMS            0x30    ; depth 3+
+%define RES_RELICS          0x38    ; depth 4+
+%define RES_CRYSTALS        0x40    ; depth 5+
+%define SIZEOF_RESOURCES    0x48
 
 ; --- Dwarf offsets (sizeof = 64 = 0x40) ---
 %define DWARF_ALIVE         0x00
@@ -38,14 +43,16 @@
 
 ; --- GameState offsets (verified) ---
 %define GS_RESOURCES        0x0000
-%define GS_DWARVES          0x0028
-%define GS_UPGR_TIER1       0x1028
-%define GS_RNG_SEED         0x1038
-%define GS_TICK             0x1040
-%define GS_DEPTH            0x1048
-%define GS_FLAGS            0x104C
-%define GS_PENDING          0x1050
-%define GS_EVENTLOG         0x1058
+%define GS_DWARVES          0x0048
+%define GS_UPGR_TIER1       0x1048
+%define GS_UPGR_TIER2       0x1050
+%define GS_RNG_SEED         0x1058
+%define GS_TICK             0x1060
+%define GS_DEPTH            0x1068
+%define GS_DEPTH_XP         0x106C
+%define GS_FLAGS            0x1070
+%define GS_PENDING          0x1074
+%define GS_EVENTLOG         0x1080
 
 %define PENDING_CODE        0x00
 %define PENDING_SEVERITY    0x01
@@ -100,11 +107,11 @@
 %define UPGR_MAX_RUNEHALLS  5
 %define UPGR_MAX_MANAWELL   3
 
-%define UPGR_COST_GOLD_TOOLS    100
-%define UPGR_COST_STONE_TOOLS    50
+%define UPGR_COST_GOLD_TOOLS    150
+%define UPGR_COST_STONE_TOOLS    75
 %define UPGR_COST_WOOD_TOOLS     30
-%define UPGR_COST_GOLD_WORK     150
-%define UPGR_COST_STONE_WORK     75
+%define UPGR_COST_GOLD_WORK     200
+%define UPGR_COST_STONE_WORK    100
 %define UPGR_COST_GOLD_WATCH    200
 %define UPGR_COST_STONE_WATCH   150
 %define UPGR_COST_GOLD_RUNE     150
@@ -113,16 +120,23 @@
 %define UPGR_COST_GOLD_MANA     200
 %define UPGR_COST_STONE_MANA     50
 
-%define UPKEEP_WATCH_WOOD         2
-%define UPKEEP_RUNE_MANA          2
-%define UPKEEP_MANA_STONE         3
-
 %define DWARF_CAP_BASE      16
-%define DWARF_CAP_PER_LEVEL 16
+%define DWARF_CAP_PER_LEVEL  8
 %define HIRE_GOLD_BASE      50
 %define HIRE_FOOD_BASE      20
 %define HIRE_GOLD_DISCOUNT  10
 %define HIRE_FOOD_DISCOUNT   5
+
+; --- Depth system ---
+%define DEPTH_MAX           5
+%define DEPTH2_COST_STONE   500
+%define DEPTH2_COST_GOLD    300
+%define DEPTH3_COST_STONE  1500
+%define DEPTH3_COST_GOLD   1000
+%define DEPTH4_COST_STONE  3000
+%define DEPTH4_COST_GOLD   2500
+%define DEPTH5_COST_STONE  6000
+%define DEPTH5_COST_GOLD   5000
 
 ; --- Research / Rune system (packed in tier2) ---
 %define RUNE_ENDURANCE      0
@@ -136,17 +150,15 @@
 %define RUNE_MAX_SMALL      5
 %define RUNE_MAX_LARGE      3
 
-%define RUNE_COST_ENDURANCE   50
-%define RUNE_COST_PLENTY      75
-%define RUNE_COST_SWIFTNESS   60
-%define RUNE_COST_WARDING    100
-%define RUNE_COST_KINSHIP     80
-%define RUNE_COST_DEEP       150
-
-%define GS_UPGR_TIER2       0x1030
+%define RUNE_COST_ENDURANCE   150
+%define RUNE_COST_PLENTY      200
+%define RUNE_COST_SWIFTNESS   175
+%define RUNE_COST_WARDING     250
+%define RUNE_COST_KINSHIP     200
+%define RUNE_COST_DEEP        400
 
 ; --- Raid / Breach system ---
-%define GS_RAID             0x1460
+%define GS_RAID             0x1488
 
 %define RAID_ACTIVE         0x00
 %define RAID_THREAT         0x01
@@ -176,7 +188,7 @@
 %define RAID_TIMER          300
 
 ; --- Prestige system ---
-%define GS_PRESTIGE         0x14D8
+%define GS_PRESTIGE         0x1500
 %define PRESTIGE_HONOR      0x00
 %define PRESTIGE_TOTAL_HON  0x04
 %define PRESTIGE_COUNT      0x08
@@ -215,5 +227,4 @@
 %define PRESTIGE_MIN_RUNES      3
 %define PRESTIGE_MIN_RESOURCES  10000
 
-%undef GS_SIZE
-%define GS_SIZE             5368
+%define GS_SIZE             5408

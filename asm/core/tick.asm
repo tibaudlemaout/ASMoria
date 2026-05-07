@@ -12,6 +12,7 @@ extern asm_tick_xp
 extern asm_event_push
 extern asm_tick_infra
 extern asm_tick_upkeep
+extern asm_tick_depth
 
 section .text
     global asm_tick
@@ -71,7 +72,11 @@ asm_tick:
     mov     rdi, rbx
     call    asm_tick_upkeep
 
-    ; 7. Infrastructure effects (Scholar/Mana Well) — skipped if degraded
+    ; 7. Depth resource yields
+    mov     rdi, rbx
+    call    asm_tick_depth
+
+    ; 8. Infrastructure effects (Scholar/Mana Well) — skipped if degraded
     mov     rdi, rbx
     call    asm_tick_infra
 

@@ -166,6 +166,12 @@ int main(void) {
                                 asm_hire_dwarf(&state);
                             break;
 
+                        case SDLK_d:
+                            if (!ui_show_upgrades && !ui_show_research
+                                && !ui_show_breach && !ui_show_prestige)
+                                asm_dig_deeper(&state);
+                            break;
+
                         case SDLK_e:
                             if (ui_show_breach
                                 && state.raid.active == RAID_COMBAT
