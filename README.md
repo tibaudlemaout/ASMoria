@@ -60,5 +60,5 @@ Strict separation between presentation (C/SDL2) and logic (NASM):
 
 ## Roadmap
 
-See [`ROADMAP.md`](ROADMAP.md) for the 6-week plan and long-term vision.
-See [`PROGRESS.md`](PROGRESS.md) for the current checklist.
+See [`ROADMAP.md`](Doc/Roadmap.md) for the 6-week plan and long-term vision.
+See [`Delivery_to_do_list.md`](Doc/Delivery_to_do_list.md) for the current checklist.
