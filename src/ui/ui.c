@@ -227,23 +227,24 @@ void ui_draw_resources(Renderer *r, const GameState *state) {
     snprintf(seg, sizeof(seg), "Mana:  %-8lld", (long long)state->resources.mana);
     renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_MANA, seg);
 
+    /* Depth resources — all on row 3, horizontal */
     if (state->depth >= 2) {
         col = UI_COL_MARGIN;
-        snprintf(seg, sizeof(seg), "Iron:  %-8lld  ", (long long)state->resources.iron_ore);
+        snprintf(seg, sizeof(seg), "Iron: %-6lld  ", (long long)state->resources.iron_ore);
         renderer_draw_text_grid(r, col, UI_ROW_RES + 3, 0xFF8888FF, seg);
         col += (int)strlen(seg);
         if (state->depth >= 3) {
-            snprintf(seg, sizeof(seg), "Gems:  %-8lld  ", (long long)state->resources.gems);
+            snprintf(seg, sizeof(seg), "Gems: %-6lld  ", (long long)state->resources.gems);
             renderer_draw_text_grid(r, col, UI_ROW_RES + 3, 0xAAFFAAFF, seg);
             col += (int)strlen(seg);
         }
         if (state->depth >= 4) {
-            snprintf(seg, sizeof(seg), "Relics:%-8lld  ", (long long)state->resources.relics);
+            snprintf(seg, sizeof(seg), "Relics: %-6lld  ", (long long)state->resources.relics);
             renderer_draw_text_grid(r, col, UI_ROW_RES + 3, COL_ACCENT, seg);
             col += (int)strlen(seg);
         }
         if (state->depth >= 5) {
-            snprintf(seg, sizeof(seg), "Crystals:%-6lld", (long long)state->resources.crystals);
+            snprintf(seg, sizeof(seg), "Crystals: %-6lld", (long long)state->resources.crystals);
             renderer_draw_text_grid(r, col, UI_ROW_RES + 3, COL_MANA, seg);
         }
     }
@@ -319,18 +320,30 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
         int cur_lv = d->job_level[d->job];
         const char *dname = asm_get_dwarf_name(d->name_idx);
 
-        snprintf(buf, sizeof(buf), "%s %-12s %-10s %3d%%  %3d%%  T%-2d  L%d",
-                 is_sel ? ">" : " ",
-                 dname, job_label,
-                 d->morale, d->fatigue,
-                 total_lv, cur_lv);
+        int is_resting = (d->job == JOB_IDLE && d->prev_job != JOB_IDLE);
 
-        uint32_t row_col = is_sel ? COL_ACCENT
-                         : (d->job == JOB_IDLE && d->prev_job != JOB_IDLE)
-                           ? 0xFF4444FF
-                           : morale_color(d->morale);
+        /* Base line: selector + name + job (white or accent if selected) */
+        snprintf(buf, sizeof(buf), "%s %-12s %-10s ",
+                 is_sel ? ">" : " ", dname, job_label);
+        uint32_t base_col = is_resting ? 0xFF4444FF
+                          : is_sel     ? COL_ACCENT
+                          :              COL_FG;
+        renderer_draw_text_grid(r, UI_COL_MARGIN, row, base_col, buf);
 
-        renderer_draw_text_grid(r, UI_COL_MARGIN, row, row_col, buf);
+        /* Morale % — coloured */
+        int col_off = 1 + 13 + 11; /* selector + name + job */
+        char mor_buf[8], fat_buf[8];
+        snprintf(mor_buf, sizeof(mor_buf), "%3d%%  ", d->morale);
+        snprintf(fat_buf, sizeof(fat_buf), "%3d%%  ", d->fatigue);
+        renderer_draw_text_grid(r, UI_COL_MARGIN + col_off, row,
+                                morale_color(d->morale), mor_buf);
+        renderer_draw_text_grid(r, UI_COL_MARGIN + col_off + 6, row,
+                                fatigue_color(d->fatigue), fat_buf);
+
+        /* TLv + Lv (dim) */
+        snprintf(buf, sizeof(buf), "T%-2d  L%d", total_lv, cur_lv);
+        renderer_draw_text_grid(r, UI_COL_MARGIN + col_off + 12, row,
+                                COL_DIM, buf);
         row++;
     }
 }
