@@ -6,40 +6,40 @@
 #include "events_text.h"
 #include <stdio.h>
 #include <string.h>
- 
+
 static const char *job_names[] = {
     "Idle", "Miner", "Lumberer", "Farmer", "Guard", "Scholar"
 };
- 
+
 /* =========================================================
  * UI state
  * ========================================================= */
 int ui_selected_dwarf = -1;
 int ui_show_upgrades  = 0;     /* -1 = none selected */
-int ui_show_research  = 0;     /* -1 = none selected */
-int ui_show_breach    = 0;     /* -1 = none selected */
-int ui_show_prestige  = 0;     /* -1 = none selected */
+int ui_show_research  = 0;
+int ui_show_breach    = 0;
+int ui_show_prestige   = 0;
 static int scroll_offset      = 0;
 static int dwarf_scroll_offset = 0;
- 
+
 void ui_dwarf_scroll(int delta) {
     dwarf_scroll_offset += delta;
     if (dwarf_scroll_offset < 0) dwarf_scroll_offset = 0;
 }
- 
+
 /* Alive dwarf index cache — rebuilt each draw call */
 static int  alive_list[MAX_DWARVES];
 static int  alive_list_count = 0;
- 
+
 void ui_dwarf_select(int delta) {
     if (alive_list_count == 0) return;
- 
+
     /* Find current position in alive list */
     int pos = -1;
     for (int i = 0; i < alive_list_count; i++) {
         if (alive_list[i] == ui_selected_dwarf) { pos = i; break; }
     }
- 
+
     if (pos < 0) {
         /* Not in list — select first or last */
         pos = (delta > 0) ? 0 : alive_list_count - 1;
@@ -48,9 +48,9 @@ void ui_dwarf_select(int delta) {
         if (pos < 0)                  pos = alive_list_count - 1;
         if (pos >= alive_list_count)  pos = 0;
     }
- 
+
     ui_selected_dwarf = alive_list[pos];
- 
+
     /* Auto-scroll to keep selection visible */
     int max_visible = UI_ROW_CMDBAR - 2 - (UI_ROW_DWARVES + 2);
     if (pos < dwarf_scroll_offset)
@@ -58,12 +58,12 @@ void ui_dwarf_select(int delta) {
     if (pos >= dwarf_scroll_offset + max_visible)
         dwarf_scroll_offset = pos - max_visible + 1;
 }
- 
+
 void ui_log_scroll(int delta) {
     scroll_offset += delta;
     if (scroll_offset < 0) scroll_offset = 0;
 }
- 
+
 /* =========================================================
  * Helpers
  * ========================================================= */
@@ -74,19 +74,19 @@ static void make_bar(char *out, uint8_t val, uint8_t max) {
         out[i + 1] = (i < filled) ? '#' : '.';
     out[9] = ']'; out[10] = '\0';
 }
- 
+
 static uint32_t morale_color(uint8_t m) {
     if (m >= 70) return COL_FOOD;
     if (m >= 40) return COL_GOLD;
     return 0xFF4444FF;
 }
- 
+
 static uint32_t fatigue_color(uint8_t f) {
     if (f < 40) return COL_FOOD;
     if (f < 70) return COL_GOLD;
     return 0xFF4444FF;
 }
- 
+
 static uint32_t evt_color(uint8_t severity) {
     switch (severity) {
         case EVT_POSITIVE:  return COL_FOOD;
@@ -95,7 +95,7 @@ static uint32_t evt_color(uint8_t severity) {
         default:            return COL_FG;
     }
 }
- 
+
 static int wordwrap(const char *text, int line_w,
                     char out[][128], int max_lines) {
     int n = 0, len = (int)strlen(text), pos = 0;
@@ -117,7 +117,7 @@ static int wordwrap(const char *text, int line_w,
     }
     return n;
 }
- 
+
 /* =========================================================
  * Hit-test: which dwarf row did the user click?
  * Returns 0-based dwarf index among alive dwarves that are
@@ -126,12 +126,12 @@ static int wordwrap(const char *text, int line_w,
 int ui_dwarf_at_pixel(Renderer *r, const GameState *state, int px, int py) {
     /* clicks must be in the left panel */
     if (px >= DIVIDER_COL * r->glyph_w) return -1;
- 
+
     int first_row = UI_ROW_DWARVES + 2;   /* first data row */
     int click_row = py / r->glyph_h;
- 
+
     if (click_row < first_row) return -1;
- 
+
     /* walk alive dwarves to find which one occupies that row */
     int row = first_row;
     int skipped = 0;
@@ -143,7 +143,7 @@ int ui_dwarf_at_pixel(Renderer *r, const GameState *state, int px, int py) {
     }
     return -1;
 }
- 
+
 /* =========================================================
  * Master draw
  * ========================================================= */
@@ -179,7 +179,7 @@ void ui_draw_all(Renderer *r, const GameState *state) {
     ui_draw_divider(r);
     ui_draw_eventlog(r, state);
 }
- 
+
 /* =========================================================
  * Title bar
  * ========================================================= */
@@ -191,24 +191,41 @@ void ui_draw_titlebar(Renderer *r, const GameState *state) {
     /* Depth dig availability */
     uint32_t deep_stacks = (uint32_t)((state->upgrades.tier2 >> (RUNE_DEEP * 4)) & 0xF);
     int can_dig = (state->depth < DEPTH_MAX) && (state->depth <= deep_stacks);
+
+    /* Dig cost for next depth */
+    static const int dig_cost_stone[] = {0, 500, 1500, 3000, 6000};
+    static const int dig_cost_gold[]  = {0, 300, 1000, 2500, 5000};
+    char dig_hint[64] = "";
+    if (can_dig) {
+        int next = (int)state->depth; /* index into cost arrays */
+        int can_afford_dig = (state->resources.stone >= dig_cost_stone[next] &&
+                              state->resources.gold  >= dig_cost_gold[next]);
+        snprintf(dig_hint, sizeof(dig_hint), "  [D] Dig (%dg/%ds)%s",
+                 dig_cost_gold[next], dig_cost_stone[next],
+                 can_afford_dig ? "" : " [need resources]");
+    } else if (state->depth < DEPTH_MAX) {
+        snprintf(dig_hint, sizeof(dig_hint), "  [D] locked — research Rune of the Deep");
+    }
+
     snprintf(buf, sizeof(buf), "Depth: %u/%u   Tick: %llu%s%s",
-             state->depth, (uint32_t)(deep_stacks + 1 < DEPTH_MAX ? deep_stacks + 1 : DEPTH_MAX),
+             state->depth,
+             (uint32_t)(deep_stacks + 1 <= DEPTH_MAX ? deep_stacks + 1 : DEPTH_MAX),
              (unsigned long long)state->tick,
-             can_dig ? "  [D] Dig Deeper" : "",
+             dig_hint,
              degraded ? "  [!] DEGRADED" : "");
     renderer_draw_text_grid(r, 20, UI_ROW_TITLE, degraded ? 0xFF4444FF : COL_DIM, buf);
     renderer_draw_hline_partial(r, UI_ROW_TITLE + 1, 0, DIVIDER_COL, COL_DIM);
 }
- 
+
 /* =========================================================
  * Resource panel
  * ========================================================= */
 void ui_draw_resources(Renderer *r, const GameState *state) {
     char seg[48];
     int col = UI_COL_MARGIN;
- 
+
     renderer_draw_text_grid(r, col, UI_ROW_RES, COL_FG, "[ RESOURCES ]");
- 
+
     snprintf(seg, sizeof(seg), "Gold:  %-8lld  ", (long long)state->resources.gold);
     renderer_draw_text_grid(r, col, UI_ROW_RES + 1, COL_GOLD, seg);
     col += (int)strlen(seg);
@@ -217,14 +234,14 @@ void ui_draw_resources(Renderer *r, const GameState *state) {
     col += (int)strlen(seg);
     snprintf(seg, sizeof(seg), "Wood:  %-8lld", (long long)state->resources.wood);
     renderer_draw_text_grid(r, col, UI_ROW_RES + 1, COL_WOOD, seg);
- 
+
     col = UI_COL_MARGIN;
     snprintf(seg, sizeof(seg), "Food:  %-8lld  ", (long long)state->resources.food);
     renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_FOOD, seg);
     col += (int)strlen(seg);
     snprintf(seg, sizeof(seg), "Mana:  %-8lld", (long long)state->resources.mana);
     renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_MANA, seg);
- 
+
     /* Depth resources — only show if unlocked */
     if (state->depth >= 2) {
         col = UI_COL_MARGIN;
@@ -246,11 +263,11 @@ void ui_draw_resources(Renderer *r, const GameState *state) {
             renderer_draw_text_grid(r, col, UI_ROW_RES + 3, COL_MANA, seg);
         }
     }
- 
+
     int sep_row = (state->depth >= 2) ? UI_ROW_RES + 4 : UI_ROW_RES + 3;
     renderer_draw_hline_partial(r, sep_row, 0, DIVIDER_COL, COL_DIM);
 }
- 
+
 /* =========================================================
  * Dwarf panel
  * ========================================================= */
@@ -258,10 +275,10 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
     char buf[128];
     char mor_bar[12], fat_bar[12];
     int alive = 0;
- 
+
     for (int i = 0; i < MAX_DWARVES; i++)
         if (state->dwarves[i].alive) alive++;
- 
+
     int bar_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_BARRACKS);
     int dwarf_cap = DWARF_CAP_BASE + bar_lv * DWARF_CAP_PER_LEVEL;
     if (alive == 0) {
@@ -271,22 +288,22 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
                                 COL_DIM, "Your halls are empty. Press H to hire.");
         return;
     }
- 
+
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES + 1,
                             COL_DIM, "Name         Job        Morale      Fatigue     TLv Lv  Progress    XP");
- 
+
     /* Rebuild alive list cache for keyboard navigation */
     alive_list_count = 0;
     for (int i = 0; i < MAX_DWARVES; i++)
         if (state->dwarves[i].alive) alive_list[alive_list_count++] = i;
     int alive_count = alive_list_count;
- 
+
     /* Clamp scroll offset */
     int max_visible = UI_ROW_CMDBAR - 2 - (UI_ROW_DWARVES + 2);
     int max_dscroll = alive_count - max_visible;
     if (max_dscroll < 0) max_dscroll = 0;
     if (dwarf_scroll_offset > max_dscroll) dwarf_scroll_offset = max_dscroll;
- 
+
     /* Scroll indicator in header */
     if (dwarf_scroll_offset > 0 || alive_count > max_visible) {
         snprintf(buf, sizeof(buf), "[ DWARVES  %d / %d ]  PgUp/PgDn to scroll (%d-%d/%d)",
@@ -299,45 +316,45 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
         snprintf(buf, sizeof(buf), "[ DWARVES  %d / %d ]", alive, dwarf_cap);
     }
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DWARVES, COL_FG, buf);
- 
+
     int row = UI_ROW_DWARVES + 2;
     int skipped = 0;
     for (int i = 0; i < MAX_DWARVES; i++) {
         const Dwarf *d = &state->dwarves[i];
         if (!d->alive) continue;
         if (skipped < dwarf_scroll_offset) { skipped++; continue; }
- 
+
         int is_selected = (i == ui_selected_dwarf);
- 
+
         const char *job = (d->job <= JOB_SCHOLAR) ? job_names[d->job] : "???";
         char job_label[16];
         if (d->job == JOB_IDLE && d->prev_job != JOB_IDLE)
             snprintf(job_label, sizeof(job_label), "%-10s", "Resting!");
         else
             snprintf(job_label, sizeof(job_label), "%-10s", job);
- 
+
         make_bar(mor_bar, d->morale,  100);
         make_bar(fat_bar, d->fatigue, 100);
- 
+
         /* Total level = sum of all job levels */
         int total_lv = 0;
         for (int j = 0; j < JOB_COUNT; j++)
             total_lv += d->job_level[j];
- 
+
         /* Current job level and XP */
         int cur_lv     = d->job_level[d->job];
         int64_t cur_xp = d->job_xp[d->job];
- 
+
         const char *dname = asm_get_dwarf_name(d->name_idx);
         snprintf(buf, sizeof(buf), "%s%-12s %s",
                  is_selected ? ">" : " ", dname, job_label);
- 
+
         uint32_t row_col = is_selected ? COL_ACCENT
                          : (d->job == JOB_IDLE && d->prev_job != JOB_IDLE)
                            ? 0xFF4444FF : COL_FG;
- 
+
         renderer_draw_text_grid(r, UI_COL_MARGIN, row, row_col, buf);
- 
+
         int bar_col = UI_COL_MARGIN + 24;
         renderer_draw_text_grid(r, bar_col, row, COL_DIM, "Mor:");
         bar_col += 4;
@@ -347,12 +364,12 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
         bar_col += 4;
         renderer_draw_text_grid(r, bar_col, row, fatigue_color(d->fatigue), fat_bar);
         bar_col += 12;
- 
+
         /* XP progress bar toward next level */
         static const int64_t xp_thresholds[] = {500, 1200, 2500, 4500, 0};
         int64_t xp_next = (cur_lv < MAX_JOB_LEVEL) ? xp_thresholds[cur_lv] : 0;
         int64_t xp_prev = (cur_lv > 0)             ? xp_thresholds[cur_lv-1] : 0;
- 
+
         char xp_bar[12];
         if (cur_lv >= MAX_JOB_LEVEL) {
             /* maxed — solid bar */
