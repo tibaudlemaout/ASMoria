@@ -83,6 +83,35 @@ asm_tick_dwarves:
     xor     ecx, ecx                    ; floor at 0
 .endurance_ok:
     pop     rbx
+
+    ; --- Depth fatigue penalty ---
+    ; depth 2: +1 for miners only
+    ; depth 3+: +1 for all workers
+    push    rcx
+    mov     ecx, [rbx + GS_DEPTH]
+    cmp     ecx, 2
+    jl      .no_depth_fatigue
+    cmp     ecx, 3
+    jge     .depth_all_workers
+    ; depth 2 — miners only
+    cmp     r14d, JOB_MINER
+    jne     .no_depth_fatigue
+    inc     ecx                         ; reuse ecx as +1
+    mov     ecx, 1
+    add     r15d, ecx
+    jmp     .no_depth_fatigue
+.depth_all_workers:
+    ; depth 3-4: +1, depth 5: +2
+    mov     ecx, [rbx + GS_DEPTH]
+    cmp     ecx, 5
+    jl      .depth_plus1
+    add     r15d, 2
+    jmp     .no_depth_fatigue
+.depth_plus1:
+    add     r15d, 1
+.no_depth_fatigue:
+    pop     rcx
+
     add     r15d, ecx
 
     cmp     r15d, FATIGUE_MAX
