@@ -211,46 +211,46 @@ void ui_draw_resources(Renderer *r, const GameState *state) {
 
     renderer_draw_text_grid(r, col, UI_ROW_RES, COL_FG, "[ RESOURCES ]");
 
-    snprintf(seg, sizeof(seg), "Gold:  %-8lld  ", (long long)state->resources.gold);
+    /* Row 1: the 5 base resources, horizontal */
+    col = UI_COL_MARGIN;
+    snprintf(seg, sizeof(seg), "Gold: %-7lld ", (long long)state->resources.gold);
     renderer_draw_text_grid(r, col, UI_ROW_RES + 1, COL_GOLD, seg);
     col += (int)strlen(seg);
-    snprintf(seg, sizeof(seg), "Stone: %-8lld  ", (long long)state->resources.stone);
+    snprintf(seg, sizeof(seg), "Stone: %-7lld ", (long long)state->resources.stone);
     renderer_draw_text_grid(r, col, UI_ROW_RES + 1, COL_STONE, seg);
     col += (int)strlen(seg);
-    snprintf(seg, sizeof(seg), "Wood:  %-8lld", (long long)state->resources.wood);
+    snprintf(seg, sizeof(seg), "Wood: %-7lld ", (long long)state->resources.wood);
     renderer_draw_text_grid(r, col, UI_ROW_RES + 1, COL_WOOD, seg);
-
-    col = UI_COL_MARGIN;
-    snprintf(seg, sizeof(seg), "Food:  %-8lld  ", (long long)state->resources.food);
-    renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_FOOD, seg);
     col += (int)strlen(seg);
-    snprintf(seg, sizeof(seg), "Mana:  %-8lld", (long long)state->resources.mana);
-    renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_MANA, seg);
+    snprintf(seg, sizeof(seg), "Food: %-7lld ", (long long)state->resources.food);
+    renderer_draw_text_grid(r, col, UI_ROW_RES + 1, COL_FOOD, seg);
+    col += (int)strlen(seg);
+    snprintf(seg, sizeof(seg), "Mana: %-7lld", (long long)state->resources.mana);
+    renderer_draw_text_grid(r, col, UI_ROW_RES + 1, COL_MANA, seg);
 
-    /* Depth resources — all on row 3, horizontal */
+    /* Row 2: depth resources, horizontal, appear as unlocked */
     if (state->depth >= 2) {
         col = UI_COL_MARGIN;
-        snprintf(seg, sizeof(seg), "Iron: %-6lld  ", (long long)state->resources.iron_ore);
-        renderer_draw_text_grid(r, col, UI_ROW_RES + 3, 0xFF8888FF, seg);
+        snprintf(seg, sizeof(seg), "Iron: %-7lld ", (long long)state->resources.iron_ore);
+        renderer_draw_text_grid(r, col, UI_ROW_RES + 2, 0xFF8888FF, seg);
         col += (int)strlen(seg);
         if (state->depth >= 3) {
-            snprintf(seg, sizeof(seg), "Gems: %-6lld  ", (long long)state->resources.gems);
-            renderer_draw_text_grid(r, col, UI_ROW_RES + 3, 0xAAFFAAFF, seg);
+            snprintf(seg, sizeof(seg), "Gems: %-7lld ", (long long)state->resources.gems);
+            renderer_draw_text_grid(r, col, UI_ROW_RES + 2, 0xAAFFAAFF, seg);
             col += (int)strlen(seg);
         }
         if (state->depth >= 4) {
-            snprintf(seg, sizeof(seg), "Relics: %-6lld  ", (long long)state->resources.relics);
-            renderer_draw_text_grid(r, col, UI_ROW_RES + 3, COL_ACCENT, seg);
+            snprintf(seg, sizeof(seg), "Relics: %-7lld ", (long long)state->resources.relics);
+            renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_ACCENT, seg);
             col += (int)strlen(seg);
         }
         if (state->depth >= 5) {
             snprintf(seg, sizeof(seg), "Crystals: %-6lld", (long long)state->resources.crystals);
-            renderer_draw_text_grid(r, col, UI_ROW_RES + 3, COL_MANA, seg);
+            renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_MANA, seg);
         }
     }
 
-    int sep_row = (state->depth >= 2) ? UI_ROW_RES + 4 : UI_ROW_RES + 3;
-    renderer_draw_hline_partial(r, sep_row, 0, DIVIDER_COL, COL_DIM);
+    renderer_draw_hline_partial(r, UI_ROW_RES + 3, 0, DIVIDER_COL, COL_DIM);
 }
 
 /* =========================================================
