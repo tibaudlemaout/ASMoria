@@ -13,10 +13,12 @@ typedef struct {
     int64_t gems;       /* depth 3+ */
     int64_t relics;     /* depth 4+ */
     int64_t crystals;   /* depth 5+ */
+    int64_t iron_bars;  /* crafted from iron_ore */
+    int64_t ale;        /* crafted from food+wood */
 } Resources;
 
 #define MAX_DWARVES     64
-#define JOB_COUNT       6       /* idle=0 miner=1 lumberer=2 farmer=3 guard=4 scholar=5 */
+#define JOB_COUNT       7       /* idle=0 miner=1 lumberer=2 farmer=3 guard=4 scholar=5 craftsdwarf=6 */
 #define MAX_JOB_LEVEL   5
 
 typedef struct {
@@ -25,10 +27,10 @@ typedef struct {
     uint8_t  morale;            /* +0x02 */
     uint8_t  fatigue;           /* +0x03 */
     uint8_t  prev_job;          /* +0x04 */
-    uint8_t  job_level[6];      /* +0x05 : level per job (indexed by JOB_*) */
-    uint8_t  name_idx;          /* +0x0B : index into dwarf name table */
-    int32_t  _pad2;             /* +0x0C */
-    int64_t  job_xp[6];         /* +0x10 : xp per job */
+    uint8_t  job_level[7];      /* +0x05 : level per job (indexed by JOB_*, incl. Craftsdwarf) */
+    uint8_t  name_idx;          /* +0x0C : index into dwarf name table */
+    uint8_t  _pad2[3];          /* +0x0D : padding to align job_xp on 8 bytes */
+    int64_t  job_xp[7];         /* +0x10 : xp per job (incl. Craftsdwarf) */
 } Dwarf;                        /* size: 64 bytes */
 
 #define JOB_IDLE     0
@@ -44,6 +46,40 @@ typedef struct {
 #define XP_LVL3     1500
 #define XP_LVL4     3500
 #define XP_LVL5     7500
+
+/* Storage caps — default values, increased by Vault/Warehouse/Granary */
+#define CAP_GOLD_BASE       500
+#define CAP_STONE_BASE      500
+#define CAP_WOOD_BASE       200
+#define CAP_FOOD_BASE       200
+#define CAP_MANA_BASE       100
+
+#define CAP_GOLD_PER_LEVEL  500
+#define CAP_STONE_PER_LEVEL 500
+#define CAP_WOOD_PER_LEVEL  300
+#define CAP_FOOD_PER_LEVEL  400
+
+#define UPGR_MAX_STORAGE    3
+
+/* Storage buildings — cost scales linearly per level like tools */
+#define UPGR_COST_GOLD_VAULT      200
+#define UPGR_COST_STONE_VAULT     100
+#define UPGR_COST_GOLD_WAREHOUSE  150
+#define UPGR_COST_STONE_WAREHOUSE 150
+#define UPGR_COST_WOOD_WAREHOUSE   50
+#define UPGR_COST_GOLD_GRANARY    150
+#define UPGR_COST_STONE_GRANARY   100
+#define UPGR_COST_FOOD_GRANARY     50
+
+/* Workshop (unlocks Craftsdwarf) */
+#define UPGR_COST_GOLD_WORKSHOP   300
+#define UPGR_COST_STONE_WORKSHOP  200
+#define UPGR_MAX_WORKSHOP         1
+
+/* Crafting rates */
+#define CRAFT_IRON_BAR_TICKS   5   /* 2 iron ore -> 1 iron bar every 5 ticks */
+#define CRAFT_IRON_ORE_COST    2
+#define CRAFT_ALE_TICKS        3   /* 1 food + 1 wood -> 1 ale every 3 ticks */
 
 /* Depth unlock costs */
 #define DEPTH2_COST_STONE   500
@@ -79,7 +115,11 @@ typedef struct {
 #define UPGR_WATCH_TOWER    5
 #define UPGR_RUNE_HALLS     6
 #define UPGR_MANA_WELL      7
-#define UPGR_COUNT          8
+#define UPGR_VAULT          8   /* gold cap */
+#define UPGR_WAREHOUSE       9   /* stone+wood cap */
+#define UPGR_GRANARY        10   /* food cap */
+#define UPGR_WORKSHOP       11   /* unlocks Craftsdwarf */
+#define UPGR_COUNT          12
 
 /* Max levels per category */
 #define UPGR_MAX_TOOLS      3

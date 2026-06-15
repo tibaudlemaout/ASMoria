@@ -183,11 +183,11 @@ asm_hire_dwarf:
     mov     byte  [r12 + DWARF_FATIGUE],  0
     mov     byte  [r12 + DWARF_PREV_JOB], JOB_IDLE
 
-    ; zero job_level[6]
+    ; zero job_level[7]
     mov     dword [r12 + DWARF_JOB_LEVEL],     0
-    mov     word  [r12 + DWARF_JOB_LEVEL + 4], 0
+    mov     dword [r12 + DWARF_JOB_LEVEL + 3], 0   ; overlaps 1 byte, harmless (zeroed anyway)
 
-    ; zero job_xp[6] (48 bytes)
+    ; zero job_xp[7] (56 bytes)
     xor     rax, rax
     mov     [r12 + DWARF_JOB_XP +  0], rax
     mov     [r12 + DWARF_JOB_XP +  8], rax
@@ -195,6 +195,7 @@ asm_hire_dwarf:
     mov     [r12 + DWARF_JOB_XP + 24], rax
     mov     [r12 + DWARF_JOB_XP + 32], rax
     mov     [r12 + DWARF_JOB_XP + 40], rax
+    mov     [r12 + DWARF_JOB_XP + 48], rax
 
     ; pick a name: roll RNG, pick unused index
     ; try up to 64 times for a unique name

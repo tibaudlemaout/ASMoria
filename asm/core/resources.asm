@@ -73,6 +73,73 @@ apply_plenty:
     ret
 
 ; ---------------------------------------------------------
+; clamp_storage_caps — r12=state
+; Clamps gold/stone/wood/food to their storage caps.
+; Cap = base + level * per_level (Vault/Warehouse/Granary)
+; Clobbers: rax, rcx, rdx
+; ---------------------------------------------------------
+clamp_storage_caps:
+    push    rax
+    push    rcx
+    push    rdx
+
+    ; --- Gold cap (Vault) ---
+    mov     rax, [r12 + GS_UPGR_TIER1]
+    shr     rax, (UPGR_VAULT * 4)
+    and     rax, 0xF
+    imul    rax, CAP_GOLD_PER_LEVEL
+    add     rax, CAP_GOLD_BASE
+    cmp     [r12 + GS_RESOURCES + RES_GOLD], rax
+    jle     .gold_ok
+    mov     [r12 + GS_RESOURCES + RES_GOLD], rax
+.gold_ok:
+
+    ; --- Stone cap (Warehouse) ---
+    mov     rax, [r12 + GS_UPGR_TIER1]
+    shr     rax, (UPGR_WAREHOUSE * 4)
+    and     rax, 0xF
+    imul    rax, CAP_STONE_PER_LEVEL
+    add     rax, CAP_STONE_BASE
+    cmp     [r12 + GS_RESOURCES + RES_STONE], rax
+    jle     .stone_ok
+    mov     [r12 + GS_RESOURCES + RES_STONE], rax
+.stone_ok:
+
+    ; --- Wood cap (Warehouse) ---
+    mov     rax, [r12 + GS_UPGR_TIER1]
+    shr     rax, (UPGR_WAREHOUSE * 4)
+    and     rax, 0xF
+    imul    rax, CAP_WOOD_PER_LEVEL
+    add     rax, CAP_WOOD_BASE
+    cmp     [r12 + GS_RESOURCES + RES_WOOD], rax
+    jle     .wood_ok
+    mov     [r12 + GS_RESOURCES + RES_WOOD], rax
+.wood_ok:
+
+    ; --- Food cap (Granary) ---
+    mov     rax, [r12 + GS_UPGR_TIER1]
+    shr     rax, (UPGR_GRANARY * 4)
+    and     rax, 0xF
+    imul    rax, CAP_FOOD_PER_LEVEL
+    add     rax, CAP_FOOD_BASE
+    cmp     [r12 + GS_RESOURCES + RES_FOOD], rax
+    jle     .food_ok
+    mov     [r12 + GS_RESOURCES + RES_FOOD], rax
+.food_ok:
+
+    ; --- Mana cap (fixed, no building yet) ---
+    mov     rax, CAP_MANA_BASE
+    cmp     [r12 + GS_RESOURCES + RES_MANA], rax
+    jle     .mana_ok
+    mov     [r12 + GS_RESOURCES + RES_MANA], rax
+.mana_ok:
+
+    pop     rdx
+    pop     rcx
+    pop     rax
+    ret
+
+; ---------------------------------------------------------
 ; apply_depth_yield_inline
 ; r12=state, rax=yield -> rax = yield * (100 + (depth-1)*20) / 100
 ; depth 1=100%, 2=120%, 3=140%, 4=160%, 5=180%
@@ -157,7 +224,7 @@ asm_tick_resources:
 
 .loop:
     test    rbx, rbx
-    jz      .done
+    jz      .loop_done
 
     movzx   eax, byte [rsi + DWARF_ALIVE]
     test    al, al
@@ -239,6 +306,9 @@ asm_tick_resources:
     add     rsi, SIZEOF_DWARF
     dec     rbx
     jmp     .loop
+
+.loop_done:
+    call    clamp_storage_caps
 
 .done:
     add     rsp, 8

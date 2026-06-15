@@ -38,6 +38,16 @@ asm_assign_job:
     je      .check_guard
     cmp     dl, JOB_SCHOLAR
     je      .check_scholar
+    cmp     dl, JOB_CRAFTSDWARF
+    je      .check_workshop
+    jmp     .assign
+
+.check_workshop:
+    mov     rax, [rdi + GS_UPGR_TIER1]
+    shr     rax, (UPGR_WORKSHOP * 4)
+    and     rax, 0xF
+    test    rax, rax
+    jz      .fail               ; Workshop not built
     jmp     .assign
 
 .check_guard:

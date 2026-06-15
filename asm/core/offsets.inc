@@ -1,9 +1,9 @@
 ; =========================================================
 ; offsets.inc - GameState field offsets for NASM modules
-; Verified against GCC offsetof() — sizeof(GameState) = 5408
+; Verified against GCC offsetof() — sizeof(GameState) = 5936
 ; =========================================================
 
-; --- Resources struct offsets (sizeof = 72) ---
+; --- Resources struct offsets (sizeof = 0x58 = 88) ---
 %define RES_GOLD            0x00
 %define RES_STONE           0x08
 %define RES_WOOD            0x10
@@ -13,20 +13,22 @@
 %define RES_GEMS            0x30    ; depth 3+
 %define RES_RELICS          0x38    ; depth 4+
 %define RES_CRYSTALS        0x40    ; depth 5+
-%define SIZEOF_RESOURCES    0x48
+%define RES_IRON_BARS       0x48    ; crafted from iron_ore
+%define RES_ALE             0x50    ; crafted from food+wood
+%define SIZEOF_RESOURCES    0x58
 
-; --- Dwarf offsets (sizeof = 64 = 0x40) ---
+; --- Dwarf offsets (sizeof = 0x48 = 72) ---
 %define DWARF_ALIVE         0x00
 %define DWARF_JOB           0x01
 %define DWARF_MORALE        0x02
 %define DWARF_FATIGUE       0x03
 %define DWARF_PREV_JOB      0x04
-%define DWARF_JOB_LEVEL     0x05
-%define DWARF_NAME_IDX      0x0B    ; uint8_t — index into name table
-%define DWARF_JOB_XP        0x10    ; int64_t[6] — index by job id * 8
-%define SIZEOF_DWARF        0x40
+%define DWARF_JOB_LEVEL     0x05    ; uint8_t[7]
+%define DWARF_NAME_IDX      0x0C    ; uint8_t — index into name table
+%define DWARF_JOB_XP        0x10    ; int64_t[7] — index by job id * 8
+%define SIZEOF_DWARF        0x48
 %define MAX_DWARVES         64
-%define JOB_COUNT           6
+%define JOB_COUNT           7
 %define MAX_JOB_LEVEL       5
 
 %define JOB_IDLE            0
@@ -35,6 +37,7 @@
 %define JOB_FARMER          3
 %define JOB_GUARD           4
 %define JOB_SCHOLAR         5
+%define JOB_CRAFTSDWARF     6
 
 %define FATIGUE_MAX         100
 %define FATIGUE_WARN        85
@@ -43,16 +46,16 @@
 
 ; --- GameState offsets (verified) ---
 %define GS_RESOURCES        0x0000
-%define GS_DWARVES          0x0048
-%define GS_UPGR_TIER1       0x1048
-%define GS_UPGR_TIER2       0x1050
-%define GS_RNG_SEED         0x1058
-%define GS_TICK             0x1060
-%define GS_DEPTH            0x1068
-%define GS_DEPTH_XP         0x106C
-%define GS_FLAGS            0x1070
-%define GS_PENDING          0x1074
-%define GS_EVENTLOG         0x1080
+%define GS_DWARVES          0x0058
+%define GS_UPGR_TIER1       0x1258
+%define GS_UPGR_TIER2       0x1260
+%define GS_RNG_SEED         0x1268
+%define GS_TICK             0x1270
+%define GS_DEPTH            0x1278
+%define GS_DEPTH_XP         0x127C
+%define GS_FLAGS            0x1280
+%define GS_PENDING          0x1284
+%define GS_EVENTLOG         0x1290
 
 %define PENDING_CODE        0x00
 %define PENDING_SEVERITY    0x01
@@ -89,6 +92,7 @@
 %define XP_RATE_FARMER      2
 %define XP_RATE_GUARD       2
 %define XP_RATE_SCHOLAR     2
+%define XP_RATE_CRAFTSDWARF 2
 
 ; --- Upgrade IDs ---
 %define UPGR_PICK_QUALITY   0
@@ -99,13 +103,19 @@
 %define UPGR_WATCH_TOWER    5
 %define UPGR_RUNE_HALLS     6
 %define UPGR_MANA_WELL      7
-%define UPGR_COUNT          8
+%define UPGR_VAULT          8
+%define UPGR_WAREHOUSE      9
+%define UPGR_GRANARY        10
+%define UPGR_WORKSHOP       11
+%define UPGR_COUNT          12
 
 %define UPGR_MAX_TOOLS      3
 %define UPGR_MAX_WORKFORCE  3
 %define UPGR_MAX_WATCHTOWER 3
 %define UPGR_MAX_RUNEHALLS  5
 %define UPGR_MAX_MANAWELL   3
+%define UPGR_MAX_STORAGE    3
+%define UPGR_MAX_WORKSHOP   1
 
 %define UPGR_COST_GOLD_TOOLS    150
 %define UPGR_COST_STONE_TOOLS    75
@@ -120,12 +130,43 @@
 %define UPGR_COST_GOLD_MANA     200
 %define UPGR_COST_STONE_MANA     50
 
+; Storage buildings
+%define UPGR_COST_GOLD_VAULT      200
+%define UPGR_COST_STONE_VAULT     100
+%define UPGR_COST_GOLD_WAREHOUSE  150
+%define UPGR_COST_STONE_WAREHOUSE 150
+%define UPGR_COST_WOOD_WAREHOUSE   50
+%define UPGR_COST_GOLD_GRANARY    150
+%define UPGR_COST_STONE_GRANARY   100
+%define UPGR_COST_FOOD_GRANARY     50
+
+; Workshop
+%define UPGR_COST_GOLD_WORKSHOP   300
+%define UPGR_COST_STONE_WORKSHOP  200
+
 %define DWARF_CAP_BASE      16
 %define DWARF_CAP_PER_LEVEL  8
 %define HIRE_GOLD_BASE      50
 %define HIRE_FOOD_BASE      20
 %define HIRE_GOLD_DISCOUNT  10
 %define HIRE_FOOD_DISCOUNT   5
+
+; --- Storage caps ---
+%define CAP_GOLD_BASE       500
+%define CAP_STONE_BASE      500
+%define CAP_WOOD_BASE       200
+%define CAP_FOOD_BASE       200
+%define CAP_MANA_BASE       100
+
+%define CAP_GOLD_PER_LEVEL  500
+%define CAP_STONE_PER_LEVEL 500
+%define CAP_WOOD_PER_LEVEL  300
+%define CAP_FOOD_PER_LEVEL  400
+
+; --- Crafting rates ---
+%define CRAFT_IRON_BAR_TICKS   5
+%define CRAFT_IRON_ORE_COST    2
+%define CRAFT_ALE_TICKS        3
 
 ; --- Depth system ---
 %define DEPTH_MAX           5
@@ -158,7 +199,7 @@
 %define RUNE_COST_DEEP        400
 
 ; --- Raid / Breach system ---
-%define GS_RAID             0x1488
+%define GS_RAID             0x1698
 
 %define RAID_ACTIVE         0x00
 %define RAID_THREAT         0x01
@@ -188,7 +229,7 @@
 %define RAID_TIMER          300
 
 ; --- Prestige system ---
-%define GS_PRESTIGE         0x1500
+%define GS_PRESTIGE         0x1710
 %define PRESTIGE_HONOR      0x00
 %define PRESTIGE_TOTAL_HON  0x04
 %define PRESTIGE_COUNT      0x08
@@ -227,4 +268,4 @@
 %define PRESTIGE_MIN_RUNES      3
 %define PRESTIGE_MIN_RESOURCES  10000
 
-%define GS_SIZE             5408
+%define GS_SIZE             5936

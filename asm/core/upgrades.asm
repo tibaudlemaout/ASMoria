@@ -56,8 +56,26 @@ asm_buy_upgrade:
     je      .chk_runehalls
     cmp     r12, 7
     je      .chk_manawell
+    cmp     r12, UPGR_VAULT
+    je      .chk_storage3
+    cmp     r12, UPGR_WAREHOUSE
+    je      .chk_storage3
+    cmp     r12, UPGR_GRANARY
+    je      .chk_storage3
+    cmp     r12, UPGR_WORKSHOP
+    je      .chk_workshop
     ; id 5 = watchtower
     cmp     r13, UPGR_MAX_WATCHTOWER
+    jge     .fail
+    jmp     .compute_cost
+
+.chk_storage3:
+    cmp     r13, UPGR_MAX_STORAGE
+    jge     .fail
+    jmp     .compute_cost
+
+.chk_workshop:
+    cmp     r13, UPGR_MAX_WORKSHOP
     jge     .fail
     jmp     .compute_cost
 
@@ -93,6 +111,14 @@ asm_buy_upgrade:
     je      .cost_runehalls
     cmp     r12, 7
     je      .cost_manawell
+    cmp     r12, UPGR_VAULT
+    je      .cost_vault
+    cmp     r12, UPGR_WAREHOUSE
+    je      .cost_warehouse
+    cmp     r12, UPGR_GRANARY
+    je      .cost_granary
+    cmp     r12, UPGR_WORKSHOP
+    je      .cost_workshop
     ; id 5 = watchtower
     jmp     .cost_watchtower
 
@@ -208,6 +234,80 @@ asm_buy_upgrade:
     mov     rax, UPGR_COST_STONE_MANA
     imul    rax, r15
     sub     [rbx + GS_RESOURCES + RES_STONE], rax
+
+.cost_vault:
+    mov     r14, UPGR_COST_GOLD_VAULT
+    imul    r14, r15
+    cmp     [rbx + GS_RESOURCES + RES_GOLD], r14
+    jl      .fail
+    mov     rax, UPGR_COST_STONE_VAULT
+    imul    rax, r15
+    cmp     [rbx + GS_RESOURCES + RES_STONE], rax
+    jl      .fail
+    sub     [rbx + GS_RESOURCES + RES_GOLD],  r14
+    mov     rax, UPGR_COST_STONE_VAULT
+    imul    rax, r15
+    sub     [rbx + GS_RESOURCES + RES_STONE], rax
+    jmp     .write_level
+
+.cost_warehouse:
+    mov     r14, UPGR_COST_GOLD_WAREHOUSE
+    imul    r14, r15
+    cmp     [rbx + GS_RESOURCES + RES_GOLD], r14
+    jl      .fail
+    mov     rax, UPGR_COST_STONE_WAREHOUSE
+    imul    rax, r15
+    cmp     [rbx + GS_RESOURCES + RES_STONE], rax
+    jl      .fail
+    mov     rax, UPGR_COST_WOOD_WAREHOUSE
+    imul    rax, r15
+    cmp     [rbx + GS_RESOURCES + RES_WOOD], rax
+    jl      .fail
+    sub     [rbx + GS_RESOURCES + RES_GOLD],  r14
+    mov     rax, UPGR_COST_STONE_WAREHOUSE
+    imul    rax, r15
+    sub     [rbx + GS_RESOURCES + RES_STONE], rax
+    mov     rax, UPGR_COST_WOOD_WAREHOUSE
+    imul    rax, r15
+    sub     [rbx + GS_RESOURCES + RES_WOOD],  rax
+    jmp     .write_level
+
+.cost_granary:
+    mov     r14, UPGR_COST_GOLD_GRANARY
+    imul    r14, r15
+    cmp     [rbx + GS_RESOURCES + RES_GOLD], r14
+    jl      .fail
+    mov     rax, UPGR_COST_STONE_GRANARY
+    imul    rax, r15
+    cmp     [rbx + GS_RESOURCES + RES_STONE], rax
+    jl      .fail
+    mov     rax, UPGR_COST_FOOD_GRANARY
+    imul    rax, r15
+    cmp     [rbx + GS_RESOURCES + RES_FOOD], rax
+    jl      .fail
+    sub     [rbx + GS_RESOURCES + RES_GOLD],  r14
+    mov     rax, UPGR_COST_STONE_GRANARY
+    imul    rax, r15
+    sub     [rbx + GS_RESOURCES + RES_STONE], rax
+    mov     rax, UPGR_COST_FOOD_GRANARY
+    imul    rax, r15
+    sub     [rbx + GS_RESOURCES + RES_FOOD],  rax
+    jmp     .write_level
+
+.cost_workshop:
+    mov     r14, UPGR_COST_GOLD_WORKSHOP
+    imul    r14, r15
+    cmp     [rbx + GS_RESOURCES + RES_GOLD], r14
+    jl      .fail
+    mov     rax, UPGR_COST_STONE_WORKSHOP
+    imul    rax, r15
+    cmp     [rbx + GS_RESOURCES + RES_STONE], rax
+    jl      .fail
+    sub     [rbx + GS_RESOURCES + RES_GOLD],  r14
+    mov     rax, UPGR_COST_STONE_WORKSHOP
+    imul    rax, r15
+    sub     [rbx + GS_RESOURCES + RES_STONE], rax
+    jmp     .write_level
 
 .write_level:
     mov     rcx, r12
