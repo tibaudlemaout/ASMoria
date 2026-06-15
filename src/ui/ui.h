@@ -13,28 +13,35 @@
 #define UI_ROW_TITLE       0
 #define UI_ROW_RES         2
 #define UI_ROW_DWARVES     6
-#define UI_ROW_CMDBAR      40
 
-#define LOG_VISIBLE_LINES  36
+/* Horizontal split — dwarf list above, detail panel below */
+#define UI_ROW_SPLIT       28
+#define UI_ROW_DETAIL      29   /* detail panel starts here */
+#define UI_ROW_CMDBAR      37
+
+#define DWARF_LIST_ROWS    (UI_ROW_SPLIT - UI_ROW_DWARVES - 2)  /* ~20 rows */
+#define LOG_VISIBLE_LINES  20
 #define LOG_MAX_WRAPPED    512
 
-extern int ui_selected_dwarf;   /* -1 = none */
-extern int ui_show_upgrades;    /* 0 = main, 1 = upgrade panel */
-extern int ui_show_research;    /* 0 = main, 1 = research panel */
-extern int ui_show_breach;      /* 0 = main, 1 = breach panel   */
-extern int ui_show_prestige;    /* 0 = main, 1 = prestige panel */
+extern int ui_selected_dwarf;
+extern int ui_show_upgrades;
+extern int ui_show_research;
+extern int ui_show_breach;
+extern int ui_show_prestige;
 
 void ui_draw_all(Renderer *r, const GameState *state);
 void ui_draw_titlebar(Renderer *r, const GameState *state);
 void ui_draw_resources(Renderer *r, const GameState *state);
 void ui_draw_dwarves(Renderer *r, const GameState *state);
+void ui_draw_dwarf_detail(Renderer *r, const GameState *state);
 void ui_draw_divider(Renderer *r);
+void ui_draw_hline_full(Renderer *r, int row);
 void ui_draw_eventlog(Renderer *r, const GameState *state);
 void ui_draw_cmdbar(Renderer *r, const GameState *state);
 
 int  ui_dwarf_at_pixel(Renderer *r, const GameState *state, int x, int y);
 void ui_log_scroll(int delta);
-void ui_dwarf_scroll(int delta);  /* scroll dwarf list left/right */
-void ui_dwarf_select(int delta);  /* move selection up(-1)/down(+1) */
+void ui_dwarf_scroll(int delta);
+void ui_dwarf_select(int delta);
 
-#endif /* UI_H */
+#endif

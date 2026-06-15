@@ -73,6 +73,31 @@ apply_plenty:
     ret
 
 ; ---------------------------------------------------------
+; apply_depth_yield_inline
+; r12=state, rax=yield -> rax = yield * (100 + (depth-1)*20) / 100
+; depth 1=100%, 2=120%, 3=140%, 4=160%, 5=180%
+; Clobbers: rcx, rdx
+; ---------------------------------------------------------
+apply_depth_yield_inline:
+    push    rcx
+    push    rdx
+    mov     ecx, [r12 + GS_DEPTH]
+    cmp     ecx, 2
+    jl      .no_depth_bonus             ; depth 1 = no change
+    dec     ecx                         ; depth-1
+    imul    ecx, ecx, 20                ; (depth-1)*20
+    add     ecx, 100                    ; 100 + bonus%
+    movsx   rcx, ecx                    ; sign-extend to 64-bit
+    imul    rax, rcx                    ; yield * multiplier
+    xor     rdx, rdx
+    mov     rcx, 100
+    div     rcx                         ; / 100
+.no_depth_bonus:
+    pop     rdx
+    pop     rcx
+    ret
+
+; ---------------------------------------------------------
 ; apply_prestige_yield(yield=rax, prestige_nodes=r14_saved) -> rax
 ; +2% per YIELD node unlocked (nodes in [r12 + GS_PRESTIGE + PRESTIGE_NODES])
 ; ---------------------------------------------------------
@@ -163,6 +188,7 @@ asm_tick_resources:
     call    apply_morale_scale
     call    apply_plenty
     call    apply_prestige_yield
+    call    apply_depth_yield_inline
     add     [r12 + GS_RESOURCES + RES_STONE], rax
     add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
 
@@ -175,6 +201,7 @@ asm_tick_resources:
     call    apply_morale_scale
     call    apply_plenty
     call    apply_prestige_yield
+    call    apply_depth_yield_inline
     add     [r12 + GS_RESOURCES + RES_GOLD], rax
     add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
     jmp     .next
@@ -189,6 +216,7 @@ asm_tick_resources:
     call    apply_morale_scale
     call    apply_plenty
     call    apply_prestige_yield
+    call    apply_depth_yield_inline
     add     [r12 + GS_RESOURCES + RES_WOOD], rax
     add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
     jmp     .next
@@ -203,6 +231,7 @@ asm_tick_resources:
     call    apply_morale_scale
     call    apply_plenty
     call    apply_prestige_yield
+    call    apply_depth_yield_inline
     add     [r12 + GS_RESOURCES + RES_FOOD], rax
     add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
 

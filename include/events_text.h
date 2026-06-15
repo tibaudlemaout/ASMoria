@@ -109,6 +109,8 @@ static const char *evt_milestone[16] = {
     /* 0x4D */ "Guards are posted. Something stirs below.",
     /* 0x4E */ "ASMoria grows. Word spreads to distant holds.",
     /* 0x4F */ "The deep calls. Who will answer?",
+    /* 0x50 */ "The clan digs deeper. The mountain yields its secrets.",
+    /* 0x51 */ "You have reached the limits of your knowledge. Research the Rune of the Deep.",
 };
 
 /* Look up a message string by raw event code.
@@ -118,6 +120,7 @@ static inline const char *evt_get_template(uint8_t code) {
     if (code <= 0x2F) return evt_positive[code & 0x0F];
     if (code <= 0x3F) return evt_negative[code & 0x0F];
     if (code <= 0x4F) return evt_milestone[code & 0x0F];
+    if (code <= 0x5F) return evt_milestone[0x10 + (code & 0x0F)];
     return "Something stirs in the dark.";
 }
 
