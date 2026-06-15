@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 int ui_upgr_cursor = 0;
+static int ui_upgr_scroll = 0;
 
 typedef struct {
     const char *name;
@@ -130,8 +131,47 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
              mw_lv * 2);
     renderer_draw_text_grid(r, UI_COL_MARGIN, 3, COL_DIM, buf);
     renderer_draw_hline_partial(r, 4, 0, DIVIDER_COL, COL_DIM);
-    row = 5;
 
+    const int FIRST_ROW = 5;
+    const int LAST_ROW  = 40;   /* exclusive-ish bound for content */
+    const int ENTRY_H   = 4;    /* rows per upgrade entry incl. spacer */
+    const int CAT_H     = 1;    /* rows per category header */
+
+    /* --- Pass 1: compute each entry's row offset (relative, unscrolled) --- */
+    int entry_row[UPGR_COUNT];
+    int entry_total = 0;
+    {
+        const char *cat = NULL;
+        for (int i = 0; i < UPGR_COUNT; i++) {
+            if (cat != upgrades[i].category) {
+                cat = upgrades[i].category;
+                entry_total += CAT_H;
+            }
+            entry_row[i] = entry_total;
+            entry_total += ENTRY_H;
+        }
+    }
+
+    /* --- Clamp scroll so selected entry is visible --- */
+    int visible_rows = LAST_ROW - FIRST_ROW;
+    int sel_row   = entry_row[ui_upgr_cursor];
+    int sel_bottom = sel_row + ENTRY_H;
+    if (sel_row < ui_upgr_scroll)
+        ui_upgr_scroll = sel_row;
+    if (sel_bottom > ui_upgr_scroll + visible_rows)
+        ui_upgr_scroll = sel_bottom - visible_rows;
+    if (ui_upgr_scroll < 0) ui_upgr_scroll = 0;
+    int max_scroll = entry_total - visible_rows;
+    if (max_scroll < 0) max_scroll = 0;
+    if (ui_upgr_scroll > max_scroll) ui_upgr_scroll = max_scroll;
+
+    /* Scroll indicator */
+    if (max_scroll > 0) {
+        snprintf(buf, sizeof(buf), "  (scroll %d/%d)", ui_upgr_scroll, max_scroll);
+        renderer_draw_text_grid(r, DIVIDER_COL - 18, 0, COL_DIM, buf);
+    }
+
+    row = FIRST_ROW;
     const char *last_cat = NULL;
 
     for (int i = 0; i < UPGR_COUNT; i++) {
@@ -142,12 +182,21 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
         int sel    = (i == ui_upgr_cursor);
 
         /* Category separator */
+        int cat_visible_row = -1;
         if (last_cat != u->category) {
             last_cat = u->category;
-            snprintf(buf, sizeof(buf), "--- %s ---", u->category);
-            renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM, buf);
-            row++;
+            cat_visible_row = FIRST_ROW + (entry_row[i] - CAT_H) - ui_upgr_scroll;
+            if (cat_visible_row >= FIRST_ROW && cat_visible_row < LAST_ROW) {
+                snprintf(buf, sizeof(buf), "--- %s ---", u->category);
+                renderer_draw_text_grid(r, UI_COL_MARGIN, cat_visible_row, COL_DIM, buf);
+            }
         }
+
+        /* Recompute this entry's screen row from its absolute offset */
+        row = FIRST_ROW + entry_row[i] - ui_upgr_scroll;
+
+        /* Skip entirely if off-screen */
+        if (row + ENTRY_H <= FIRST_ROW || row >= LAST_ROW) continue;
 
         /* Level bar */
         char bar[10];
@@ -187,22 +236,25 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
         uint32_t name_col = is_degraded ? 0xFF4444FF
                           : sel         ? COL_ACCENT
                           :               COL_FG;
-        renderer_draw_text_grid(r, UI_COL_MARGIN, row, name_col, buf);
+        if (row >= FIRST_ROW && row < LAST_ROW)
+            renderer_draw_text_grid(r, UI_COL_MARGIN, row, name_col, buf);
         row++;
 
         /* Next level effect — only show what the NEXT level does */
-        if (maxed) {
-            renderer_draw_text_grid(r, UI_COL_MARGIN, row,
-                                    COL_FOOD, "    [MAXED OUT]");
-        } else {
-            snprintf(buf, sizeof(buf), "    Next: %s",
-                     u->level_effects[level]);   /* level = current, so index = next-1 */
-            renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM, buf);
+        if (row >= FIRST_ROW && row < LAST_ROW) {
+            if (maxed) {
+                renderer_draw_text_grid(r, UI_COL_MARGIN, row,
+                                        COL_FOOD, "    [MAXED OUT]");
+            } else {
+                snprintf(buf, sizeof(buf), "    Next: %s",
+                         u->level_effects[level]);   /* level = current, so index = next-1 */
+                renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM, buf);
+            }
         }
         row++;
 
         /* Cost */
-        if (!maxed) {
+        if (!maxed && row >= FIRST_ROW && row < LAST_ROW) {
             char costbuf[64];
             int  off = 0;
             off += snprintf(costbuf+off, sizeof(costbuf)-off, "%d gold  %d stone", cost_gold, cost_stone);
@@ -216,10 +268,6 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
             renderer_draw_text_grid(r, UI_COL_MARGIN, row,
                                     can_afford ? COL_GOLD : COL_DIM, buf);
         }
-        row++;
-        row++; /* spacer */
-
-        if (row > 40) break;
     }
 
     renderer_draw_hline_partial(r, 41, 0, DIVIDER_COL, COL_DIM);
