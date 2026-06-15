@@ -189,17 +189,21 @@ int main(void) {
                         case SDLK_f:
                         case SDLK_g:
                         case SDLK_s:
+                        case SDLK_c:
                         case SDLK_i: {
-                            if (ui_show_upgrades || ui_selected_dwarf < 0)
+                            if (ui_show_upgrades || ui_show_research
+                                || ui_show_breach || ui_show_prestige
+                                || ui_selected_dwarf < 0)
                                 break;
                             uint8_t job = JOB_IDLE;
                             switch (ev.key.keysym.sym) {
-                                case SDLK_m: job = JOB_MINER;    break;
-                                case SDLK_l: job = JOB_LUMBERER; break;
-                                case SDLK_f: job = JOB_FARMER;   break;
-                                case SDLK_g: job = JOB_GUARD;    break;
-                                case SDLK_s: job = JOB_SCHOLAR;  break;
-                                case SDLK_i: job = JOB_IDLE;     break;
+                                case SDLK_m: job = JOB_MINER;       break;
+                                case SDLK_l: job = JOB_LUMBERER;    break;
+                                case SDLK_f: job = JOB_FARMER;      break;
+                                case SDLK_g: job = JOB_GUARD;       break;
+                                case SDLK_s: job = JOB_SCHOLAR;     break;
+                                case SDLK_c: job = JOB_CRAFTSDWARF; break;
+                                case SDLK_i: job = JOB_IDLE;        break;
                                 default: break;
                             }
                             asm_assign_job(&state,

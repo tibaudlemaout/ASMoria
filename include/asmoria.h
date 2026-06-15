@@ -39,6 +39,7 @@ typedef struct {
 #define JOB_FARMER   3
 #define JOB_GUARD    4
 #define JOB_SCHOLAR  5
+#define JOB_CRAFTSDWARF 6
 
 /* XP thresholds for each level (index = level, value = xp needed) */
 #define XP_LVL1     0

@@ -8,7 +8,7 @@
 #include <string.h>
 
 static const char *job_names[] = {
-    "Idle", "Miner", "Lumberer", "Farmer", "Guard", "Scholar"
+    "Idle", "Miner", "Lumberer", "Farmer", "Guard", "Scholar", "Craftsdwarf"
 };
 
 /* =========================================================
@@ -245,8 +245,22 @@ void ui_draw_resources(Renderer *r, const GameState *state) {
             col += (int)strlen(seg);
         }
         if (state->depth >= 5) {
-            snprintf(seg, sizeof(seg), "Crystals: %-6lld", (long long)state->resources.crystals);
+            snprintf(seg, sizeof(seg), "Crystals: %-6lld  ", (long long)state->resources.crystals);
             renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_MANA, seg);
+            col += (int)strlen(seg);
+        }
+    }
+
+    /* Crafted resources — append to row 2 once Workshop is built */
+    {
+        int ws_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_WORKSHOP);
+        if (ws_lv >= 1) {
+            if (state->depth < 2) col = UI_COL_MARGIN;
+            snprintf(seg, sizeof(seg), "Bars: %-6lld  ", (long long)state->resources.iron_bars);
+            renderer_draw_text_grid(r, col, UI_ROW_RES + 2, 0xFF8888FF, seg);
+            col += (int)strlen(seg);
+            snprintf(seg, sizeof(seg), "Ale: %-6lld", (long long)state->resources.ale);
+            renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_GOLD, seg);
         }
     }
 
@@ -425,7 +439,7 @@ void ui_draw_dwarf_detail(Renderer *r, const GameState *state) {
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 2, COL_GOLD, buf);
 
     /* Row 4: per-job levels */
-    static const char *jnames[] = {"Idle","Mine","Lumb","Farm","Guard","Scholar"};
+    static const char *jnames[] = {"Idle","Mine","Lumb","Farm","Guard","Scholar","Craft"};
     int col = UI_COL_MARGIN;
     renderer_draw_text_grid(r, col, UI_ROW_DETAIL + 3, COL_DIM, " Jobs: ");
     col += 7;
@@ -438,7 +452,7 @@ void ui_draw_dwarf_detail(Renderer *r, const GameState *state) {
 
     /* Row 5: job assignment keys */
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 4, COL_DIM,
-        " [M]iner  [L]umberer  [F]armer  [G]uard  [S]cholar  [I]dle      [E] Feed (10 food)");
+        " [M]iner [L]umberer [F]armer [G]uard [S]cholar [C]raftsdwarf [I]dle  [E] Feed");
 }
 
 /* =========================================================
