@@ -13,6 +13,7 @@ extern asm_event_push
 extern asm_tick_infra
 extern asm_tick_upkeep
 extern asm_tick_depth
+extern asm_tick_craft
 
 section .text
     global asm_tick
@@ -75,6 +76,9 @@ asm_tick:
     ; 7. Depth resource yields
     mov     rdi, rbx
     call    asm_tick_depth
+
+    mov     rdi, rbx
+    call    asm_tick_craft
 
     ; 8. Infrastructure effects (Scholar/Mana Well) — skipped if degraded
     mov     rdi, rbx
