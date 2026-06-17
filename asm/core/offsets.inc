@@ -1,6 +1,6 @@
 ; =========================================================
 ; offsets.inc - GameState field offsets for NASM modules
-; Verified against GCC offsetof() — sizeof(GameState) = 5936
+; Verified against GCC offsetof() -- sizeof(GameState) = 5960
 ; =========================================================
 
 ; --- Resources struct offsets (sizeof = 0x58 = 88) ---
@@ -24,8 +24,9 @@
 %define DWARF_FATIGUE       0x03
 %define DWARF_PREV_JOB      0x04
 %define DWARF_JOB_LEVEL     0x05    ; uint8_t[7]
-%define DWARF_NAME_IDX      0x0C    ; uint8_t — index into name table
-%define DWARF_JOB_XP        0x10    ; int64_t[7] — index by job id * 8
+%define DWARF_NAME_IDX      0x0C    ; uint8_t -- index into name table
+%define DWARF_EQUIPMENT     0x0D    ; uint8_t -- EQUIP_* constant
+%define DWARF_JOB_XP        0x10    ; int64_t[7] -- index by job id * 8
 %define SIZEOF_DWARF        0x48
 %define MAX_DWARVES         64
 %define JOB_COUNT           7
@@ -39,23 +40,29 @@
 %define JOB_SCHOLAR         5
 %define JOB_CRAFTSDWARF     6
 
+%define EQUIP_NONE          0
+%define EQUIP_WEAPON        1
+%define EQUIP_ARMOUR        2
+%define EQUIP_TOOL          3
+
 %define FATIGUE_MAX         100
 %define FATIGUE_WARN        85
 %define MORALE_MAX          100
 %define MORALE_IDLE_RATE    5
 
-; --- GameState offsets (verified) ---
+; --- GameState offsets (verified against offsetof) ---
 %define GS_RESOURCES        0x0000
 %define GS_DWARVES          0x0058
 %define GS_UPGR_TIER1       0x1258
 %define GS_UPGR_TIER2       0x1260
-%define GS_RNG_SEED         0x1268
-%define GS_TICK             0x1270
-%define GS_DEPTH            0x1278
-%define GS_DEPTH_XP         0x127C
-%define GS_FLAGS            0x1280
-%define GS_PENDING          0x1284
-%define GS_EVENTLOG         0x1290
+%define GS_CRAFT            0x1268    ; CraftSlot[6] = 24 bytes
+%define GS_RNG_SEED         0x1280
+%define GS_TICK             0x1288
+%define GS_DEPTH            0x1290
+%define GS_DEPTH_XP         0x1294
+%define GS_FLAGS            0x1298
+%define GS_PENDING          0x129c
+%define GS_EVENTLOG         0x12a8
 
 %define PENDING_CODE        0x00
 %define PENDING_SEVERITY    0x01
@@ -163,6 +170,20 @@
 %define CAP_WOOD_PER_LEVEL  300
 %define CAP_FOOD_PER_LEVEL  400
 
+; --- CraftSlot offsets ---
+%define CRAFT_ASSIGNED      0x00    ; uint8_t
+%define CRAFT_ACTIVE        0x01    ; uint8_t
+%define CRAFT_TIMER         0x02    ; uint16_t
+%define SIZEOF_CRAFTSLOT    0x04
+%define RECIPE_COUNT        6
+
+%define RECIPE_IRON_BARS_I  0
+%define RECIPE_ALE_I        1
+%define RECIPE_IRON_BARS_II 2
+%define RECIPE_WEAPONS_I    3
+%define RECIPE_ARMOUR_I     4
+%define RECIPE_TOOLS_I      5
+
 ; --- Crafting rates ---
 %define CRAFT_IRON_BAR_TICKS   5
 %define CRAFT_IRON_ORE_COST    2
@@ -179,7 +200,7 @@
 %define DEPTH5_COST_STONE  6000
 %define DEPTH5_COST_GOLD   5000
 
-; --- Research / Rune system (packed in tier2) ---
+; --- Research / Rune system ---
 %define RUNE_ENDURANCE      0
 %define RUNE_PLENTY         1
 %define RUNE_SWIFTNESS      2
@@ -199,7 +220,7 @@
 %define RUNE_COST_DEEP        400
 
 ; --- Raid / Breach system ---
-%define GS_RAID             0x1698
+%define GS_RAID             0x16b0
 
 %define RAID_ACTIVE         0x00
 %define RAID_THREAT         0x01
@@ -229,7 +250,7 @@
 %define RAID_TIMER          300
 
 ; --- Prestige system ---
-%define GS_PRESTIGE         0x1710
+%define GS_PRESTIGE         0x1728
 %define PRESTIGE_HONOR      0x00
 %define PRESTIGE_TOTAL_HON  0x04
 %define PRESTIGE_COUNT      0x08
@@ -268,4 +289,4 @@
 %define PRESTIGE_MIN_RUNES      3
 %define PRESTIGE_MIN_RESOURCES  10000
 
-%define GS_SIZE             5936
+%define GS_SIZE             5960

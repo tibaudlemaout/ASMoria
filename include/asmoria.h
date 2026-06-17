@@ -29,7 +29,8 @@ typedef struct {
     uint8_t  prev_job;          /* +0x04 */
     uint8_t  job_level[7];      /* +0x05 : level per job (indexed by JOB_*, incl. Craftsdwarf) */
     uint8_t  name_idx;          /* +0x0C : index into dwarf name table */
-    uint8_t  _pad2[3];          /* +0x0D : padding to align job_xp on 8 bytes */
+    uint8_t  equipment;         /* +0x0D : EQUIP_* constant */
+    uint8_t  _pad2[2];          /* +0x0E : padding to align job_xp on 8 bytes */
     int64_t  job_xp[7];         /* +0x10 : xp per job (incl. Craftsdwarf) */
 } Dwarf;                        /* size: 64 bytes */
 
@@ -48,7 +49,29 @@ typedef struct {
 #define XP_LVL4     3500
 #define XP_LVL5     7500
 
-/* Storage caps — default values, increased by Vault/Warehouse/Granary */
+/* Equipment slots */
+#define EQUIP_NONE      0
+#define EQUIP_WEAPON    1
+#define EQUIP_ARMOUR    2
+#define EQUIP_TOOL      3
+
+/* Recipe IDs */
+#define RECIPE_IRON_BARS_I   0
+#define RECIPE_ALE_I         1
+#define RECIPE_IRON_BARS_II  2
+#define RECIPE_WEAPONS_I     3
+#define RECIPE_ARMOUR_I      4
+#define RECIPE_TOOLS_I       5
+#define RECIPE_COUNT         6
+
+/* Craft slot — one per recipe */
+typedef struct {
+    uint8_t  assigned;   /* dwarves assigned */
+    uint8_t  active;     /* 1 = timer running */
+    uint16_t timer;      /* ticks remaining */
+} CraftSlot;
+
+/* Storage caps -- default values, increased by Vault/Warehouse/Granary */
 #define CAP_GOLD_BASE       500
 #define CAP_STONE_BASE      500
 #define CAP_WOOD_BASE       200
@@ -307,6 +330,7 @@ typedef struct {
     /* offset 0x0000 */ Resources    resources;
     /* offset 0x0028 */ Dwarf        dwarves[MAX_DWARVES];
     /* offset 0x1028 */ Upgrades     upgrades;
+    CraftSlot    craft[RECIPE_COUNT];   /* 6 * 4 = 24 bytes */
     /* offset 0x1038 */ RngState     rng;
     /* offset 0x1040 */ uint64_t     tick;
     /* offset 0x1048 */ uint32_t     depth;
@@ -334,6 +358,8 @@ extern int64_t  asm_do_prestige(GameState *state);
 extern int64_t  asm_can_prestige(GameState *state);
 extern void     asm_breach_retreat(GameState *state);
 extern int64_t  asm_dig_deeper(GameState *state);
+extern int64_t  asm_craft_assign(GameState *state, uint8_t recipe_id, int delta);
+extern void     asm_tick_craft(GameState *state);
 extern int64_t  asm_feed_dwarf(GameState *state, uint8_t dwarf_idx);
 extern int64_t  asm_buy_rune(GameState *state, uint8_t rune_id);
 extern int64_t  asm_buy_upgrade(GameState *state, uint8_t upgrade_id);
