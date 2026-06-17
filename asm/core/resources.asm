@@ -127,8 +127,12 @@ clamp_storage_caps:
     mov     [r12 + GS_RESOURCES + RES_FOOD], rax
 .food_ok:
 
-    ; --- Mana cap (fixed, no building yet) ---
-    mov     rax, CAP_MANA_BASE
+    ; --- Mana cap: base + Mana Well level * 500 ---
+    mov     rax, [r12 + GS_UPGR_TIER1]
+    shr     rax, (UPGR_MANA_WELL * 4)
+    and     rax, 0xF
+    imul    rax, 500
+    add     rax, CAP_MANA_BASE          ; cap = 100 + well_level*500
     cmp     [r12 + GS_RESOURCES + RES_MANA], rax
     jle     .mana_ok
     mov     [r12 + GS_RESOURCES + RES_MANA], rax
@@ -137,6 +141,28 @@ clamp_storage_caps:
     pop     rdx
     pop     rcx
     pop     rax
+    ret
+
+; ---------------------------------------------------------
+; apply_tool_yield_inline
+; rsi=current dwarf ptr, rax=yield -> rax = yield * (100+TOOL_YIELD_BONUS) / 100
+; Only applies if dwarf has EQUIP_TOOL
+; Clobbers: rcx, rdx
+; ---------------------------------------------------------
+apply_tool_yield_inline:
+    push    rcx
+    push    rdx
+    movzx   ecx, byte [rsi + DWARF_EQUIPMENT]
+    cmp     ecx, EQUIP_TOOL
+    jne     .no_tool
+    ; yield * (100 + TOOL_YIELD_BONUS) / 100
+    imul    rax, (100 + TOOL_YIELD_BONUS)
+    xor     rdx, rdx
+    mov     rcx, 100
+    div     rcx
+.no_tool:
+    pop     rdx
+    pop     rcx
     ret
 
 ; ---------------------------------------------------------
@@ -256,6 +282,7 @@ asm_tick_resources:
     call    apply_plenty
     call    apply_prestige_yield
     call    apply_depth_yield_inline
+    call    apply_tool_yield_inline
     add     [r12 + GS_RESOURCES + RES_STONE], rax
     add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
 
@@ -269,6 +296,7 @@ asm_tick_resources:
     call    apply_plenty
     call    apply_prestige_yield
     call    apply_depth_yield_inline
+    call    apply_tool_yield_inline
     add     [r12 + GS_RESOURCES + RES_GOLD], rax
     add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
     jmp     .next
@@ -284,6 +312,7 @@ asm_tick_resources:
     call    apply_plenty
     call    apply_prestige_yield
     call    apply_depth_yield_inline
+    call    apply_tool_yield_inline
     add     [r12 + GS_RESOURCES + RES_WOOD], rax
     add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
     jmp     .next
@@ -299,6 +328,7 @@ asm_tick_resources:
     call    apply_plenty
     call    apply_prestige_yield
     call    apply_depth_yield_inline
+    call    apply_tool_yield_inline
     add     [r12 + GS_RESOURCES + RES_FOOD], rax
     add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
 

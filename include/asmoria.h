@@ -15,6 +15,9 @@ typedef struct {
     int64_t crystals;   /* depth 5+ */
     int64_t iron_bars;  /* crafted from iron_ore */
     int64_t ale;        /* crafted from food+wood */
+    int64_t weapons;    /* crafted weapons in inventory */
+    int64_t armour;     /* crafted armour in inventory */
+    int64_t tools;      /* crafted tools in inventory */
 } Resources;
 
 #define MAX_DWARVES     64
@@ -359,6 +362,8 @@ extern int64_t  asm_can_prestige(GameState *state);
 extern void     asm_breach_retreat(GameState *state);
 extern int64_t  asm_dig_deeper(GameState *state);
 extern int64_t  asm_craft_assign(GameState *state, uint8_t recipe_id, int delta);
+extern int64_t  asm_equip(GameState *state, uint64_t dwarf_idx, uint8_t equip_type);
+extern int64_t  asm_unequip(GameState *state, uint64_t dwarf_idx);
 extern void     asm_tick_craft(GameState *state);
 extern int64_t  asm_feed_dwarf(GameState *state, uint8_t dwarf_idx);
 extern int64_t  asm_buy_rune(GameState *state, uint8_t rune_id);

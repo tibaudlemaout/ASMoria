@@ -141,13 +141,19 @@ asm_tick_breach:
     test    eax, eax
     jle     .guard_atk_loop
 
-    ; guard ATK = 5 + guard_job_level*3
+    ; guard ATK = 5 + guard_job_level*3 + weapon_bonus
     movzx   ecx, byte [r12 + RAID_GUARD_IDX + r13]
     imul    ecx, SIZEOF_DWARF
     lea     rdx, [rbx + GS_DWARVES + rcx]
     movzx   ecx, byte [rdx + DWARF_JOB_LEVEL + JOB_GUARD]
     imul    ecx, 3
     add     ecx, 5
+    ; weapon bonus
+    movzx   eax, byte [rdx + DWARF_EQUIPMENT]
+    cmp     eax, EQUIP_WEAPON
+    jne     .no_weapon_bonus
+    add     ecx, WEAPON_ATK_BONUS
+.no_weapon_bonus:
     add     r14d, ecx
     jmp     .guard_atk_loop
 
@@ -331,13 +337,19 @@ asm_tick_breach:
     ; found a guard — compute HP and ATK
     mov     [r12 + RAID_GUARD_IDX + r13], r14b
 
-    ; HP = 50 + level*15 + morale/2
+    ; HP = 50 + level*15 + morale/2 + armour_bonus
     movzx   eax, byte [rdx + DWARF_JOB_LEVEL + JOB_GUARD]
     imul    eax, 15
     add     eax, 50
     movzx   ecx, byte [rdx + DWARF_MORALE]
     shr     ecx, 1
     add     eax, ecx
+    ; armour bonus
+    movzx   ecx, byte [rdx + DWARF_EQUIPMENT]
+    cmp     ecx, EQUIP_ARMOUR
+    jne     .no_armour_bonus
+    add     eax, ARMOUR_HP_BONUS
+.no_armour_bonus:
     mov     [r12 + RAID_GUARD_HP     + r13*4], eax
     mov     [r12 + RAID_GUARD_HP_MAX + r13*4], eax
 

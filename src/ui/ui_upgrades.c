@@ -51,7 +51,7 @@ static const UpgradeInfo upgrades[UPGR_COUNT] = {
 
     { "Mana Well", "INFRASTRUCTURE", UPGR_MAX_MANAWELL,
       UPGR_COST_GOLD_MANA, UPGR_COST_STONE_MANA, 0, 0, 0,
-      { "Passive +2 mana/tick", "Passive +4 mana/tick", "Passive +6 mana/tick" } },
+      { "Passive +2 mana/tick, mana cap: 600", "Passive +4 mana/tick, mana cap: 1100", "Passive +6 mana/tick, mana cap: 1600" } },
 
     { "Vault", "STORAGE", UPGR_MAX_STORAGE,
       UPGR_COST_GOLD_VAULT, UPGR_COST_STONE_VAULT, 0, 0, 0,

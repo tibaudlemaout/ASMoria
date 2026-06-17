@@ -1,9 +1,9 @@
 ; =========================================================
 ; offsets.inc - GameState field offsets for NASM modules
-; Verified against GCC offsetof() -- sizeof(GameState) = 5960
+; Verified against GCC offsetof() -- sizeof(GameState) = 5984
 ; =========================================================
 
-; --- Resources struct offsets (sizeof = 0x58 = 88) ---
+; --- Resources struct offsets (sizeof = 0x70 = 112) ---
 %define RES_GOLD            0x00
 %define RES_STONE           0x08
 %define RES_WOOD            0x10
@@ -15,7 +15,10 @@
 %define RES_CRYSTALS        0x40    ; depth 5+
 %define RES_IRON_BARS       0x48    ; crafted from iron_ore
 %define RES_ALE             0x50    ; crafted from food+wood
-%define SIZEOF_RESOURCES    0x58
+%define RES_WEAPONS         0x58    ; crafted weapons
+%define RES_ARMOUR          0x60    ; crafted armour
+%define RES_TOOLS           0x68    ; crafted tools
+%define SIZEOF_RESOURCES    0x70
 
 ; --- Dwarf offsets (sizeof = 0x48 = 72) ---
 %define DWARF_ALIVE         0x00
@@ -24,9 +27,9 @@
 %define DWARF_FATIGUE       0x03
 %define DWARF_PREV_JOB      0x04
 %define DWARF_JOB_LEVEL     0x05    ; uint8_t[7]
-%define DWARF_NAME_IDX      0x0C    ; uint8_t -- index into name table
+%define DWARF_NAME_IDX      0x0C    ; uint8_t
 %define DWARF_EQUIPMENT     0x0D    ; uint8_t -- EQUIP_* constant
-%define DWARF_JOB_XP        0x10    ; int64_t[7] -- index by job id * 8
+%define DWARF_JOB_XP        0x10    ; int64_t[7]
 %define SIZEOF_DWARF        0x48
 %define MAX_DWARVES         64
 %define JOB_COUNT           7
@@ -45,24 +48,30 @@
 %define EQUIP_ARMOUR        2
 %define EQUIP_TOOL          3
 
+%define WEAPON_ATK_BONUS    10
+%define ARMOUR_HP_BONUS     20
+%define TOOL_YIELD_BONUS    15
+
 %define FATIGUE_MAX         100
 %define FATIGUE_WARN        85
 %define MORALE_MAX          100
 %define MORALE_IDLE_RATE    5
 
-; --- GameState offsets (verified against offsetof) ---
+; --- GameState offsets (verified against GCC offsetof) ---
 %define GS_RESOURCES        0x0000
-%define GS_DWARVES          0x0058
-%define GS_UPGR_TIER1       0x1258
-%define GS_UPGR_TIER2       0x1260
-%define GS_CRAFT            0x1268    ; CraftSlot[6] = 24 bytes
-%define GS_RNG_SEED         0x1280
-%define GS_TICK             0x1288
-%define GS_DEPTH            0x1290
-%define GS_DEPTH_XP         0x1294
-%define GS_FLAGS            0x1298
-%define GS_PENDING          0x129c
-%define GS_EVENTLOG         0x12a8
+%define GS_DWARVES          0x0070
+%define GS_UPGR_TIER1       0x1270
+%define GS_UPGR_TIER2       0x1278
+%define GS_CRAFT            0x1280    ; CraftSlot[6] = 24 bytes
+%define GS_RNG_SEED         0x1298
+%define GS_TICK             0x12a0
+%define GS_DEPTH            0x12a8
+%define GS_DEPTH_XP         0x12ac
+%define GS_FLAGS            0x12b0
+%define GS_PENDING          0x12b4
+%define GS_EVENTLOG         0x12c0
+%define GS_RAID             0x16c8
+%define GS_PRESTIGE         0x1740
 
 %define PENDING_CODE        0x00
 %define PENDING_SEVERITY    0x01
@@ -184,6 +193,22 @@
 %define RECIPE_ARMOUR_I     4
 %define RECIPE_TOOLS_I      5
 
+; --- Resource indices for craft system (RES_x / 8) ---
+%define RID_GOLD            0
+%define RID_STONE           1
+%define RID_WOOD            2
+%define RID_FOOD            3
+%define RID_MANA            4
+%define RID_IRON_ORE        5
+%define RID_GEMS            6
+%define RID_RELICS          7
+%define RID_CRYSTALS        8
+%define RID_IRON_BARS       9
+%define RID_ALE             10
+%define RID_WEAPONS         11
+%define RID_ARMOUR          12
+%define RID_TOOLS           13
+
 ; --- Crafting rates ---
 %define CRAFT_IRON_BAR_TICKS   5
 %define CRAFT_IRON_ORE_COST    2
@@ -220,7 +245,7 @@
 %define RUNE_COST_DEEP        400
 
 ; --- Raid / Breach system ---
-%define GS_RAID             0x16b0
+%define GS_RAID             0x16c8
 
 %define RAID_ACTIVE         0x00
 %define RAID_THREAT         0x01
@@ -250,7 +275,7 @@
 %define RAID_TIMER          300
 
 ; --- Prestige system ---
-%define GS_PRESTIGE         0x1728
+%define GS_PRESTIGE         0x1740
 %define PRESTIGE_HONOR      0x00
 %define PRESTIGE_TOTAL_HON  0x04
 %define PRESTIGE_COUNT      0x08
@@ -289,4 +314,4 @@
 %define PRESTIGE_MIN_RUNES      3
 %define PRESTIGE_MIN_RESOURCES  10000
 
-%define GS_SIZE             5960
+%define GS_SIZE             5984

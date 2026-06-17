@@ -234,6 +234,7 @@ asm_buy_upgrade:
     mov     rax, UPGR_COST_STONE_MANA
     imul    rax, r15
     sub     [rbx + GS_RESOURCES + RES_STONE], rax
+    jmp     .write_level
 
 .cost_vault:
     mov     r14, UPGR_COST_GOLD_VAULT

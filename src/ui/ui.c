@@ -9,7 +9,7 @@
 #include <string.h>
 
 static const char *job_names[] = {
-    "Idle", "Miner", "Lumberer", "Farmer", "Guard", "Scholar", "Crafter"
+    "Idle", "Miner", "Lumberer", "Farmer", "Guard", "Scholar", "Craftsdwarf"
 };
 
 /* =========================================================

@@ -8,7 +8,7 @@
 ; Guard requires Watch Tower >= 1
 ; Scholar requires Rune Halls >= 1
 ;
-; STACK: no pushes, no calls.
+; STACK: may push rdi,rsi,rcx,rdx,r8 in craft-unassign path (no calls made).
 ; =========================================================
 
 %include "core/offsets.inc"
@@ -67,6 +67,49 @@ asm_assign_job:
     jmp     .assign
 
 .assign:
+    ; If dwarf was a Craftsdwarf, remove from any craft slot before changing job
+    movzx   eax, byte [rcx + DWARF_JOB]
+    cmp     eax, JOB_CRAFTSDWARF
+    jne     .no_craft_unassign
+
+    ; Also if new job IS craftsdwarf, don't unassign (job stays same effectively)
+    cmp     dl, JOB_CRAFTSDWARF
+    je      .no_craft_unassign
+
+    ; Scan craft slots and decrement assigned count if > 0
+    push    rdi
+    push    rsi
+    push    rcx
+    push    rdx
+    push    r8
+    lea     r8, [rdi + GS_CRAFT]
+    mov     ecx, RECIPE_COUNT
+.craft_scan:
+    test    ecx, ecx
+    jz      .craft_scan_done
+    movzx   eax, byte [r8 + CRAFT_ASSIGNED]
+    test    eax, eax
+    jz      .craft_scan_next
+    dec     eax
+    mov     byte [r8 + CRAFT_ASSIGNED], al
+    ; if now 0, deactivate the slot
+    test    eax, eax
+    jnz     .craft_scan_next
+    mov     byte [r8 + CRAFT_ACTIVE], 0
+    mov     word [r8 + CRAFT_TIMER],  0
+    jmp     .craft_scan_done    ; only remove from one slot per dwarf
+.craft_scan_next:
+    add     r8, SIZEOF_CRAFTSLOT
+    dec     ecx
+    jmp     .craft_scan
+.craft_scan_done:
+    pop     r8
+    pop     rdx
+    pop     rcx
+    pop     rsi
+    pop     rdi
+
+.no_craft_unassign:
     mov     [rcx + DWARF_JOB],           dl
     mov     byte [rcx + DWARF_PREV_JOB], JOB_IDLE
     mov     rax, 1

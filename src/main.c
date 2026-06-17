@@ -194,6 +194,34 @@ int main(void) {
                                 asm_craft_assign(&state, (uint8_t)ui_craft_selected(), -1);
                             break;
 
+                        case SDLK_1:
+                            if (!ui_show_upgrades && !ui_show_research
+                                && !ui_show_breach && !ui_show_prestige
+                                && !ui_show_craft && ui_selected_dwarf >= 0)
+                                asm_equip(&state, (uint64_t)ui_selected_dwarf, EQUIP_WEAPON);
+                            break;
+
+                        case SDLK_2:
+                            if (!ui_show_upgrades && !ui_show_research
+                                && !ui_show_breach && !ui_show_prestige
+                                && !ui_show_craft && ui_selected_dwarf >= 0)
+                                asm_equip(&state, (uint64_t)ui_selected_dwarf, EQUIP_ARMOUR);
+                            break;
+
+                        case SDLK_3:
+                            if (!ui_show_upgrades && !ui_show_research
+                                && !ui_show_breach && !ui_show_prestige
+                                && !ui_show_craft && ui_selected_dwarf >= 0)
+                                asm_equip(&state, (uint64_t)ui_selected_dwarf, EQUIP_TOOL);
+                            break;
+
+                        case SDLK_0:
+                            if (!ui_show_upgrades && !ui_show_research
+                                && !ui_show_breach && !ui_show_prestige
+                                && !ui_show_craft && ui_selected_dwarf >= 0)
+                                asm_unequip(&state, (uint64_t)ui_selected_dwarf);
+                            break;
+
                         case SDLK_e:
                             if (ui_show_breach
                                 && state.raid.active == RAID_COMBAT
