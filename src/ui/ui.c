@@ -264,10 +264,19 @@ void ui_draw_resources(Renderer *r, const GameState *state) {
         int ws_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_WORKSHOP);
         if (ws_lv >= 1) {
             if (state->depth < 2) col = UI_COL_MARGIN;
-            snprintf(seg, sizeof(seg), "Bars: %-6lld  ", (long long)state->resources.iron_bars);
+            snprintf(seg, sizeof(seg), "Bars:%-5lld  ", (long long)state->resources.iron_bars);
             renderer_draw_text_grid(r, col, UI_ROW_RES + 2, 0xFF8888FF, seg);
             col += (int)strlen(seg);
-            snprintf(seg, sizeof(seg), "Ale: %-6lld", (long long)state->resources.ale);
+            snprintf(seg, sizeof(seg), "Ale:%-5lld  ", (long long)state->resources.ale);
+            renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_GOLD, seg);
+            col += (int)strlen(seg);
+            snprintf(seg, sizeof(seg), "Weapon:%-4lld  ", (long long)state->resources.weapons);
+            renderer_draw_text_grid(r, col, UI_ROW_RES + 2, 0xFF8888FF, seg);
+            col += (int)strlen(seg);
+            snprintf(seg, sizeof(seg), "Armour:%-4lld  ", (long long)state->resources.armour);
+            renderer_draw_text_grid(r, col, UI_ROW_RES + 2, 0xAAAAFFFF, seg);
+            col += (int)strlen(seg);
+            snprintf(seg, sizeof(seg), "Tool:%-4lld", (long long)state->resources.tools);
             renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_GOLD, seg);
         }
     }
@@ -458,8 +467,29 @@ void ui_draw_dwarf_detail(Renderer *r, const GameState *state) {
         col += 12;
     }
 
+    /* Row 4: equipment slot + inventory counts */
+    {
+        static const char    *equip_names[] = { "None", "Weapon", "Armour", "Tool" };
+        static const uint32_t equip_cols[]  = { COL_DIM, 0xFF8888FF, 0xAAAAFFFF, COL_GOLD };
+        uint8_t eq = d->equipment;
+        uint32_t eq_col = (eq < 4) ? equip_cols[eq] : COL_DIM;
+        const char *eq_name = (eq < 4) ? equip_names[eq] : "???";
+
+        /* Left: equipped item */
+        snprintf(buf, sizeof(buf), " Equipped: %-8s", eq_name);
+        renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 4, eq_col, buf);
+
+        /* Right: equip key hints */
+        int ws_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_WORKSHOP);
+        if (ws_lv >= 1) {
+            renderer_draw_text_grid(r, UI_COL_MARGIN + 19, UI_ROW_DETAIL + 4,
+                                    COL_DIM,
+                                    "  [1] Weapon  [2] Armour  [3] Tool  [0] Unequip");
+        }
+    }
+
     /* Row 5: job assignment keys */
-    renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 4, COL_DIM,
+    renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 5, COL_DIM,
         " [M]iner [L]umberer [F]armer [G]uard [S]cholar [C]raftsdwarf [I]dle  [E] Feed");
 }
 

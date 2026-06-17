@@ -72,9 +72,12 @@ void ui_draw_craft(Renderer *r, const GameState *state) {
 
     /* Iron Bars / Ale / Weapons / Armour count */
     snprintf(buf, sizeof(buf),
-             "  Bars: %-5lld  Ale: %-5lld  Depth: %u",
+             "  Bars:%-5lld  Ale:%-5lld  Wpn:%-4lld  Arm:%-4lld  Tol:%-4lld  Depth:%u",
              (long long)state->resources.iron_bars,
              (long long)state->resources.ale,
+             (long long)state->resources.weapons,
+             (long long)state->resources.armour,
+             (long long)state->resources.tools,
              state->depth);
     renderer_draw_text_grid(r, _UI_COL_MARGIN, 3, COL_DIM, buf);
     renderer_draw_hline_partial(r, 4, 0, _DIVIDER_COL, COL_DIM);
