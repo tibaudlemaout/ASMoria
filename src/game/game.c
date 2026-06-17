@@ -14,6 +14,21 @@ void game_init(GameState *state) {
     state->resources.wood  = 30;
     state->resources.food  = 20;
     state->depth           = 1;
+
+    /* Craft slots */
+    for (int i = 0; i < RECIPE_COUNT; i++) {
+        state->craft[i].assigned = 0;
+        state->craft[i].active   = 0;
+        state->craft[i].timer    = 0;
+    }
+
+    /* New resources (zeroed by memset but explicit for clarity) */
+    state->resources.iron_ore  = 0;
+    state->resources.gems      = 0;
+    state->resources.relics    = 0;
+    state->resources.crystals  = 0;
+    state->resources.iron_bars = 0;
+    state->resources.ale       = 0;
     state->pending.code      = 0xFF;
     state->raid.active         = RAID_NONE;
     state->raid.threat         = 0;
@@ -48,6 +63,21 @@ void game_update(GameState *state) {
         save_game(state);
 }
 
+static void sanitise_craft(GameState *state) {
+    for (int i = 0; i < RECIPE_COUNT; i++) {
+        /* Clear any garbage assigned counts or stuck timers */
+        if (state->craft[i].assigned > 64)
+            state->craft[i].assigned = 0;
+        if (!state->craft[i].assigned) {
+            state->craft[i].active = 0;
+            state->craft[i].timer  = 0;
+        }
+    }
+    /* Clamp new resources to sane values */
+    if (state->resources.iron_bars < 0) state->resources.iron_bars = 0;
+    if (state->resources.ale       < 0) state->resources.ale       = 0;
+}
+
 static void sanitise_raid(GameState *state) {
     Raid *raid = &state->raid;
     /* If next_raid_tick looks garbage (> current_tick + 10000), reset it */
@@ -71,6 +101,7 @@ void game_load_or_init(GameState *state) {
 
     if (r == SAVE_OK) {
         sanitise_raid(state);
+        sanitise_craft(state);
         asm_event_push(state, 0x4B, EVT_MILESTONE, 0xFF);
         return;
     }

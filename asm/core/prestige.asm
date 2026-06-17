@@ -341,11 +341,12 @@ asm_do_prestige:
 .spawn_loop:
     cmp     edx, ecx
     jge     .spawn_done
-    mov     byte [rdi + DWARF_ALIVE],   1
-    mov     byte [rdi + DWARF_JOB],     JOB_MINER
-    mov     byte [rdi + DWARF_MORALE],  80
-    mov     byte [rdi + DWARF_FATIGUE], 0
-    mov     byte [rdi + DWARF_PREV_JOB], JOB_IDLE
+    mov     byte [rdi + DWARF_ALIVE],     1
+    mov     byte [rdi + DWARF_JOB],       JOB_MINER
+    mov     byte [rdi + DWARF_MORALE],    80
+    mov     byte [rdi + DWARF_FATIGUE],   0
+    mov     byte [rdi + DWARF_PREV_JOB],  JOB_IDLE
+    mov     byte [rdi + DWARF_EQUIPMENT], EQUIP_NONE
     add     rdi, SIZEOF_DWARF
     inc     edx
     jmp     .spawn_loop
