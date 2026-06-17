@@ -9,7 +9,7 @@
 #include <string.h>
 
 static const char *job_names[] = {
-    "Idle", "Miner", "Lumberer", "Farmer", "Guard", "Scholar", "Craftsdwarf"
+    "Idle", "Miner", "Lumberer", "Farmer", "Guard", "Scholar", "Crafter"
 };
 
 /* =========================================================
@@ -330,7 +330,7 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
         }
 
         int is_sel = (i == ui_selected_dwarf);
-        const char *job = (d->job <= JOB_SCHOLAR) ? job_names[d->job] : "???";
+        const char *job = (d->job < JOB_COUNT) ? job_names[d->job] : "???";
         char job_label[12];
         if (d->job == JOB_IDLE && d->prev_job != JOB_IDLE)
             snprintf(job_label, sizeof(job_label), "%-10s", "Resting!");
@@ -397,7 +397,7 @@ void ui_draw_dwarf_detail(Renderer *r, const GameState *state) {
 
     const Dwarf *d = &state->dwarves[ui_selected_dwarf];
     const char *dname = asm_get_dwarf_name(d->name_idx);
-    const char *job   = (d->job <= JOB_SCHOLAR) ? job_names[d->job] : "???";
+    const char *job   = (d->job < JOB_COUNT) ? job_names[d->job] : "???";
 
     int total_lv = 0;
     for (int j = 0; j < JOB_COUNT; j++) total_lv += d->job_level[j];
