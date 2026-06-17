@@ -9,6 +9,7 @@
 #include "ui/ui_research.h"
 #include "ui/ui_breach.h"
 #include "ui/ui_prestige.h"
+#include "ui/ui_craft.h"
 #include "game/game.h"
 #include "game/save.h"
 
@@ -58,6 +59,8 @@ int main(void) {
                                 ui_show_breach = 0;
                             else if (ui_show_prestige)
                                 ui_show_prestige = 0;
+                            else if (ui_show_craft)
+                                ui_show_craft = 0;
                             else {
                                 save_game(&state);
                                 running = 0;
@@ -74,6 +77,12 @@ int main(void) {
                         case SDLK_p:
                             if (!ui_show_upgrades && !ui_show_research && !ui_show_breach)
                                 ui_show_prestige = !ui_show_prestige;
+                            break;
+
+                        case SDLK_w:
+                            if (!ui_show_upgrades && !ui_show_research
+                                && !ui_show_breach && !ui_show_prestige)
+                                ui_show_craft = !ui_show_craft;
                             break;
 
                         case SDLK_b:
@@ -120,6 +129,7 @@ int main(void) {
                             else if (ui_show_research)  ui_research_move(-1);
                             else if (ui_show_breach)    ui_breach_select(-1);
                             else if (ui_show_prestige)  ui_prestige_move(-1);
+                            else if (ui_show_craft)      ui_craft_move(-1);
                             else                        ui_dwarf_select(-1);
                             break;
                         case SDLK_DOWN:
@@ -127,6 +137,7 @@ int main(void) {
                             else if (ui_show_research)  ui_research_move(+1);
                             else if (ui_show_breach)    ui_breach_select(+1);
                             else if (ui_show_prestige)  ui_prestige_move(+1);
+                            else if (ui_show_craft)      ui_craft_move(+1);
                             else                        ui_dwarf_select(+1);
                             break;
                         case SDLK_LEFT:
@@ -170,6 +181,17 @@ int main(void) {
                             if (!ui_show_upgrades && !ui_show_research
                                 && !ui_show_breach && !ui_show_prestige)
                                 asm_dig_deeper(&state);
+                            break;
+
+                        case SDLK_EQUALS:
+                        case SDLK_PLUS:
+                            if (ui_show_craft)
+                                asm_craft_assign(&state, (uint8_t)ui_craft_selected(), 1);
+                            break;
+
+                        case SDLK_MINUS:
+                            if (ui_show_craft)
+                                asm_craft_assign(&state, (uint8_t)ui_craft_selected(), -1);
                             break;
 
                         case SDLK_e:

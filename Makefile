@@ -25,7 +25,8 @@ C_SRCS    := $(SRCDIR)/main.c              \
              $(SRCDIR)/game/save.c \
              $(SRCDIR)/ui/ui_research.c \
              $(SRCDIR)/ui/ui_breach.c \
-             $(SRCDIR)/ui/ui_prestige.c
+             $(SRCDIR)/ui/ui_prestige.c \
+             $(SRCDIR)/ui/ui_craft.c
 
 ASM_SRCS  := $(ASMDIR)/core/tick.asm      \
              $(ASMDIR)/core/resources.asm  \

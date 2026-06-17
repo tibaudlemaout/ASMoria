@@ -2,6 +2,7 @@
 #include "ui_research.h"
 #include "ui_breach.h"
 #include "ui_prestige.h"
+#include "ui_craft.h"
 #include "ui.h"
 #include "events_text.h"
 #include <stdio.h>
@@ -19,6 +20,7 @@ int ui_show_upgrades     = 0;
 int ui_show_research     = 0;
 int ui_show_breach       = 0;
 int ui_show_prestige     = 0;
+int ui_show_craft        = 0;
 static int scroll_offset      = 0;
 static int dwarf_scroll_offset = 0;
 
@@ -154,6 +156,12 @@ void ui_draw_all(Renderer *r, const GameState *state) {
     }
     if (ui_show_prestige) {
         ui_draw_prestige(r, state);
+        ui_draw_divider(r);
+        ui_draw_eventlog(r, state);
+        return;
+    }
+    if (ui_show_craft) {
+        ui_draw_craft(r, state);
         ui_draw_divider(r);
         ui_draw_eventlog(r, state);
         return;
@@ -478,11 +486,13 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state) {
         state->raid.active == RAID_COMBAT  ? "  [B] BREACH(!)" :
         state->raid.active == RAID_WARNING ? "  [B] Breach(warn)" : "  [B] Breach";
 
+    int ws_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_WORKSHOP);
     snprintf(line1, sizeof(line1),
-             "[H] Hire (%dg/%df)%s  [U] Upgrades  [R] Research  [P] Prestige%s  [F5] Save  [F9] Load",
+             "[H] Hire (%dg/%df)%s  [U] Upgrades  [R] Research  [P] Prestige%s%s  [F5] Save  [F9] Load",
              hire_gold, hire_food,
              can_hire ? "" : " [need resources]",
-             breach_hint);
+             breach_hint,
+             ws_lv >= 1 ? "  [W] Workshop" : "");
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR,
                             can_hire ? COL_FG : COL_DIM, line1);
 }

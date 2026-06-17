@@ -28,6 +28,7 @@ extern int ui_show_upgrades;
 extern int ui_show_research;
 extern int ui_show_breach;
 extern int ui_show_prestige;
+extern int ui_show_craft;
 
 void ui_draw_all(Renderer *r, const GameState *state);
 void ui_draw_titlebar(Renderer *r, const GameState *state);
@@ -38,6 +39,7 @@ void ui_draw_divider(Renderer *r);
 void ui_draw_hline_full(Renderer *r, int row);
 void ui_draw_eventlog(Renderer *r, const GameState *state);
 void ui_draw_cmdbar(Renderer *r, const GameState *state);
+void ui_draw_craft(Renderer *r, const GameState *state);
 
 int  ui_dwarf_at_pixel(Renderer *r, const GameState *state, int x, int y);
 void ui_log_scroll(int delta);

@@ -143,20 +143,20 @@ asm_craft_assign:
     imul    rax, r12, SIZEOF_CRAFTSLOT
     add     r14, rax
 
-    movzx   eax, byte [r14 + CRAFT_ASSIGNED]
-
     cmp     r13d, 0
     jl      .remove
 
     ; Adding — need a free craftsdwarf
-    call    count_free_craftsdwarves
+    call    count_free_craftsdwarves    ; ecx = free count; clobbers rax
     test    ecx, ecx
     jz      .fail
+    movzx   eax, byte [r14 + CRAFT_ASSIGNED]  ; reload after call
     inc     eax
     mov     byte [r14 + CRAFT_ASSIGNED], al
     jmp     .ok
 
 .remove:
+    movzx   eax, byte [r14 + CRAFT_ASSIGNED]
     test    eax, eax
     jz      .fail
     dec     eax
