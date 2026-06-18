@@ -59,6 +59,8 @@ recipe_table:
 
 %define RSIZ    10  ; recipe entry size
 
+extern asm_tavern_buff_active
+
 section .text
     global asm_craft_assign
     global asm_tick_craft
@@ -329,10 +331,33 @@ asm_tick_craft:
     test    eax, eax
     jz      .start              ; assigned but idle — try to start
 
-    ; Active: decrement timer
+    ; Active: decrement timer (2x if Craftsdwarf's Focus active)
     movzx   eax, word [r14 + CRAFT_TIMER]
     test    eax, eax
     jz      .complete           ; already 0
+
+    ; check focus buff
+    push    rdi
+    push    rsi
+    mov     rdi, rbx
+    mov     esi, BUFF_CRAFTERS_FOCUS
+    call    asm_tavern_buff_active
+    pop     rsi
+    pop     rdi
+    test    eax, eax
+    jz      .no_focus
+    ; focus active: decrement by 2, clamp to 0
+    movzx   eax, word [r14 + CRAFT_TIMER]
+    cmp     eax, 2
+    jle     .force_zero
+    sub     eax, 2
+    mov     word [r14 + CRAFT_TIMER], ax
+    jmp     .next
+.force_zero:
+    mov     word [r14 + CRAFT_TIMER], 0
+    jmp     .complete
+.no_focus:
+    movzx   eax, word [r14 + CRAFT_TIMER]
     dec     eax
     mov     word [r14 + CRAFT_TIMER], ax
     test    eax, eax
