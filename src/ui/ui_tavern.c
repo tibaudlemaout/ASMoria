@@ -85,7 +85,8 @@ void ui_draw_tavern(Renderer *r, const GameState *state) {
             int dur = bi->duration > 0 ? bi->duration : 1;
             int elapsed = dur - tb->timer;
             int filled = elapsed * 12 / dur;
-            if (filled < 0) filled = 0; if (filled > 12) filled = 12;
+            if (filled < 0) filled = 0;
+            if (filled > 12) filled = 12;
             timerbar[0] = '[';
             for (int t = 0; t < 12; t++) timerbar[t+1] = (t < filled) ? '#' : '.';
             timerbar[13] = ']'; timerbar[13] = '\0';

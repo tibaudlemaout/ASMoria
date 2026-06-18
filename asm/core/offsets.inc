@@ -1,6 +1,6 @@
 ; =========================================================
 ; offsets.inc - GameState field offsets for NASM modules
-; Verified against GCC offsetof() -- sizeof(GameState) = 5984
+; Verified against GCC offsetof() -- sizeof(GameState) = 6000
 ; =========================================================
 
 ; --- Resources struct offsets (sizeof = 0x70 = 112) ---
@@ -126,17 +126,28 @@
 %define UPGR_GRANARY        10
 %define UPGR_WORKSHOP       11
 %define UPGR_TAVERN         12
-%define UPGR_COUNT          13
+%define UPGR_ORE_STORAGE    13
+%define UPGR_FORGE          14
+%define UPGR_BREWERY        15
+%define UPGR_DEEP_BARRACKS  16
+%define UPGR_RELIC_VAULT    17
+%define UPGR_CRYSTAL_CONDUIT 18
+%define UPGR_COUNT          19
 
-
-%define UPGR_MAX_TOOLS      3
+%define UPGR_MAX_TOOLS      5
 %define UPGR_MAX_WORKFORCE  3
-%define UPGR_MAX_WATCHTOWER 3
+%define UPGR_MAX_WATCHTOWER 5
 %define UPGR_MAX_RUNEHALLS  5
-%define UPGR_MAX_MANAWELL   3
+%define UPGR_MAX_MANAWELL   5
 %define UPGR_MAX_STORAGE    3
 %define UPGR_MAX_WORKSHOP   1
 %define UPGR_MAX_TAVERN     3
+%define UPGR_MAX_ORE_STORAGE     3
+%define UPGR_MAX_FORGE           3
+%define UPGR_MAX_BREWERY         3
+%define UPGR_MAX_DEEP_BARRACKS   3
+%define UPGR_MAX_RELIC_VAULT     3
+%define UPGR_MAX_CRYSTAL_CONDUIT 3
 
 %define UPGR_COST_GOLD_TOOLS    150
 %define UPGR_COST_STONE_TOOLS    75
@@ -183,6 +194,27 @@
 %define CAP_STONE_PER_LEVEL 500
 %define CAP_WOOD_PER_LEVEL  300
 %define CAP_FOOD_PER_LEVEL  400
+
+; --- TavernBuff offsets ---
+%define TBUFF_ACTIVE        0x00
+%define TBUFF_ID            0x01
+%define TBUFF_TIMER         0x02
+%define SIZEOF_TAVAVERBUFF  0x04
+%define MAX_TAVERN_BUFFS    3
+%define TAVERN_MAX_LEVEL    3
+
+%define BUFF_NONE              0
+%define BUFF_FEAST             1
+%define BUFF_DRINKING_CONTEST  2
+%define BUFF_TOAST             3
+%define BUFF_LONG_REST         4
+%define BUFF_MINERS_COURAGE    5
+%define BUFF_LUMBERJACKS_SONG  6
+%define BUFF_HARVEST_FESTIVAL  7
+%define BUFF_WARRIORS_DRAFT    8
+%define BUFF_SCHOLARS_CLARITY  9
+%define BUFF_CRAFTERS_FOCUS    10
+%define BUFF_COUNT             11
 
 ; --- CraftSlot offsets ---
 %define CRAFT_ASSIGNED      0x00    ; uint8_t
@@ -250,7 +282,7 @@
 %define RUNE_COST_DEEP        400
 
 ; --- Raid / Breach system ---
-%define GS_RAID             0x16c8
+%define GS_RAID             0x16d8
 
 %define RAID_ACTIVE         0x00
 %define RAID_THREAT         0x01
@@ -280,7 +312,7 @@
 %define RAID_TIMER          300
 
 ; --- Prestige system ---
-%define GS_PRESTIGE         0x1740
+%define GS_PRESTIGE         0x1750
 %define PRESTIGE_HONOR      0x00
 %define PRESTIGE_TOTAL_HON  0x04
 %define PRESTIGE_COUNT      0x08
@@ -318,25 +350,5 @@
 %define PRESTIGE_MIN_RAIDS      1
 %define PRESTIGE_MIN_RUNES      3
 %define PRESTIGE_MIN_RESOURCES  10000
-
-%define TBUFF_ACTIVE        0x00
-%define TBUFF_ID            0x01
-%define TBUFF_TIMER         0x02
-%define SIZEOF_TAVAVERBUFF  0x04
-%define MAX_TAVERN_BUFFS    3
-%define TAVERN_MAX_LEVEL    3
-
-%define BUFF_NONE              0
-%define BUFF_FEAST             1
-%define BUFF_DRINKING_CONTEST  2
-%define BUFF_TOAST             3
-%define BUFF_LONG_REST         4
-%define BUFF_MINERS_COURAGE    5
-%define BUFF_LUMBERJACKS_SONG  6
-%define BUFF_HARVEST_FESTIVAL  7
-%define BUFF_WARRIORS_DRAFT    8
-%define BUFF_SCHOLARS_CLARITY  9
-%define BUFF_CRAFTERS_FOCUS    10
-%define BUFF_COUNT             11
 
 %define GS_SIZE             6000

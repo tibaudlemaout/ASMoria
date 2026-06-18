@@ -110,7 +110,7 @@ void ui_draw_craft(Renderer *r, const GameState *state) {
                          ? cs->assigned / ri->dwarves_per_unit : 0;
 
         /* Timer bar */
-        char timer_bar[14] = "[............]";
+        char timer_bar[15] = "[............]";
         if (cs->active && ri->timer_ticks > 0) {
             int elapsed = ri->timer_ticks - cs->timer;
             int filled  = elapsed * 12 / ri->timer_ticks;

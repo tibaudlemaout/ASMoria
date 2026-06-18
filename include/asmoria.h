@@ -139,6 +139,14 @@ typedef struct {
 #define UPGR_COST_BARS_TAVERN_2     5
 #define UPGR_COST_BARS_TAVERN_3    15
 
+/* New depth/craft upgrade max levels */
+#define UPGR_MAX_ORE_STORAGE    3
+#define UPGR_MAX_FORGE          3
+#define UPGR_MAX_BREWERY        3
+#define UPGR_MAX_DEEP_BARRACKS  3
+#define UPGR_MAX_RELIC_VAULT    3
+#define UPGR_MAX_CRYSTAL_CONDUIT 3
+
 /* Workshop (unlocks Craftsdwarf) */
 #define UPGR_COST_GOLD_WORKSHOP   300
 #define UPGR_COST_STONE_WORKSHOP  200
@@ -189,14 +197,20 @@ typedef struct {
 #define UPGR_GRANARY        10   /* food cap */
 #define UPGR_WORKSHOP       11   /* unlocks Craftsdwarf */
 #define UPGR_TAVERN         12   /* unlocks tavern buff system */
-#define UPGR_COUNT          13
+#define UPGR_ORE_STORAGE    13   /* depth 2: caps iron ore/gems */
+#define UPGR_FORGE          14   /* depth 2: iron bars cap + miner bonus */
+#define UPGR_BREWERY        15   /* workshop: ale cap + craft speed */
+#define UPGR_DEEP_BARRACKS  16   /* depth 3: dwarf cap beyond 40 */
+#define UPGR_RELIC_VAULT    17   /* depth 4: relics/crystals cap */
+#define UPGR_CRYSTAL_CONDUIT 18  /* depth 5: passive mana from crystals */
+#define UPGR_COUNT          19
 
 /* Max levels per category */
-#define UPGR_MAX_TOOLS      3
+#define UPGR_MAX_TOOLS      5
 #define UPGR_MAX_WORKFORCE  3
-#define UPGR_MAX_WATCHTOWER 3
+#define UPGR_MAX_WATCHTOWER 5
 #define UPGR_MAX_RUNEHALLS  5
-#define UPGR_MAX_MANAWELL   3
+#define UPGR_MAX_MANAWELL   5
 
 #define UPGR_LEVEL(tier1, id)  (((tier1) >> ((id) * 4)) & 0xF)
 

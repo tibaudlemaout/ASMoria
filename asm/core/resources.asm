@@ -11,6 +11,9 @@
 
 %include "core/offsets.inc"
 
+extern asm_rng_next
+extern asm_tavern_buff_active
+
 section .text
     global asm_tick_resources
 
@@ -138,9 +141,150 @@ clamp_storage_caps:
     mov     [r12 + GS_RESOURCES + RES_MANA], rax
 .mana_ok:
 
+    ; --- Iron Ore cap: 200 + OreStorage*300 ---
+    mov     rax, [r12 + GS_UPGR_TIER1]
+    shr     rax, (UPGR_ORE_STORAGE * 4)
+    and     rax, 0xF
+    imul    rax, 300
+    add     rax, 200
+    cmp     [r12 + GS_RESOURCES + RES_IRON_ORE], rax
+    jle     .iron_ore_ok
+    mov     [r12 + GS_RESOURCES + RES_IRON_ORE], rax
+.iron_ore_ok:
+
+    ; --- Gems cap: 100 + OreStorage*150 ---
+    mov     rax, [r12 + GS_UPGR_TIER1]
+    shr     rax, (UPGR_ORE_STORAGE * 4)
+    and     rax, 0xF
+    imul    rax, 150
+    add     rax, 100
+    cmp     [r12 + GS_RESOURCES + RES_GEMS], rax
+    jle     .gems_ok
+    mov     [r12 + GS_RESOURCES + RES_GEMS], rax
+.gems_ok:
+
+    ; --- Relics cap: 50 + RelicVault*100 ---
+    mov     rax, [r12 + GS_UPGR_TIER1]
+    shr     rax, (UPGR_RELIC_VAULT * 4)
+    and     rax, 0xF
+    imul    rax, 100
+    add     rax, 50
+    cmp     [r12 + GS_RESOURCES + RES_RELICS], rax
+    jle     .relics_ok
+    mov     [r12 + GS_RESOURCES + RES_RELICS], rax
+.relics_ok:
+
+    ; --- Crystals cap: 50 + RelicVault*100 ---
+    mov     rax, [r12 + GS_UPGR_TIER1]
+    shr     rax, (UPGR_RELIC_VAULT * 4)
+    and     rax, 0xF
+    imul    rax, 100
+    add     rax, 50
+    cmp     [r12 + GS_RESOURCES + RES_CRYSTALS], rax
+    jle     .crystals_ok
+    mov     [r12 + GS_RESOURCES + RES_CRYSTALS], rax
+.crystals_ok:
+
+    ; --- Crafted caps (only if Workshop built) ---
+    mov     rax, [r12 + GS_UPGR_TIER1]
+    shr     rax, (UPGR_WORKSHOP * 4)
+    and     rax, 0xF
+    test    rax, rax
+    jz      .no_crafted_caps
+
+    ; Iron Bars cap: 100 + Forge*100
+    mov     rax, [r12 + GS_UPGR_TIER1]
+    shr     rax, (UPGR_FORGE * 4)
+    and     rax, 0xF
+    imul    rax, 100
+    add     rax, 100
+    cmp     [r12 + GS_RESOURCES + RES_IRON_BARS], rax
+    jle     .bars_ok
+    mov     [r12 + GS_RESOURCES + RES_IRON_BARS], rax
+.bars_ok:
+
+    ; Weapons/Armour/Tools cap: 20 each (fixed)
+    cmp     qword [r12 + GS_RESOURCES + RES_WEAPONS], 20
+    jle     .wpn_ok
+    mov     qword [r12 + GS_RESOURCES + RES_WEAPONS], 20
+.wpn_ok:
+    cmp     qword [r12 + GS_RESOURCES + RES_ARMOUR], 20
+    jle     .arm_ok
+    mov     qword [r12 + GS_RESOURCES + RES_ARMOUR], 20
+.arm_ok:
+    cmp     qword [r12 + GS_RESOURCES + RES_TOOLS], 20
+    jle     .tol_ok
+    mov     qword [r12 + GS_RESOURCES + RES_TOOLS], 20
+.tol_ok:
+
+    ; Ale cap: 200 + Tavern*100 + Brewery*200
+    mov     eax, [r12 + GS_TAVERN_LEVEL]   ; uint32_t -- use eax to zero-extend
+    imul    rax, 100
+    add     rax, 200
+    mov     rcx, [r12 + GS_UPGR_TIER1]
+    shr     rcx, (UPGR_BREWERY * 4)
+    and     rcx, 0xF
+    imul    rcx, 200
+    add     rax, rcx
+    cmp     [r12 + GS_RESOURCES + RES_ALE], rax
+    jle     .ale_ok
+    mov     [r12 + GS_RESOURCES + RES_ALE], rax
+.ale_ok:
+
+.no_crafted_caps:
     pop     rdx
     pop     rcx
     pop     rax
+    ret
+
+; ---------------------------------------------------------
+; apply_tavern_yield_inline
+; r12=state, rax=yield -> rax scaled by tavern buff
+; BUFF_FEAST: *120/100  BUFF_DRINKING_CONTEST: *90/100
+; ---------------------------------------------------------
+apply_tavern_yield_inline:
+    push    rcx
+    push    rdx
+    push    rdi
+    push    rsi
+    push    r8
+
+    mov     r8, rax             ; save yield in r8
+
+    ; check FEAST
+    mov     rdi, r12
+    mov     esi, BUFF_FEAST
+    call    asm_tavern_buff_active
+    test    eax, eax
+    jz      .check_contest
+    mov     rax, r8
+    imul    rax, 120
+    xor     rdx, rdx
+    mov     rcx, 100
+    div     rcx
+    mov     r8, rax             ; update saved yield
+    jmp     .tav_yield_done
+
+.check_contest:
+    mov     rdi, r12
+    mov     esi, BUFF_DRINKING_CONTEST
+    call    asm_tavern_buff_active
+    test    eax, eax
+    jz      .tav_yield_done
+    mov     rax, r8
+    imul    rax, 90
+    xor     rdx, rdx
+    mov     rcx, 100
+    div     rcx
+    mov     r8, rax
+
+.tav_yield_done:
+    mov     rax, r8             ; restore yield to rax
+    pop     r8
+    pop     rsi
+    pop     rdi
+    pop     rdx
+    pop     rcx
     ret
 
 ; ---------------------------------------------------------
@@ -283,6 +427,7 @@ asm_tick_resources:
     call    apply_prestige_yield
     call    apply_depth_yield_inline
     call    apply_tool_yield_inline
+    call    apply_tavern_yield_inline
     add     [r12 + GS_RESOURCES + RES_STONE], rax
     add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
 
@@ -297,6 +442,7 @@ asm_tick_resources:
     call    apply_prestige_yield
     call    apply_depth_yield_inline
     call    apply_tool_yield_inline
+    call    apply_tavern_yield_inline
     add     [r12 + GS_RESOURCES + RES_GOLD], rax
     add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
     jmp     .next
@@ -313,6 +459,7 @@ asm_tick_resources:
     call    apply_prestige_yield
     call    apply_depth_yield_inline
     call    apply_tool_yield_inline
+    call    apply_tavern_yield_inline
     add     [r12 + GS_RESOURCES + RES_WOOD], rax
     add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
     jmp     .next
@@ -329,6 +476,7 @@ asm_tick_resources:
     call    apply_prestige_yield
     call    apply_depth_yield_inline
     call    apply_tool_yield_inline
+    call    apply_tavern_yield_inline
     add     [r12 + GS_RESOURCES + RES_FOOD], rax
     add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
 
