@@ -3,6 +3,7 @@
 #include "ui_breach.h"
 #include "ui_prestige.h"
 #include "ui_craft.h"
+#include "ui_tavern.h"
 #include "ui.h"
 #include "events_text.h"
 #include <stdio.h>
@@ -167,6 +168,12 @@ void ui_draw_all(Renderer *r, const GameState *state) {
         ui_draw_eventlog(r, state);
         return;
     }
+    if (ui_show_tavern) {
+        ui_draw_tavern(r, state);
+        ui_draw_divider(r);
+        ui_draw_eventlog(r, state);
+        return;
+    }
     ui_draw_titlebar(r, state);
     ui_draw_resources(r, state);
     ui_draw_dwarves(r, state);
@@ -271,13 +278,13 @@ void ui_draw_resources(Renderer *r, const GameState *state) {
             snprintf(seg, sizeof(seg), "Ale:%-5lld  ", (long long)state->resources.ale);
             renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_GOLD, seg);
             col += (int)strlen(seg);
-            snprintf(seg, sizeof(seg), "Weapon:%-4lld  ", (long long)state->resources.weapons);
+            snprintf(seg, sizeof(seg), "Wpn:%-4lld  ", (long long)state->resources.weapons);
             renderer_draw_text_grid(r, col, UI_ROW_RES + 2, 0xFF8888FF, seg);
             col += (int)strlen(seg);
-            snprintf(seg, sizeof(seg), "Armour:%-4lld  ", (long long)state->resources.armour);
+            snprintf(seg, sizeof(seg), "Arm:%-4lld  ", (long long)state->resources.armour);
             renderer_draw_text_grid(r, col, UI_ROW_RES + 2, 0xAAAAFFFF, seg);
             col += (int)strlen(seg);
-            snprintf(seg, sizeof(seg), "Tool:%-4lld", (long long)state->resources.tools);
+            snprintf(seg, sizeof(seg), "Tol:%-4lld", (long long)state->resources.tools);
             renderer_draw_text_grid(r, col, UI_ROW_RES + 2, COL_GOLD, seg);
         }
     }
@@ -518,12 +525,14 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state) {
         state->raid.active == RAID_WARNING ? "  [B] Breach(warn)" : "  [B] Breach";
 
     int ws_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_WORKSHOP);
+    int tv_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_TAVERN);
     snprintf(line1, sizeof(line1),
-             "[H] Hire (%dg/%df)%s  [U] Upgrades  [R] Research  [P] Prestige%s%s  [F5] Save  [F9] Load",
+             "[H] Hire (%dg/%df)%s  [U] Upgrades  [R] Research  [P] Prestige%s%s%s  [F5] Save  [F9] Load",
              hire_gold, hire_food,
              can_hire ? "" : " [need resources]",
              breach_hint,
-             ws_lv >= 1 ? "  [W] Workshop" : "");
+             ws_lv >= 1 ? "  [W] Workshop" : "",
+             tv_lv >= 1 ? "  [T] Tavern"   : "");
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR,
                             can_hire ? COL_FG : COL_DIM, line1);
 }

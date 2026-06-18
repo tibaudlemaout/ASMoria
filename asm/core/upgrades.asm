@@ -17,6 +17,12 @@
 %include "core/offsets.inc"
 
 section .data
+; Tavern cost tables (indexed by current level 0=Lv1, 1=Lv2, 2=Lv3)
+tavern_gold_cost:  dd 500,  1000, 2000
+tavern_stone_cost: dd 400,   800, 1500
+tavern_wood_cost:  dd 200,   400,  800
+tavern_bars_cost:  dd 0,       5,   15   ; 0 = no bars needed (Lv1 uses iron ore instead)
+
 ; Barracks cost tables (indexed by current level 0-2)
 barracks_gold_cost:  dd 200, 400, 700
 barracks_stone_cost: dd 100, 200, 350
@@ -64,6 +70,8 @@ asm_buy_upgrade:
     je      .chk_storage3
     cmp     r12, UPGR_WORKSHOP
     je      .chk_workshop
+    cmp     r12, UPGR_TAVERN
+    je      .chk_tavern
     ; id 5 = watchtower
     cmp     r13, UPGR_MAX_WATCHTOWER
     jge     .fail
@@ -76,6 +84,11 @@ asm_buy_upgrade:
 
 .chk_workshop:
     cmp     r13, UPGR_MAX_WORKSHOP
+    jge     .fail
+    jmp     .compute_cost
+
+.chk_tavern:
+    cmp     r13, UPGR_MAX_TAVERN
     jge     .fail
     jmp     .compute_cost
 
@@ -119,6 +132,8 @@ asm_buy_upgrade:
     je      .cost_granary
     cmp     r12, UPGR_WORKSHOP
     je      .cost_workshop
+    cmp     r12, UPGR_TAVERN
+    je      .cost_tavern
     ; id 5 = watchtower
     jmp     .cost_watchtower
 
@@ -308,6 +323,59 @@ asm_buy_upgrade:
     mov     rax, UPGR_COST_STONE_WORKSHOP
     imul    rax, r15
     sub     [rbx + GS_RESOURCES + RES_STONE], rax
+    jmp     .write_level
+
+.cost_tavern:
+    ; Tavern costs vary per level
+    ; r13 = current level index (0=buying Lv1, 1=buying Lv2, 2=buying Lv3)
+    ; Load per-level costs — sign-extend to 64-bit for comparison with int64 resources
+    lea     rax, [rel tavern_gold_cost]
+    movsx   r14, dword [rax + r13*4]    ; r14 = gold cost (64-bit)
+    cmp     [rbx + GS_RESOURCES + RES_GOLD], r14
+    jl      .fail
+
+    lea     rax, [rel tavern_stone_cost]
+    movsx   rcx, dword [rax + r13*4]
+    cmp     [rbx + GS_RESOURCES + RES_STONE], rcx
+    jl      .fail
+
+    lea     rax, [rel tavern_wood_cost]
+    movsx   rcx, dword [rax + r13*4]
+    cmp     [rbx + GS_RESOURCES + RES_WOOD], rcx
+    jl      .fail
+
+    ; Iron ore check (level 1 only)
+    cmp     r13d, 0
+    jne     .tavern_bars_check
+    cmp     qword [rbx + GS_RESOURCES + RES_IRON_ORE], 100
+    jl      .fail
+    sub     qword [rbx + GS_RESOURCES + RES_IRON_ORE], 100
+    jmp     .tavern_deduct
+.tavern_bars_check:
+    ; Iron bars check (levels 2 and 3)
+    lea     rax, [rel tavern_bars_cost]
+    mov     ecx, [rax + r13*4]
+    test    ecx, ecx
+    jz      .tavern_deduct
+    movsx   rcx, ecx
+    cmp     qword [rbx + GS_RESOURCES + RES_IRON_BARS], rcx
+    jl      .fail
+    sub     qword [rbx + GS_RESOURCES + RES_IRON_BARS], rcx
+
+.tavern_deduct:
+    sub     [rbx + GS_RESOURCES + RES_GOLD],  r14
+    lea     rax, [rel tavern_stone_cost]
+    movsx   rcx, dword [rax + r13*4]
+    sub     [rbx + GS_RESOURCES + RES_STONE], rcx
+    lea     rax, [rel tavern_wood_cost]
+    movsx   rcx, dword [rax + r13*4]
+    sub     [rbx + GS_RESOURCES + RES_WOOD],  rcx
+
+    ; Also update tavern_level in GameState directly
+    mov     eax, r13d
+    inc     eax
+    mov     [rbx + GS_TAVERN_LEVEL], eax
+
     jmp     .write_level
 
 .write_level:
