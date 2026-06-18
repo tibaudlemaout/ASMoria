@@ -52,6 +52,31 @@ typedef struct {
 #define XP_LVL4     3500
 #define XP_LVL5     7500
 
+/* Tavern buff IDs */
+#define BUFF_NONE              0
+/* General */
+#define BUFF_FEAST             1
+#define BUFF_DRINKING_CONTEST  2
+#define BUFF_TOAST             3
+#define BUFF_LONG_REST         4
+/* Per-job */
+#define BUFF_MINERS_COURAGE    5
+#define BUFF_LUMBERJACKS_SONG  6
+#define BUFF_HARVEST_FESTIVAL  7
+#define BUFF_WARRIORS_DRAFT    8
+#define BUFF_SCHOLARS_CLARITY  9
+#define BUFF_CRAFTERS_FOCUS    10
+#define BUFF_COUNT             11
+
+#define MAX_TAVERN_BUFFS       3   /* max simultaneous buffs at level 3 */
+#define TAVERN_MAX_LEVEL       3
+
+typedef struct {
+    uint8_t  active;     /* 1 = in use */
+    uint8_t  buff_id;    /* BUFF_* constant */
+    uint16_t timer;      /* ticks remaining */
+} TavernBuff;
+
 /* Equipment slots */
 #define EQUIP_NONE      0
 #define EQUIP_WEAPON    1
@@ -98,10 +123,27 @@ typedef struct {
 #define UPGR_COST_STONE_GRANARY   100
 #define UPGR_COST_FOOD_GRANARY     50
 
+/* Tavern upgrade costs (gold/stone/wood per level, iron ore/bars handled separately) */
+#define UPGR_COST_GOLD_TAVERN_1   500
+#define UPGR_COST_STONE_TAVERN_1  400
+#define UPGR_COST_WOOD_TAVERN_1   200
+#define UPGR_COST_GOLD_TAVERN_2  1000
+#define UPGR_COST_STONE_TAVERN_2  800
+#define UPGR_COST_WOOD_TAVERN_2   400
+#define UPGR_COST_GOLD_TAVERN_3  2000
+#define UPGR_COST_STONE_TAVERN_3 1500
+#define UPGR_COST_WOOD_TAVERN_3   800
+/* Iron ore/bars costs checked separately in tavern upgrade handler */
+#define UPGR_COST_ORE_TAVERN_1    100
+#define UPGR_COST_ORE_TAVERN_2      0   /* uses iron bars instead */
+#define UPGR_COST_BARS_TAVERN_2     5
+#define UPGR_COST_BARS_TAVERN_3    15
+
 /* Workshop (unlocks Craftsdwarf) */
 #define UPGR_COST_GOLD_WORKSHOP   300
 #define UPGR_COST_STONE_WORKSHOP  200
 #define UPGR_MAX_WORKSHOP         1
+#define UPGR_MAX_TAVERN           3
 
 /* Crafting rates */
 #define CRAFT_IRON_BAR_TICKS   5   /* 2 iron ore -> 1 iron bar every 5 ticks */
@@ -146,7 +188,8 @@ typedef struct {
 #define UPGR_WAREHOUSE       9   /* stone+wood cap */
 #define UPGR_GRANARY        10   /* food cap */
 #define UPGR_WORKSHOP       11   /* unlocks Craftsdwarf */
-#define UPGR_COUNT          12
+#define UPGR_TAVERN         12   /* unlocks tavern buff system */
+#define UPGR_COUNT          13
 
 /* Max levels per category */
 #define UPGR_MAX_TOOLS      3
@@ -334,6 +377,8 @@ typedef struct {
     /* offset 0x0028 */ Dwarf        dwarves[MAX_DWARVES];
     /* offset 0x1028 */ Upgrades     upgrades;
     CraftSlot    craft[RECIPE_COUNT];   /* 6 * 4 = 24 bytes */
+    TavernBuff   tavern_buffs[MAX_TAVERN_BUFFS]; /* 3 * 4 = 12 bytes */
+    uint32_t     tavern_level;           /* 0 = not built */
     /* offset 0x1038 */ RngState     rng;
     /* offset 0x1040 */ uint64_t     tick;
     /* offset 0x1048 */ uint32_t     depth;
@@ -363,6 +408,9 @@ extern void     asm_breach_retreat(GameState *state);
 extern int64_t  asm_dig_deeper(GameState *state);
 extern int64_t  asm_craft_assign(GameState *state, uint8_t recipe_id, int delta);
 extern int64_t  asm_equip(GameState *state, uint64_t dwarf_idx, uint8_t equip_type);
+extern int64_t  asm_tavern_activate(GameState *state, uint8_t buff_id);
+extern int64_t  asm_tavern_buff_active(GameState *state, uint8_t buff_id);
+extern void     asm_tick_tavern(GameState *state);
 extern int64_t  asm_unequip(GameState *state, uint64_t dwarf_idx);
 extern void     asm_tick_craft(GameState *state);
 extern int64_t  asm_feed_dwarf(GameState *state, uint8_t dwarf_idx);

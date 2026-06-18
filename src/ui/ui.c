@@ -21,6 +21,7 @@ int ui_show_research     = 0;
 int ui_show_breach       = 0;
 int ui_show_prestige     = 0;
 int ui_show_craft        = 0;
+int ui_show_tavern       = 0;
 static int scroll_offset      = 0;
 static int dwarf_scroll_offset = 0;
 

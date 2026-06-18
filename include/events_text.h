@@ -92,7 +92,7 @@ static const char *evt_negative[16] = {
     /* 0x3F */ "%s sees something in the dark. Won't speak of it. [-MORALE]",
 };
 
-static const char *evt_milestone[16] = {
+static const char *evt_milestone[18] = {
     /* 0x40 */ "The halls grow deeper. Depth increased!",
     /* 0x41 */ "A new upgrade has been unlocked.",
     /* 0x42 */ "The first dwarf joins the workforce.",
@@ -120,7 +120,7 @@ static inline const char *evt_get_template(uint8_t code) {
     if (code <= 0x2F) return evt_positive[code & 0x0F];
     if (code <= 0x3F) return evt_negative[code & 0x0F];
     if (code <= 0x4F) return evt_milestone[code & 0x0F];
-    if (code <= 0x5F) return evt_milestone[0x10 + (code & 0x0F)];
+    if (code <= 0x51) return evt_milestone[0x10 + (code & 0x0F)];
     return "Something stirs in the dark.";
 }
 

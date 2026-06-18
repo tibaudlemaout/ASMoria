@@ -63,15 +63,17 @@
 %define GS_UPGR_TIER1       0x1270
 %define GS_UPGR_TIER2       0x1278
 %define GS_CRAFT            0x1280    ; CraftSlot[6] = 24 bytes
-%define GS_RNG_SEED         0x1298
-%define GS_TICK             0x12a0
-%define GS_DEPTH            0x12a8
-%define GS_DEPTH_XP         0x12ac
-%define GS_FLAGS            0x12b0
-%define GS_PENDING          0x12b4
-%define GS_EVENTLOG         0x12c0
-%define GS_RAID             0x16c8
-%define GS_PRESTIGE         0x1740
+%define GS_TAVERN_BUFFS     0x1298    ; TavernBuff[3] = 12 bytes
+%define GS_TAVERN_LEVEL     0x12a4    ; uint32_t
+%define GS_RNG_SEED         0x12a8
+%define GS_TICK             0x12b0
+%define GS_DEPTH            0x12b8
+%define GS_DEPTH_XP         0x12bc
+%define GS_FLAGS            0x12c0
+%define GS_PENDING          0x12c4
+%define GS_EVENTLOG         0x12d0
+%define GS_RAID             0x16d8
+%define GS_PRESTIGE         0x1750
 
 %define PENDING_CODE        0x00
 %define PENDING_SEVERITY    0x01
@@ -123,7 +125,9 @@
 %define UPGR_WAREHOUSE      9
 %define UPGR_GRANARY        10
 %define UPGR_WORKSHOP       11
-%define UPGR_COUNT          12
+%define UPGR_TAVERN         12
+%define UPGR_COUNT          13
+
 
 %define UPGR_MAX_TOOLS      3
 %define UPGR_MAX_WORKFORCE  3
@@ -132,6 +136,7 @@
 %define UPGR_MAX_MANAWELL   3
 %define UPGR_MAX_STORAGE    3
 %define UPGR_MAX_WORKSHOP   1
+%define UPGR_MAX_TAVERN     3
 
 %define UPGR_COST_GOLD_TOOLS    150
 %define UPGR_COST_STONE_TOOLS    75
@@ -314,4 +319,24 @@
 %define PRESTIGE_MIN_RUNES      3
 %define PRESTIGE_MIN_RESOURCES  10000
 
-%define GS_SIZE             5984
+%define TBUFF_ACTIVE        0x00
+%define TBUFF_ID            0x01
+%define TBUFF_TIMER         0x02
+%define SIZEOF_TAVAVERBUFF  0x04
+%define MAX_TAVERN_BUFFS    3
+%define TAVERN_MAX_LEVEL    3
+
+%define BUFF_NONE              0
+%define BUFF_FEAST             1
+%define BUFF_DRINKING_CONTEST  2
+%define BUFF_TOAST             3
+%define BUFF_LONG_REST         4
+%define BUFF_MINERS_COURAGE    5
+%define BUFF_LUMBERJACKS_SONG  6
+%define BUFF_HARVEST_FESTIVAL  7
+%define BUFF_WARRIORS_DRAFT    8
+%define BUFF_SCHOLARS_CLARITY  9
+%define BUFF_CRAFTERS_FOCUS    10
+%define BUFF_COUNT             11
+
+%define GS_SIZE             6000

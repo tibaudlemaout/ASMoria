@@ -69,6 +69,10 @@ static const UpgradeInfo upgrades[UPGR_COUNT] = {
     { "Workshop", "CRAFTING", UPGR_MAX_WORKSHOP,
       UPGR_COST_GOLD_WORKSHOP, UPGR_COST_STONE_WORKSHOP, 0, 0, 0,
       { "Unlocks Craftsdwarf job (Iron Bars, Ale)" } },
+
+    { "Tavern", "CRAFTING", UPGR_MAX_TAVERN,
+      500, 400, 0, 200, 0,
+      { "1 buff slot (100 iron ore)", "2 buff slots (5 iron bars)", "3 buff slots (15 iron bars)" } },
 };
 
 void ui_upgr_move(int delta) {
@@ -246,8 +250,9 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
                 renderer_draw_text_grid(r, UI_COL_MARGIN, row,
                                         COL_FOOD, "    [MAXED OUT]");
             } else {
-                snprintf(buf, sizeof(buf), "    Next: %s",
-                         u->level_effects[level]);   /* level = current, so index = next-1 */
+                const char *eff = (level < u->max_level && u->level_effects[level])
+                                  ? u->level_effects[level] : "---";
+                snprintf(buf, sizeof(buf), "    Next: %s", eff);
                 renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM, buf);
             }
         }
@@ -255,15 +260,32 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
 
         /* Cost */
         if (!maxed && row >= FIRST_ROW && row < LAST_ROW) {
-            char costbuf[64];
+            char costbuf[80];
             int  off = 0;
-            off += snprintf(costbuf+off, sizeof(costbuf)-off, "%d gold  %d stone", cost_gold, cost_stone);
-            if (cost_wood > 0)
-                off += snprintf(costbuf+off, sizeof(costbuf)-off, "  %d wood", cost_wood);
-            if (cost_food > 0)
-                off += snprintf(costbuf+off, sizeof(costbuf)-off, "  %d food", cost_food);
-            if (cost_mana > 0)
-                off += snprintf(costbuf+off, sizeof(costbuf)-off, "  %d mana", cost_mana);
+            if (i == UPGR_TAVERN) {
+                /* Tavern has fixed per-level costs including iron ore/bars */
+                static const int tgold[]  = {500, 1000, 2000};
+                static const int tstone[] = {400,  800, 1500};
+                static const int twood[]  = {200,  400,  800};
+                int lv = level < 3 ? level : 2;
+                off += snprintf(costbuf+off, sizeof(costbuf)-off,
+                                "%d gold  %d stone  %d wood",
+                                tgold[lv], tstone[lv], twood[lv]);
+                if (lv == 0)
+                    off += snprintf(costbuf+off, sizeof(costbuf)-off, "  100 iron ore");
+                else if (lv == 1)
+                    off += snprintf(costbuf+off, sizeof(costbuf)-off, "  5 iron bars");
+                else
+                    off += snprintf(costbuf+off, sizeof(costbuf)-off, "  15 iron bars");
+            } else {
+                off += snprintf(costbuf+off, sizeof(costbuf)-off, "%d gold  %d stone", cost_gold, cost_stone);
+                if (cost_wood > 0)
+                    off += snprintf(costbuf+off, sizeof(costbuf)-off, "  %d wood", cost_wood);
+                if (cost_food > 0)
+                    off += snprintf(costbuf+off, sizeof(costbuf)-off, "  %d food", cost_food);
+                if (cost_mana > 0)
+                    off += snprintf(costbuf+off, sizeof(costbuf)-off, "  %d mana", cost_mana);
+            }
             snprintf(buf, sizeof(buf), "    Cost: %s", costbuf);
             renderer_draw_text_grid(r, UI_COL_MARGIN, row,
                                     can_afford ? COL_GOLD : COL_DIM, buf);
