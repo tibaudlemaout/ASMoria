@@ -36,10 +36,10 @@
 %define RID_IRON_BARS   9
 %define RID_ALE         10
 
-; Equipment output codes (>= 0x80, stored in relics/crystals/iron_bars slots temporarily)
-%define RID_WEAPON      0x80    ; stored at RID_RELICS
-%define RID_ARMOUR      0x81    ; stored at RID_CRYSTALS
-%define RID_TOOL        0x82    ; stored at RID_IRON_BARS+1 (future dedicated slot)
+; Equipment output codes -- now have proper resource slots
+%define RID_WEAPON      11      ; RES_WEAPONS = 0x58 / 8
+%define RID_ARMOUR_R    12      ; RES_ARMOUR  = 0x60 / 8
+%define RID_TOOL_R      13      ; RES_TOOLS   = 0x68 / 8
 
 section .data
 
@@ -53,9 +53,9 @@ recipe_table:
     ; [3] RECIPE_WEAPONS_I    -- tier 2, 2 dwarves/unit, 10 ticks, 3 iron bars -> 1 weapon
     db 2, 2, 10, 0, RID_IRON_BARS, 3, RES_NONE, 0,  RID_WEAPON, 1
     ; [4] RECIPE_ARMOUR_I     -- tier 2, 2 dwarves/unit, 15 ticks, 4 iron bars -> 1 armour
-    db 2, 2, 15, 0, RID_IRON_BARS, 4, RES_NONE, 0,  RID_ARMOUR, 1
+    db 2, 2, 15, 0, RID_IRON_BARS, 4, RES_NONE, 0,  RID_ARMOUR_R, 1
     ; [5] RECIPE_TOOLS_I      -- tier 2, 2 dwarves/unit, 10 ticks, 2 bars+1 gem -> 1 tool
-    db 2, 2, 10, 0, RID_IRON_BARS, 2, RID_GEMS, 1,  RID_TOOL, 1
+    db 2, 2, 10, 0, RID_IRON_BARS, 2, RID_GEMS, 1,  RID_TOOL_R, 1
 
 %define RSIZ    10  ; recipe entry size
 
@@ -79,7 +79,7 @@ section .text
     imul    eax, 8              ; byte offset
 %endmacro
 
-equip_map: db RID_RELICS, RID_CRYSTALS, 0xFF   ; weapon, armour, tool(unused)
+; No equip_map needed -- weapons/armour/tools use direct resource slots
 
 ; ---------------------------------------------------------
 ; count_free_craftsdwarves(rbx=state) -> ecx
@@ -275,26 +275,16 @@ deliver:
     push    rcx
     push    rdx
 
-    movzx   ecx, byte [r15 + 8]     ; out_rid
+    movzx   ecx, byte [r15 + 8]     ; out_rid (direct resource index)
     movzx   edx, byte [r15 + 9]     ; out_amt
     imul    edx, r10d               ; total output
 
-    ; Equipment?
-    cmp     ecx, 0x80
-    jl      .del_res
-    sub     ecx, 0x80
-    lea     rax, [rel equip_map]
-    movzx   ecx, byte [rax + rcx]
-    cmp     ecx, 0xFF
-    je      .del_skip               ; tool has no slot yet
-
-.del_res:
+    ; All outputs map directly to resource slots (rid * 8 = byte offset)
     mov     eax, ecx
     imul    eax, 8
     movsx   rdx, edx
     add     [rbx + GS_RESOURCES + rax], rdx
 
-.del_skip:
     pop     rdx
     pop     rcx
     pop     rax
@@ -353,13 +343,16 @@ asm_tick_craft:
     movzx   eax, byte [r14 + CRAFT_ASSIGNED]
     movzx   ecx, byte [r15 + 1]     ; dwarves_per_unit
     test    ecx, ecx
-    jz      .start
+    jz      .deactivate
     xor     edx, edx
     div     ecx
     mov     r10d, eax           ; r10 = output_count
+    test    r10d, r10d
+    jz      .deactivate         ; no output (not enough dwarves)
 
     call    deliver
 
+.deactivate:
     ; Deactivate before restart attempt
     mov     byte [r14 + CRAFT_ACTIVE], 0
 

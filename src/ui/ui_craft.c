@@ -129,15 +129,19 @@ void ui_draw_craft(Renderer *r, const GameState *state) {
                      sel ? ">" : " ", ri->name, ri->depth_req);
             renderer_draw_text_grid(r, _UI_COL_MARGIN, row, COL_DIM, buf);
         } else {
-            snprintf(buf, sizeof(buf), "%s %-18s  Assigned: %d  Output: %d/%d ticks",
+            int insufficient = cs->assigned > 0 && output_count == 0;
+            snprintf(buf, sizeof(buf), "%s %-18s  Assigned: %d/%d  Output: %d/%d ticks%s",
                      sel ? ">" : " ",
                      ri->name,
                      cs->assigned,
+                     ri->dwarves_per_unit,
                      output_count,
-                     ri->timer_ticks);
-            uint32_t col = sel    ? COL_ACCENT
-                         : cs->active ? COL_FOOD
-                         :              COL_FG;
+                     ri->timer_ticks,
+                     insufficient ? " [need more dwarves]" : "");
+            uint32_t col = insufficient ? COL_GOLD
+                         : sel          ? COL_ACCENT
+                         : cs->active   ? COL_FOOD
+                         :                COL_FG;
             renderer_draw_text_grid(r, _UI_COL_MARGIN, row, col, buf);
         }
         row++;
