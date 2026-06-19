@@ -26,11 +26,11 @@ extern asm_tavern_buff_active
 ; Enemy stat tables [threat 0-5, index 0 unused]
 section .data
 
-enemy_hp_max:   dw 0, 30, 50, 120, 200, 350
-enemy_atk:      db 0,  5,  8,  15,  22,  35
-enemy_move_int: db 0,  3,  3,   5,   5,   4  ; ticks per move
-enemy_count:    db 0,  2,  4,   2,   3,   2  ; enemies to spawn
-enemy_type_for_threat: db 0, ENEMY_GOBLIN_SCOUT, ENEMY_GOBLIN_RAIDER, \
+enemy_hp_max:   dw 30, 50, 120, 200, 350   ; indexed by threat-1
+enemy_atk:      db  5,  8,  15,  22,  35
+enemy_move_int: db  8,  8,  12,  12,  10       ; ticks per move, indexed by threat-1
+enemy_count:    db  2,  4,   2,   3,   2       ; enemies to spawn, indexed by threat-1
+enemy_type_for_threat: db ENEMY_GOBLIN_SCOUT, ENEMY_GOBLIN_RAIDER, \
                            ENEMY_STONE_TROLL, ENEMY_WAR_TROLL, ENEMY_DEMON
 
 ; Reward tables [threat 1-5]
@@ -93,26 +93,20 @@ compute_threat:
     ret
 
 ; ---------------------------------------------------------
-; init_grid(rbx=state) — clear grid, mark settlement column
+; init_grid(rbx=state) — ensure settlement column is marked
+; Does NOT wipe placed guards/walls/traps so pre-placed
+; defences survive into combat.
 ; ---------------------------------------------------------
 init_grid:
     push    rdi
     push    rcx
 
-    ; zero entire grid
-    lea     rdi, [rbx + GS_RAID + RAID_GRID]
-    mov     ecx, RAID_ROWS * RAID_COLS
-    xor     eax, eax
-    rep     stosb
-
-    ; mark settlement column
+    ; Only mark settlement column -- preserve everything else
     mov     ecx, RAID_ROWS
     lea     rdi, [rbx + GS_RAID + RAID_GRID]
 .settle_loop:
     test    ecx, ecx
     jz      .settle_done
-    ; grid[row][RAID_COL_SETTLE] = CELL_SETTLEMENT
-    movzx   eax, byte [rdi + RAID_COL_SETTLE]
     mov     byte [rdi + RAID_COL_SETTLE], CELL_SETTLEMENT
     add     rdi, RAID_COLS
     dec     ecx

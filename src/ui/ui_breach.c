@@ -221,11 +221,17 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
     int threat = raid->threat;
     if (threat < 1) threat = 1;
     if (threat > 5) threat = 5;
-    snprintf(buf, sizeof(buf), "  Threat: %d/5 - %s    Enemies remaining: %d",
-             threat,
-             (threat <= 2) ? "Goblins" :
-             (threat <= 4) ? "Trolls"  : "Demon",
-             raid->enemies_remaining);
+    if (raid->active == RAID_COMBAT)
+        snprintf(buf, sizeof(buf), "  Threat: %d/5 - %s    Enemies remaining: %d",
+                 threat,
+                 (threat <= 2) ? "Goblins" :
+                 (threat <= 4) ? "Trolls"  : "Demon",
+                 raid->enemies_remaining);
+    else
+        snprintf(buf, sizeof(buf), "  Threat: %d/5 - %s    Place your defences!",
+                 threat,
+                 (threat <= 2) ? "Goblins" :
+                 (threat <= 4) ? "Trolls"  : "Demon");
     renderer_draw_text_grid(r, _UI_COL_MARGIN, 2,
                             raid->active == RAID_COMBAT ? 0xFF4444FF : COL_GOLD,
                             buf);
