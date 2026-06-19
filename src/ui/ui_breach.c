@@ -7,7 +7,7 @@
 #define _DIVIDER_COL    90
 #define _UI_COL_MARGIN   2
 #define GRID_CHAR_W      4   /* chars per cell */
-#define GRID_START_ROW   6
+#define GRID_START_ROW   7
 #define GRID_START_COL   2
 
 /* ---- cursor state for placement ---- */
@@ -65,7 +65,7 @@ static void draw_grid(Renderer *r, const GameState *state, int phase) {
         for (int col = 0; col < RAID_COLS; col++) {
             int sx = GRID_START_COL + 3 + col * GRID_CHAR_W;
             uint8_t cell = raid->grid[row][col];
-            int is_cursor = (phase == RAID_WARNING &&
+            int is_cursor = ((phase == RAID_NONE || phase == RAID_WARNING || phase == RAID_COMBAT) &&
                              col == ui_breach_cursor_col &&
                              row == ui_breach_cursor_row);
 
@@ -132,8 +132,8 @@ static void draw_status(Renderer *r, const GameState *state) {
             snprintf(buf, sizeof(buf), "  G%d [KO]", i+1);
             renderer_draw_text_grid(r, sx, row, COL_DIM, buf);
         } else {
-            make_hp_bar(hpbar, g->hp, g->hp_max, 8);
-            snprintf(buf, sizeof(buf), "  G%d %s %d/%d",
+            make_hp_bar(hpbar, g->hp, g->hp_max, 6);
+            snprintf(buf, sizeof(buf), " G%d %s %d/%d",
                      i+1, hpbar, g->hp, g->hp_max);
             renderer_draw_text_grid(r, sx, row,
                                     hp_col(g->hp, g->hp_max), buf);
@@ -177,22 +177,43 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
 
     /* ---- NONE ---- */
     if (raid->active == RAID_NONE) {
-        renderer_draw_text_grid(r, _UI_COL_MARGIN, 2, COL_DIM,
-            "No raid in progress. The deep is quiet... for now.");
         uint64_t tl = 0;
         if (raid->next_raid_tick > state->tick &&
             raid->next_raid_tick - state->tick < 10000ULL)
             tl = raid->next_raid_tick - state->tick;
-        if (tl > 0) {
-            snprintf(buf, sizeof(buf), "  Next warning in ~%llu ticks",
-                     (unsigned long long)tl);
-            renderer_draw_text_grid(r, _UI_COL_MARGIN, 3, COL_DIM, buf);
-        } else {
-            renderer_draw_text_grid(r, _UI_COL_MARGIN, 3, COL_DIM,
-                "  Raid warning imminent...");
-        }
+        if (tl > 0)
+            snprintf(buf, sizeof(buf),
+                "  Raid warning in ~%llu ticks -- prepare your defences now!",
+                (unsigned long long)tl);
+        else
+            snprintf(buf, sizeof(buf), "  Raid warning imminent...");
+        renderer_draw_text_grid(r, _UI_COL_MARGIN, 2, COL_DIM, buf);
+
+        int pm = raid->place_mode < 4 ? raid->place_mode : 0;
+        snprintf(buf, sizeof(buf), "  Mode: [%s]   [TAB] cycle   [ENTER] place   [X] remove",
+                 place_mode_names[pm]);
+        renderer_draw_text_grid(r, _UI_COL_MARGIN, 3, COL_DIM, buf);
+        snprintf(buf, sizeof(buf),
+                 "  Bars:%-4lld  Tools:%-4lld  Gems:%-4lld  Stone:%-4lld"
+                 "  Walls:%-3lld  Spikes:%-3lld  Slows:%-3lld",
+                 (long long)state->resources.iron_bars,
+                 (long long)state->resources.tools,
+                 (long long)state->resources.gems,
+                 (long long)state->resources.stone,
+                 (long long)state->resources.walls,
+                 (long long)state->resources.spike_traps,
+                 (long long)state->resources.slow_traps);
+        renderer_draw_text_grid(r, _UI_COL_MARGIN, 4, COL_DIM, buf);
+        renderer_draw_hline_partial(r, 5, 0, _DIVIDER_COL, COL_DIM);
+
+        draw_grid(r, state, RAID_NONE);
+
+        int lr = GRID_START_ROW + RAID_ROWS + 1;
+        renderer_draw_text_grid(r, _UI_COL_MARGIN, lr, COL_DIM,
+            "  [G]=Guard  [W]=Wall  [^]=Spike  [~]=Slow  [|]=Settlement");
         renderer_draw_hline_partial(r, 41, 0, _DIVIDER_COL, COL_DIM);
-        renderer_draw_text_grid(r, _UI_COL_MARGIN, 42, COL_DIM, "  [B] Close");
+        renderer_draw_text_grid(r, _UI_COL_MARGIN, 42, COL_DIM,
+            "  Arrows: move   TAB: cycle mode   ENTER: place   X: remove   B: close");
         return;
     }
 
@@ -200,7 +221,7 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
     int threat = raid->threat;
     if (threat < 1) threat = 1;
     if (threat > 5) threat = 5;
-    snprintf(buf, sizeof(buf), "  Threat: %d/5 — %s    Enemies remaining: %d",
+    snprintf(buf, sizeof(buf), "  Threat: %d/5 - %s    Enemies remaining: %d",
              threat,
              (threat <= 2) ? "Goblins" :
              (threat <= 4) ? "Trolls"  : "Demon",
@@ -215,15 +236,19 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
             "  Place your defences before the raid arrives!");
 
         int pm = raid->place_mode < 4 ? raid->place_mode : 0;
-        snprintf(buf, sizeof(buf),
-                 "  Mode: [%s]   [TAB] cycle   [ENTER] place   [X] remove   "
-                 "Resources: Bars:%-4lld  Tols:%-4lld  Gems:%-4lld  Stone:%-4lld",
-                 place_mode_names[pm],
+        snprintf(buf, sizeof(buf), "  Mode: [%s]   [TAB] cycle mode   [ENTER] place   [X] remove",
+                 place_mode_names[pm]);
+        renderer_draw_text_grid(r, _UI_COL_MARGIN, 4, COL_DIM, buf);
+        snprintf(buf, sizeof(buf), "  Bars:%-4lld  Tools:%-4lld  Gems:%-4lld  Stone:%-4lld  "
+                 "Walls:%-3lld  Spikes:%-3lld  Slows:%-3lld",
                  (long long)state->resources.iron_bars,
                  (long long)state->resources.tools,
                  (long long)state->resources.gems,
-                 (long long)state->resources.stone);
-        renderer_draw_text_grid(r, _UI_COL_MARGIN, 4, COL_DIM, buf);
+                 (long long)state->resources.stone,
+                 (long long)state->resources.walls,
+                 (long long)state->resources.spike_traps,
+                 (long long)state->resources.slow_traps);
+        renderer_draw_text_grid(r, _UI_COL_MARGIN, 5, COL_DIM, buf);
         renderer_draw_hline_partial(r, 5, 0, _DIVIDER_COL, COL_DIM);
 
         draw_grid(r, state, RAID_WARNING);
@@ -242,7 +267,7 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
     if (raid->active == RAID_COMBAT) {
         if (raid->settlement_breached) {
             renderer_draw_text_grid(r, _UI_COL_MARGIN, 3, 0xFF4444FF,
-                "  !! SETTLEMENT BREACHED — resolving...");
+                "  !! SETTLEMENT BREACHED - resolving...");
         } else {
             renderer_draw_text_grid(r, _UI_COL_MARGIN, 3, 0xFF4444FF,
                 "  !! COMBAT IN PROGRESS !!");
@@ -267,7 +292,7 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
     /* ---- RESULT ---- */
     if (raid->settlement_breached) {
         renderer_draw_text_grid(r, _UI_COL_MARGIN, 3, 0xFF4444FF,
-            "  Raid lost — the settlement was breached. Morale -20 to all dwarves.");
+            "  Raid lost - the settlement was breached. Morale -20 to all dwarves.");
     } else {
         snprintf(buf, sizeof(buf),
                  "  Raid won! Rewards: +%d gold%s",

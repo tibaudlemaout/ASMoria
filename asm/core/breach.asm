@@ -139,13 +139,14 @@ spawn_enemies:
     jle     .threat_ok
     mov     eax, 5
 .threat_ok:
-    ; load table bases with RIP-relative addressing (PIE safe)
+    push    rcx
     lea     rcx, [rel enemy_count]
-    movzx   r9d, byte [rcx + rax - 1]          ; count (threat 1-5 -> index 0-4)
+    movzx   r9d, byte [rcx + rax - 1]
     lea     rcx, [rel enemy_hp_max]
-    movzx   r10d, word [rcx + rax*2 - 2]       ; hp_max
+    movzx   r10d, word [rcx + rax*2 - 2]
     lea     rcx, [rel enemy_atk]
-    movzx   r11d, byte [rcx + rax - 1]         ; atk
+    movzx   r11d, byte [rcx + rax - 1]
+    pop     rcx
 
     lea     r8, [r12 + RAID_ENEMIES]
     ; clear enemy array first
@@ -216,8 +217,10 @@ spawn_enemies:
     jle     .t_ok3
     mov     eax, 5
 .t_ok3:
+    push    rcx
     lea     rcx, [rel enemy_move_int]
     movzx   r13d, byte [rcx + rax - 1]
+    pop     rcx
     mov     byte [rdi + ENEMY_MOVE_TIMER],  r13b
 
     ; spawn delay: each enemy waits 10 ticks more than previous
@@ -908,6 +911,10 @@ asm_tick_breach:
     mov     byte [r12 + RAID_SETTLEMENT_BREACH], 0
     mov     byte [r12 + RAID_WALL_COUNT], 0
 
+    ; store current tick as warning start (used in tick_warning timer)
+    mov     rax, [rbx + GS_TICK]
+    mov     [r12 + RAID_LAST_MOVE_TICK], rax
+
     ; init grid and collect guards for placement
     call    init_grid
     call    collect_guards
@@ -920,9 +927,9 @@ asm_tick_breach:
 
 ; -------------------------------------------------------
 .tick_warning:
-    ; wait RAID_WARN_TICKS then start combat
+    ; wait RAID_WARN_TICKS from when warning started (stored in LAST_MOVE_TICK)
     mov     rax, [rbx + GS_TICK]
-    mov     rcx, [r12 + RAID_NEXT_TICK]
+    mov     rcx, [r12 + RAID_LAST_MOVE_TICK]
     add     rcx, RAID_WARN_TICKS
     cmp     rax, rcx
     jl      .tick_done
@@ -930,6 +937,7 @@ asm_tick_breach:
     ; spawn enemies and begin combat
     call    spawn_enemies
     mov     byte [r12 + RAID_ACTIVE], RAID_COMBAT
+    mov     rax, [rbx + GS_TICK]
     mov     qword [r12 + RAID_LAST_MOVE_TICK], rax
     jmp     .tick_done
 
@@ -937,6 +945,13 @@ asm_tick_breach:
 .tick_combat:
     ; tick enemies every tick
     call    tick_enemies
+
+    ; Don't resolve until at least RAID_MOVE_INTERVAL ticks into combat
+    mov     rax, [rbx + GS_TICK]
+    mov     rcx, [r12 + RAID_LAST_MOVE_TICK]
+    sub     rax, rcx
+    cmp     rax, RAID_MOVE_INTERVAL
+    jl      .tick_done
 
     ; check win: enemies_remaining == 0
     movzx   eax, byte [r12 + RAID_ENEMIES_REMAINING]

@@ -95,6 +95,24 @@ int main(void) {
                                 ui_show_tavern = !ui_show_tavern;
                             break;
 
+                        case SDLK_TAB:
+                            if (ui_show_breach && (state.raid.active == RAID_NONE
+                                || state.raid.active == RAID_WARNING)) {
+                                state.raid.place_mode = (state.raid.place_mode + 1) % 4;
+                            }
+                            break;
+
+                        case SDLK_x:
+                            if (ui_show_breach && (state.raid.active == RAID_NONE
+                                || state.raid.active == RAID_WARNING)) {
+                                /* Remove whatever is at cursor */
+                                int cc = ui_breach_cursor_col;
+                                int cr = ui_breach_cursor_row;
+                                if (cc >= 0 && cc < RAID_COLS && cr >= 0 && cr < RAID_ROWS)
+                                    state.raid.grid[cr][cc] = CELL_EMPTY;
+                            }
+                            break;
+
                         case SDLK_b:
                             if (!ui_show_upgrades && !ui_show_research) {
                                 ui_show_breach = !ui_show_breach;
@@ -174,6 +192,12 @@ int main(void) {
                                 int id = ui_upgr_selected();
                                 if (id >= 0)
                                     asm_buy_upgrade(&state, (uint8_t)id);
+                            } else if (ui_show_breach && (state.raid.active == RAID_NONE
+                                || state.raid.active == RAID_WARNING)) {
+                                asm_breach_place(&state,
+                                    (uint8_t)ui_breach_cursor_col,
+                                    (uint8_t)ui_breach_cursor_row,
+                                    state.raid.place_mode);
                             } else if (ui_show_research) {
                                 int id = ui_research_selected();
                                 if (id >= 0)

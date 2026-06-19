@@ -158,10 +158,10 @@
 %define RAID_COMBAT         2
 %define RAID_RESULT         3
 
-%define RAID_WARN_TICKS     60
+%define RAID_WARN_TICKS     120
 %define RAID_FIRST_TICK     300
 %define RAID_INTERVAL       500
-%define RAID_MOVE_INTERVAL  3
+%define RAID_MOVE_INTERVAL  8
 %define RAID_SLOW_TURNS     4
 
 ; --- Pending event ---
