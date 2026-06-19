@@ -4,11 +4,10 @@
 #include "../render/renderer.h"
 #include "../../include/asmoria.h"
 
+extern int ui_breach_cursor_col;
+extern int ui_breach_cursor_row;
+
 void ui_draw_breach(Renderer *r, const GameState *state);
-
-/* Index of selected guard in breach panel (for feeding) */
-extern int ui_breach_selected_guard;
-
-void ui_breach_select(int delta);
+void ui_breach_move(int dc, int dr);
 
 #endif

@@ -15,32 +15,11 @@ void game_init(GameState *state) {
     state->resources.food  = 20;
     state->depth           = 1;
 
-    /* Craft slots */
-    for (int i = 0; i < RECIPE_COUNT; i++) {
-        state->craft[i].assigned = 0;
-        state->craft[i].active   = 0;
-        state->craft[i].timer    = 0;
-    }
-
-    /* New resources (zeroed by memset but explicit for clarity) */
-    state->resources.iron_ore  = 0;
-    state->resources.gems      = 0;
-    state->resources.relics    = 0;
-    state->resources.crystals  = 0;
-    state->resources.iron_bars = 0;
-    state->resources.ale       = 0;
-    state->pending.code      = 0xFF;
-    state->raid.active         = RAID_NONE;
-    state->raid.threat         = 0;
-    state->raid.guard_count    = 0;
-    state->raid.enemy_hp       = 0;
-    state->raid.enemy_hp_max   = 0;
-    state->raid.enemy_atk      = 0;
-    state->raid.next_raid_tick = 0; /* breach.asm sets this on first tick */
-    state->raid.combat_start_tick = 0;
-    state->raid.last_combat_tick  = 0;
-    state->raid.reward_gold    = 0;
-    state->raid.raids_completed  = 0;
+    /* Raid grid init */
+    memset(&state->raid, 0, sizeof(state->raid));
+    state->raid.active = RAID_NONE;
+    for (int r = 0; r < RAID_ROWS; r++)
+        state->raid.grid[r][RAID_COL_SETTLE] = CELL_SETTLEMENT;
 
     state->prestige.honor           = 0;
     state->prestige.total_honor     = 0;
@@ -64,6 +43,13 @@ void game_update(GameState *state) {
 }
 
 static void sanitise_craft(GameState *state) {
+    for (int i = 0; i < MAX_TAVERN_BUFFS; i++) {
+        state->tavern_buffs[i].active = 0;
+        state->tavern_buffs[i].buff_id = 0;
+        state->tavern_buffs[i].timer  = 0;
+    }
+    state->tavern_level = 0;
+
     for (int i = 0; i < RECIPE_COUNT; i++) {
         /* Clear any garbage assigned counts or stuck timers */
         if (state->craft[i].assigned > 64)

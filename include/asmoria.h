@@ -18,6 +18,9 @@ typedef struct {
     int64_t weapons;    /* crafted weapons in inventory */
     int64_t armour;     /* crafted armour in inventory */
     int64_t tools;      /* crafted tools in inventory */
+    int64_t walls;      /* crafted wall segments      */
+    int64_t spike_traps;/* crafted spike traps        */
+    int64_t slow_traps; /* crafted slow traps         */
 } Resources;
 
 #define MAX_DWARVES     64
@@ -327,37 +330,119 @@ typedef struct {
 } PrestigeState;
 
 /* =========================================================
- * Raid / Breach system
+ * Raid / Breach system — tower defence grid
  * ========================================================= */
-#define RAID_NONE       0   /* no raid active              */
-#define RAID_WARNING    1   /* warning phase               */
+#define RAID_NONE       0   /* no raid                     */
+#define RAID_WARNING    1   /* warning, placement phase    */
 #define RAID_COMBAT     2   /* combat in progress          */
 #define RAID_RESULT     3   /* resolved, awaiting cleanup  */
 
-#define RAID_MAX_GUARDS 8
-#define RAID_WARN_TICKS 60  /* ticks between warning and combat */
-#define RAID_FIRST_TICK 300 /* tick of first raid warning  */
-#define RAID_INTERVAL   500 /* ticks between raids         */
-#define RAID_COMBAT_INTERVAL 5 /* ticks between damage rounds */
-#define RAID_TIMER      300 /* ticks before raid auto-resolves as loss */
+/* Grid dimensions */
+#define RAID_COLS       12
+#define RAID_ROWS       5
+#define RAID_COL_SPAWN  0           /* enemies enter here  */
+#define RAID_COL_SETTLE 11          /* settlement column   */
+
+/* Cell contents (grid values) */
+#define CELL_EMPTY      0
+#define CELL_GUARD      1
+#define CELL_WALL       2
+#define CELL_SPIKE_TRAP 3
+#define CELL_SLOW_TRAP  4
+#define CELL_SETTLEMENT 5
+
+/* Enemy types */
+#define ENEMY_NONE          0
+#define ENEMY_GOBLIN_SCOUT  1
+#define ENEMY_GOBLIN_RAIDER 2
+#define ENEMY_STONE_TROLL   3
+#define ENEMY_WAR_TROLL     4
+#define ENEMY_DEMON         5
+
+#define RAID_MAX_ENEMIES    8
+#define RAID_MAX_GUARDS     8
+#define RAID_MAX_WALLS      10
+#define RAID_MAX_TRAPS      8
+
+#define RAID_WARN_TICKS     60
+#define RAID_FIRST_TICK     300
+#define RAID_INTERVAL       500
+#define RAID_MOVE_INTERVAL  3   /* ticks per enemy move (normal speed) */
+#define RAID_SLOW_TURNS     4   /* extra turns slowed enemies wait     */
+
+/* Per-enemy state */
+typedef struct {
+    uint8_t  type;          /* ENEMY_* constant, 0=dead/inactive   */
+    uint8_t  col;           /* current column (0=spawn)            */
+    uint8_t  row;           /* current row                         */
+    uint8_t  slow_timer;    /* turns remaining slowed              */
+    int16_t  hp;
+    int16_t  hp_max;
+    int8_t   atk;
+    uint8_t  move_timer;    /* ticks until next move               */
+    uint8_t  spawn_delay;   /* ticks before this enemy enters      */
+    uint8_t  _pad;
+} Enemy;                    /* sizeof = 10 bytes, pad to 12        */
+
+/* Per-guard placement */
+typedef struct {
+    uint8_t  dwarf_idx;     /* index into state->dwarves           */
+    uint8_t  col;
+    uint8_t  row;
+    uint8_t  active;        /* 1=alive in raid                     */
+    int16_t  hp;
+    int16_t  hp_max;
+} RaidGuard;                /* sizeof = 8 bytes                    */
+
+/* Wall cell */
+typedef struct {
+    uint8_t  col;
+    uint8_t  row;
+    int16_t  hp;
+} RaidWall;                 /* sizeof = 4 bytes                    */
 
 typedef struct {
-    uint8_t  active;                    /* RAID_* state            */
-    uint8_t  threat;                    /* 1-5                     */
-    uint8_t  guard_count;               /* guards in raid          */
-    uint8_t  _pad;
-    int32_t  enemy_hp;
-    int32_t  enemy_hp_max;
-    int32_t  enemy_atk;
-    uint8_t  guard_idx[RAID_MAX_GUARDS];
-    int32_t  guard_hp[RAID_MAX_GUARDS];
-    int32_t  guard_hp_max[RAID_MAX_GUARDS];
-    uint64_t next_raid_tick;            /* when next warning fires */
-    uint64_t combat_start_tick;         /* when combat began       */
-    uint64_t last_combat_tick;          /* last damage exchange    */
-    int32_t  reward_gold;               /* gold on win             */
-    int32_t  raids_completed;           /* for threat scaling      */
-} Raid;                                 /* size: ~120 bytes        */
+    /* Phase & meta */
+    uint8_t  active;                        /* RAID_* state                */
+    uint8_t  threat;                        /* 1-5 difficulty              */
+    uint8_t  enemies_remaining;             /* enemies yet to die/escape   */
+    uint8_t  settlement_breached;           /* 1 = player lost             */
+    int32_t  raids_completed;
+    uint64_t next_raid_tick;
+    uint64_t last_move_tick;                /* last time enemies moved     */
+
+    /* Placement grid — what is on each cell */
+    uint8_t  grid[RAID_ROWS][RAID_COLS];    /* CELL_* values               */
+
+    /* Enemies */
+    Enemy    enemies[RAID_MAX_ENEMIES];
+
+    /* Guards in raid */
+    RaidGuard guards[RAID_MAX_GUARDS];
+    uint8_t   guard_count;
+
+    /* Walls */
+    RaidWall  walls[RAID_MAX_WALLS];
+    uint8_t   wall_count;
+
+    /* Rewards */
+    int32_t  reward_gold;
+    int32_t  reward_relics;
+
+    /* Placement cursor (warning phase) */
+    uint8_t  cursor_col;
+    uint8_t  cursor_row;
+    uint8_t  place_mode;    /* 0=guard 1=wall 2=spike 3=slow       */
+    uint8_t  _pad[1];
+} Raid;
+
+/* Craftable breach items (stored in Resources) */
+#define WALLS_CRAFT_STONE   5
+#define WALLS_CRAFT_BARS    2
+#define SPIKE_CRAFT_BARS    3
+#define SPIKE_CRAFT_TOOLS   1
+#define SLOW_CRAFT_BARS     2
+#define SLOW_CRAFT_GEMS     1
 
 typedef struct { uint64_t tier1, tier2; } Upgrades;
 typedef struct { uint64_t seed; } RngState;

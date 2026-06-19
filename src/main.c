@@ -98,6 +98,7 @@ int main(void) {
                         case SDLK_b:
                             if (!ui_show_upgrades && !ui_show_research) {
                                 ui_show_breach = !ui_show_breach;
+                                /* result acknowledged */
                                 /* Clear RESULT state when player dismisses */
                                 if (!ui_show_breach && state.raid.active == RAID_RESULT)
                                     state.raid.active = RAID_NONE;
@@ -137,7 +138,7 @@ int main(void) {
                         case SDLK_UP:
                             if (ui_show_upgrades)       ui_upgr_move(-1);
                             else if (ui_show_research)  ui_research_move(-1);
-                            else if (ui_show_breach)    ui_breach_select(-1);
+                            else if (ui_show_breach)    ui_breach_move(0, -1);
                             else if (ui_show_prestige)  ui_prestige_move(-1);
                             else if (ui_show_craft)      ui_craft_move(-1);
                             else if (ui_show_tavern)     ui_tavern_move(-1);
@@ -146,17 +147,19 @@ int main(void) {
                         case SDLK_DOWN:
                             if (ui_show_upgrades)       ui_upgr_move(+1);
                             else if (ui_show_research)  ui_research_move(+1);
-                            else if (ui_show_breach)    ui_breach_select(+1);
+                            else if (ui_show_breach)    ui_breach_move(0, +1);
                             else if (ui_show_prestige)  ui_prestige_move(+1);
                             else if (ui_show_craft)      ui_craft_move(+1);
                             else if (ui_show_tavern)     ui_tavern_move(+1);
                             else                        ui_dwarf_select(+1);
                             break;
                         case SDLK_LEFT:
-                            if (!ui_show_upgrades) ui_dwarf_scroll(-1);
+                            if (ui_show_breach) ui_breach_move(-1, 0);
+                            else if (!ui_show_upgrades) ui_dwarf_scroll(-1);
                             break;
                         case SDLK_RIGHT:
-                            if (!ui_show_upgrades) ui_dwarf_scroll(+1);
+                            if (ui_show_breach) ui_breach_move(+1, 0);
+                            else if (!ui_show_upgrades) ui_dwarf_scroll(+1);
                             break;
                         case SDLK_PAGEUP:
                             if (!ui_show_upgrades) ui_log_scroll(+3);
@@ -235,12 +238,7 @@ int main(void) {
                             break;
 
                         case SDLK_e:
-                            if (ui_show_breach
-                                && state.raid.active == RAID_COMBAT
-                                && ui_breach_selected_guard < state.raid.guard_count) {
-                                uint8_t gidx = state.raid.guard_idx[ui_breach_selected_guard];
-                                asm_feed_dwarf(&state, gidx);
-                            } else if (!ui_show_upgrades && !ui_show_research
+                            if (!ui_show_upgrades && !ui_show_research
                                 && ui_selected_dwarf >= 0) {
                                 asm_feed_dwarf(&state, (uint8_t)ui_selected_dwarf);
                             }
