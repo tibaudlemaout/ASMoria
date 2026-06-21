@@ -40,6 +40,7 @@ reward_relics_tab: dd 0,  0,   0,   5,  10,  20
 section .text
     global asm_tick_breach
     global asm_breach_place
+    global asm_collect_guards
     global asm_breach_retreat
 
 ; ---------------------------------------------------------
@@ -233,10 +234,17 @@ spawn_enemies:
     ret
 
 ; ---------------------------------------------------------
-; collect_guards(rbx=state) — find all guard-job dwarves and
+; asm_collect_guards / collect_guards(rbx=state) — find all guard-job dwarves and
 ; add them to raid->guards if they have been placed on grid
 ; Also initialise any guards found placed on grid
 ; ---------------------------------------------------------
+asm_collect_guards:
+    push    rbx
+    mov     rbx, rdi
+    call    collect_guards
+    pop     rbx
+    ret
+
 collect_guards:
     push    r8
     push    r9
@@ -246,6 +254,10 @@ collect_guards:
     lea     r8, [rbx + GS_RAID + RAID_GUARDS]
     xor     r9d, r9d    ; guard count
 
+    ; TEMP DEBUG: mark function entry, zero iteration counter
+    mov     byte [r8 + 6*SIZEOF_RAIDGUARD + RGUARD_COL], 0x11
+    mov     byte [r8 + 6*SIZEOF_RAIDGUARD + RGUARD_DWARF_IDX], 0
+
     lea     r10, [rbx + GS_DWARVES]
     xor     r11d, r11d  ; dwarf index
 .cg_loop:
@@ -253,6 +265,22 @@ collect_guards:
     jge     .cg_done
     cmp     r9d, RAID_MAX_GUARDS
     jge     .cg_done
+
+    ; TEMP DEBUG: prove the loop body itself executes, and how often
+    inc     byte [r8 + 6*SIZEOF_RAIDGUARD + RGUARD_DWARF_IDX]
+    mov     byte [r8 + 6*SIZEOF_RAIDGUARD + RGUARD_COL], 0x22
+
+    ; TEMP DEBUG: stash raw field reads for dwarf index 5 into the
+    ; unused guards[7] slot (harmless with only 1 real guard) so we
+    ; can inspect exactly what DWARF_ALIVE/DWARF_JOB resolve to.
+    cmp     r11d, 5
+    jne     .no_dbg5
+    movzx   eax, byte [r10 + DWARF_ALIVE]
+    mov     byte [r8 + 7*SIZEOF_RAIDGUARD + RGUARD_DWARF_IDX], al
+    movzx   eax, byte [r10 + DWARF_JOB]
+    mov     byte [r8 + 7*SIZEOF_RAIDGUARD + RGUARD_ACTIVE], al
+    mov     byte [r8 + 7*SIZEOF_RAIDGUARD + RGUARD_COL], 0xAA
+.no_dbg5:
 
     movzx   eax, byte [r10 + DWARF_ALIVE]
     test    eax, eax
@@ -276,6 +304,15 @@ collect_guards:
     add     eax, ARMOUR_HP_BONUS
 .no_arm:
     ; warrior's draft HP bonus
+    ; r8/r9/r10/r11 hold this loop's live state (guard array base,
+    ; guard count/index, dwarf array ptr, dwarf index) and are
+    ; caller-saved under the ABI -- asm_tavern_buff_active is free to
+    ; clobber them, so they MUST be saved across the call or the loop
+    ; silently corrupts itself after returning.
+    push    r8
+    push    r9
+    push    r10
+    push    r11
     push    rdi
     push    rsi
     push    rax
@@ -289,6 +326,10 @@ collect_guards:
 .no_draft_hp:
     pop     rsi
     pop     rdi
+    pop     r11
+    pop     r10
+    pop     r9
+    pop     r8
 
     ; get guard slot
     imul    ecx, r9d, SIZEOF_RAIDGUARD
@@ -297,22 +338,13 @@ collect_guards:
     mov     byte [rdx + RGUARD_DWARF_IDX], r11b
     mov     byte [rdx + RGUARD_ACTIVE],    1
 
-    ; default col=5, row = guard_index % RAID_ROWS
-    mov     byte [rdx + RGUARD_COL], 5
-    push    rax
-    push    rdx
-    mov     eax, r9d        ; guard index
-    xor     edx, edx
-    mov     ecx, RAID_ROWS
-    div     ecx             ; edx = index % RAID_ROWS
-    pop     rcx             ; rcx = guard slot ptr (was rdx)
-    mov     byte [rcx + RGUARD_ROW], dl
-    pop     rax
-    mov     rdx, rcx        ; restore rdx = guard slot ptr
-
-    imul    ecx, r9d, SIZEOF_RAIDGUARD
-    lea     rdx, [r8 + rcx]
-    mov     byte [rdx + RGUARD_ROW],   dl  ; dl = rdx % RAID_ROWS result in edx
+    ; only set col/row if not already placed (preserve placements)
+    movzx   ecx, byte [rdx + RGUARD_COL]
+    cmp     ecx, 0xFF
+    jne     .cg_already_placed  ; already has a position, keep it
+    ; newly seen guard: mark as unplaced
+    mov     byte [rdx + RGUARD_COL], 0xFF
+.cg_already_placed:
 
     ; store HP
     mov     word [rdx + RGUARD_HP],     ax
@@ -325,6 +357,10 @@ collect_guards:
     inc     r11d
     jmp     .cg_loop
 .cg_done:
+    ; TEMP DEBUG: stash final loop-exit counters before r8 is repurposed
+    mov     byte [r8 + 6*SIZEOF_RAIDGUARD + RGUARD_ACTIVE], r9b
+    mov     byte [r8 + 6*SIZEOF_RAIDGUARD + RGUARD_ROW],    r11b
+
     lea     r8, [rbx + GS_RAID]
     mov     byte [r8 + RAID_GUARD_COUNT], r9b
 
@@ -686,11 +722,14 @@ asm_breach_place:
     mov     r13d, edx           ; row
     mov     r14d, ecx           ; cell_type
 
-    ; must be in WARNING phase
+    ; must be in WARNING or NONE phase
     lea     r15, [rbx + GS_RAID]
     movzx   eax, byte [r15 + RAID_ACTIVE]
     cmp     eax, RAID_WARNING
+    je      .place_phase_ok
+    cmp     eax, RAID_NONE
     jne     .place_fail
+.place_phase_ok:
 
     ; bounds check
     cmp     r12d, 0
@@ -738,12 +777,9 @@ asm_breach_place:
     movzx   ecx, byte [r11 + RGUARD_ACTIVE]
     test    ecx, ecx
     jz      .pg_next
-    ; check not already placed somewhere
+    ; check if unplaced (0xFF = unplaced marker)
     movzx   ecx, byte [r11 + RGUARD_COL]
     cmp     ecx, 0xFF
-    je      .pg_found           ; 0xFF = unplaced marker
-    ; allow re-place: find first guard with col == 0 (default)
-    cmp     ecx, 0
     je      .pg_found
 .pg_next:
     inc     r10d

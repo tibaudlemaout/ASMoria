@@ -108,14 +108,54 @@ int main(void) {
                                 /* Remove whatever is at cursor */
                                 int cc = ui_breach_cursor_col;
                                 int cr = ui_breach_cursor_row;
-                                if (cc >= 0 && cc < RAID_COLS && cr >= 0 && cr < RAID_ROWS)
+                                if (cc >= 0 && cc < RAID_COLS && cr >= 0 && cr < RAID_ROWS) {
+                                    if (state.raid.grid[cr][cc] == CELL_GUARD) {
+                                        /* Free the guard occupying this cell so it
+                                           becomes placeable again (col == 0xFF marks
+                                           a guard as unplaced). Without this the guard
+                                           stays "placed" internally forever and can
+                                           never be re-assigned to a new cell. */
+                                        for (int gi = 0; gi < state.raid.guard_count; gi++) {
+                                            RaidGuard *g = &state.raid.guards[gi];
+                                            if (g->active && g->col == cc && g->row == cr) {
+                                                g->col = 0xFF;
+                                                g->row = 0xFF;
+                                                break;
+                                            }
+                                        }
+                                    }
                                     state.raid.grid[cr][cc] = CELL_EMPTY;
+                                }
                             }
                             break;
 
                         case SDLK_b:
                             if (!ui_show_upgrades && !ui_show_research) {
                                 ui_show_breach = !ui_show_breach;
+                                if (ui_show_breach) {
+                                    /* TEMP DEBUG */
+                                    int c_side_guards = 0;
+                                    for (int di = 0; di < MAX_DWARVES; di++)
+                                        if (state.dwarves[di].alive
+                                            && state.dwarves[di].job == JOB_GUARD)
+                                            c_side_guards++;
+                                    asm_collect_guards(&state);
+                                    fprintf(stderr,
+                                        "[breach open] c_side_guard_dwarves=%d "
+                                        "asm_guard_count=%d "
+                                        "dbg_reached=0x%02X dbg_alive_read=%d "
+                                        "dbg_job_read=%d "
+                                        "dbg_loop_marker=0x%02X dbg_iters=%d "
+                                        "dbg_exit_r9=%d dbg_exit_r11=%d\n",
+                                        c_side_guards, state.raid.guard_count,
+                                        state.raid.guards[7].col,
+                                        state.raid.guards[7].dwarf_idx,
+                                        state.raid.guards[7].active,
+                                        state.raid.guards[6].col,
+                                        state.raid.guards[6].dwarf_idx,
+                                        state.raid.guards[6].active,
+                                        state.raid.guards[6].row);
+                                }
                                 /* result acknowledged */
                                 /* Clear RESULT state when player dismisses */
                                 if (!ui_show_breach && state.raid.active == RAID_RESULT)
@@ -194,10 +234,20 @@ int main(void) {
                                     asm_buy_upgrade(&state, (uint8_t)id);
                             } else if (ui_show_breach && (state.raid.active == RAID_NONE
                                 || state.raid.active == RAID_WARNING)) {
-                                asm_breach_place(&state,
+                                /* place_mode 0=Guard,1=Wall,2=Spike,3=Slow
+                                   maps to CELL_GUARD=1,CELL_WALL=2,CELL_SPIKE=3,CELL_SLOW=4 */
+                                uint8_t cell_type = state.raid.place_mode + 1;
+                                int placed = asm_breach_place(&state,
                                     (uint8_t)ui_breach_cursor_col,
                                     (uint8_t)ui_breach_cursor_row,
-                                    state.raid.place_mode);
+                                    cell_type);
+                                /* TEMP DEBUG - remove once placement is confirmed working */
+                                fprintf(stderr,
+                                    "[breach place] col=%d row=%d cell_type=%d "
+                                    "place_mode=%d guard_count=%d active_phase=%d -> %s\n",
+                                    ui_breach_cursor_col, ui_breach_cursor_row, cell_type,
+                                    state.raid.place_mode, state.raid.guard_count,
+                                    state.raid.active, placed ? "SUCCESS" : "FAILED");
                             } else if (ui_show_research) {
                                 int id = ui_research_selected();
                                 if (id >= 0)
@@ -292,6 +342,13 @@ int main(void) {
                             }
                             asm_assign_job(&state,
                                            (uint8_t)ui_selected_dwarf, job);
+                            /* TEMP DEBUG */
+                            fprintf(stderr,
+                                "[assign job] dwarf=%d requested_job=%d "
+                                "actual_job=%d alive=%d\n",
+                                ui_selected_dwarf, job,
+                                state.dwarves[ui_selected_dwarf].job,
+                                state.dwarves[ui_selected_dwarf].alive);
                             break;
                         }
 

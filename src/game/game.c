@@ -18,6 +18,9 @@ void game_init(GameState *state) {
     /* Raid grid init */
     memset(&state->raid, 0, sizeof(state->raid));
     state->raid.active = RAID_NONE;
+    /* Mark all guard slots as unplaced (0xFF) */
+    for (int g = 0; g < RAID_MAX_GUARDS; g++)
+        state->raid.guards[g].col = 0xFF;
     for (int r = 0; r < RAID_ROWS; r++)
         state->raid.grid[r][RAID_COL_SETTLE] = CELL_SETTLEMENT;
 
