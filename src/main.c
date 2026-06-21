@@ -163,6 +163,25 @@ int main(void) {
                             }
                             break;
 
+                        /* TEMP DEBUG: dump full enemy array state */
+                        case SDLK_F8: {
+                            fprintf(stderr, "---- enemy dump (tick=%llu, active=%d, "
+                                "threat=%d, enemies_remaining=%d, breached=%d) ----\n",
+                                (unsigned long long)state.tick, state.raid.active,
+                                state.raid.threat, state.raid.enemies_remaining,
+                                state.raid.settlement_breached);
+                            for (int ei = 0; ei < RAID_MAX_ENEMIES; ei++) {
+                                Enemy *e = &state.raid.enemies[ei];
+                                fprintf(stderr,
+                                    "  [%d] type=%d col=%d row=%d hp=%d/%d atk=%d "
+                                    "move_timer=%d spawn_delay=%d slow_timer=%d\n",
+                                    ei, e->type, e->col, e->row, e->hp, e->hp_max,
+                                    e->atk, e->move_timer, e->spawn_delay,
+                                    e->slow_timer);
+                            }
+                            break;
+                        }
+
                         /* Manual save */
                         case SDLK_F5: {
                             SaveResult r = save_game(&state);

@@ -157,6 +157,12 @@ spawn_enemies:
     ; set enemies_remaining
     mov     byte [r12 + RAID_ENEMIES_REMAINING], r9b
 
+    ; TEMP DEBUG: stash computed enemy_count + zero an iteration counter
+    ; into the unused enemies[7] slot (enemy_count maxes at 4, so slot 7
+    ; is never touched by real spawning logic)
+    mov     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_ATK], r9b
+    mov     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_SLOW_TIMER], 0
+
     ; spawn each enemy on a random row, staggered spawn delay
     xor     ecx, ecx
 .spawn_loop:
@@ -164,6 +170,10 @@ spawn_enemies:
     jge     .spawn_done
     cmp     ecx, RAID_MAX_ENEMIES
     jge     .spawn_done
+
+    ; TEMP DEBUG: bump iteration counter, record current ecx
+    inc     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_SLOW_TIMER]
+    mov     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_MOVE_TIMER], cl
 
     ; get enemy slot ptr
     imul    eax, ecx, SIZEOF_ENEMY
@@ -196,8 +206,10 @@ spawn_enemies:
     jle     .t_ok2
     mov     eax, 5
 .t_ok2:
+    push    rcx
     lea     rcx, [rel enemy_type_for_threat]
     movzx   r13d, byte [rcx + rax - 1]
+    pop     rcx
 
     mov     byte [rdi + ENEMY_TYPE],        r13b
     mov     byte [rdi + ENEMY_COL],         0       ; spawn at col 0
@@ -225,6 +237,8 @@ spawn_enemies:
     inc     ecx
     jmp     .spawn_loop
 .spawn_done:
+    ; TEMP DEBUG: snapshot r9d (enemy_count) right at loop exit
+    mov     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_ROW], r9b
 
     pop     r12
     pop     r11
