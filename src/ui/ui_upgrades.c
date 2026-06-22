@@ -121,6 +121,14 @@ static const UpgradeInfo upgrades[UPGR_COUNT] = {
       { "+2 mana/tick from crystals (15 crystals)",
         "+4 mana/tick from crystals (35 crystals)",
         "+6 mana/tick from crystals (70 crystals)" } },
+
+    { "Outposts", "BREACH", UPGR_MAX_OUTPOSTS,
+      400, 300, 0, 0, 0, 2, 0,
+      { "+50 ticks between raids (5 iron bars)",
+        "+100 ticks between raids (10 iron bars)",
+        "+150 ticks between raids (20 iron bars)",
+        "+200 ticks between raids (40 iron bars)",
+        "+250 ticks between raids (75 iron bars)" } },
 };
 
 static int last_upgr_delta = 1;
@@ -139,11 +147,12 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
     int row = 0;
 
     int bar_lv    = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_BARRACKS);
-    int db_lv     = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_DEEP_BARRACKS);
+    int db_lv     = (int)UPGR_LEVEL2(state->upgrades.tier2, UPGR_DEEP_BARRACKS);
     int rec_lv    = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_RECRUITERS);
     int wt_lv     = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_WATCH_TOWER);
     int rh_lv     = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_RUNE_HALLS);
     int mw_lv     = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_MANA_WELL);
+    int op_lv     = (int)UPGR_LEVEL2(state->upgrades.tier2, UPGR_OUTPOSTS);
     int dwarf_cap = DWARF_CAP_BASE + bar_lv * DWARF_CAP_PER_LEVEL + db_lv * 8;
     int hire_gold = HIRE_GOLD_BASE - rec_lv * HIRE_GOLD_DISCOUNT;
     int hire_food = HIRE_FOOD_BASE - rec_lv * HIRE_FOOD_DISCOUNT;
@@ -177,11 +186,12 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
     }
 
     snprintf(buf, sizeof(buf),
-             "  Cap: %d  Hire: %dg/%df  Guards: %s  Scholars: %s  Mana/tick: %d",
+             "  Cap: %d  Hire: %dg/%df  Guards: %s  Scholars: %s  Mana/tick: %d  Raid +%dticks",
              dwarf_cap, hire_gold, hire_food,
              wt_lv >= 1 ? "unlocked" : "locked",
              rh_lv >= 1 ? "unlocked" : "locked",
-             mw_lv * 2);
+             mw_lv * 2,
+             op_lv * 50);
     renderer_draw_text_grid(r, UI_COL_MARGIN, 3, COL_DIM, buf);
     renderer_draw_hline_partial(r, 4, 0, DIVIDER_COL, COL_DIM);
 
@@ -247,7 +257,9 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
         if (entry_row[i] < 0) continue;
 
         const UpgradeInfo *u = &upgrades[i];
-        int level  = (int)UPGR_LEVEL(state->upgrades.tier1, i);
+        int level  = (i >= 16)
+                   ? (int)UPGR_LEVEL2(state->upgrades.tier2, i)
+                   : (int)UPGR_LEVEL(state->upgrades.tier1, i);
         int next   = level + 1;
         int maxed  = (level >= u->max_level);
         int sel    = (i == ui_upgr_cursor);
@@ -379,6 +391,13 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
                 int lv = level < 3 ? level : 2;
                 off += snprintf(costbuf+off, sizeof(costbuf)-off,
                     "%dg  %ds  %d crystals", cg[lv], cs2[lv], cc[lv]);
+            } else if (i == UPGR_OUTPOSTS) {
+                static const int og[] = {400,700,1100,1600,2500};
+                static const int os[] = {300,500, 800,1200,1800};
+                static const int ob[] = {  5, 10,  20,  40,  75};
+                int lv = level < 5 ? level : 4;
+                off += snprintf(costbuf+off, sizeof(costbuf)-off,
+                    "%dg  %ds  %d iron bars", og[lv], os[lv], ob[lv]);
             } else {
                 off += snprintf(costbuf+off, sizeof(costbuf)-off,
                     "%dg  %ds", cost_gold, cost_stone);

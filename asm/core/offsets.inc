@@ -1,7 +1,7 @@
 ; =========================================================
 ; offsets.inc - GameState field offsets for NASM modules
-; Verified against GCC offsetof() -- sizeof(GameState) = 6208
-; SAVE_VERSION = 9
+; Verified against GCC offsetof() -- sizeof(GameState) = 6224
+; SAVE_VERSION = 10
 ; =========================================================
 
 ; --- Resources struct offsets (sizeof = 0x88 = 136) ---
@@ -62,23 +62,27 @@
 %define MORALE_IDLE_RATE    5
 
 ; --- GameState offsets ---
+; craft[RECIPE_COUNT] grew from 6 to 9 slots (+12 bytes).
+; The extra slots also change the alignment of RngState (uint64_t seed),
+; which needs GCC to insert 4 bytes of padding after tavern_level.
+; Net shift: +12 for TAVERN_BUFFS/TAVERN_LEVEL, +16 for everything else.
 %define GS_RESOURCES        0x0000
 %define GS_DWARVES          0x0088
 %define GS_UPGR_TIER1       0x1288
 %define GS_UPGR_TIER2       0x1290
 %define GS_CRAFT            0x1298
-%define GS_TAVERN_BUFFS     0x12b0
-%define GS_TAVERN_LEVEL     0x12bc
-%define GS_RNG_SEED         0x12c0
-%define GS_TICK             0x12c8
-%define GS_DEPTH            0x12d0
-%define GS_DEPTH_XP         0x12d4
-%define GS_FLAGS            0x12d8
-%define GS_PENDING          0x12dc
-%define GS_EVENTLOG         0x12e8
-%define GS_RAID             0x16f0
-%define GS_PRESTIGE         0x1820
-%define GS_SIZE             6208
+%define GS_TAVERN_BUFFS     0x12bc
+%define GS_TAVERN_LEVEL     0x12c8
+%define GS_RNG_SEED         0x12d0
+%define GS_TICK             0x12d8
+%define GS_DEPTH            0x12e0
+%define GS_DEPTH_XP         0x12e4
+%define GS_FLAGS            0x12e8
+%define GS_PENDING          0x12ec
+%define GS_EVENTLOG         0x12f8
+%define GS_RAID             0x1700
+%define GS_PRESTIGE         0x1830
+%define GS_SIZE             6224
 
 ; --- Raid struct offsets (from GS_RAID base) ---
 %define RAID_ACTIVE             0x00
@@ -218,7 +222,8 @@
 %define UPGR_DEEP_BARRACKS   16
 %define UPGR_RELIC_VAULT     17
 %define UPGR_CRYSTAL_CONDUIT 18
-%define UPGR_COUNT           19
+%define UPGR_OUTPOSTS        19
+%define UPGR_COUNT           20
 
 %define UPGR_MAX_TOOLS           5
 %define UPGR_MAX_WORKFORCE       3
@@ -234,6 +239,7 @@
 %define UPGR_MAX_DEEP_BARRACKS   3
 %define UPGR_MAX_RELIC_VAULT     3
 %define UPGR_MAX_CRYSTAL_CONDUIT 3
+%define UPGR_MAX_OUTPOSTS        5
 
 %define UPGR_COST_GOLD_TOOLS      150
 %define UPGR_COST_STONE_TOOLS      75
@@ -302,7 +308,7 @@
 %define CRAFT_ACTIVE        0x01
 %define CRAFT_TIMER         0x02
 %define SIZEOF_CRAFTSLOT    0x04
-%define RECIPE_COUNT        6
+%define RECIPE_COUNT        9
 
 %define RECIPE_IRON_BARS_I  0
 %define RECIPE_ALE_I        1
@@ -310,6 +316,9 @@
 %define RECIPE_WEAPONS_I    3
 %define RECIPE_ARMOUR_I     4
 %define RECIPE_TOOLS_I      5
+%define RECIPE_WALL_I       6
+%define RECIPE_SPIKE_I      7
+%define RECIPE_SLOW_I       8
 
 ; --- Resource indices (RES_x / 8) ---
 %define RID_GOLD            0

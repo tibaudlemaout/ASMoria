@@ -35,6 +35,9 @@ static const RecipeInfo recipes[RECIPE_COUNT] = {
     { "Weapons I",     2, 2, 10, "3 Iron Bars",              "1 Weapon",    3 },
     { "Armour I",      2, 2, 15, "4 Iron Bars",              "1 Armour",    3 },
     { "Tools I",       2, 2, 10, "2 Iron Bars + 1 Gem",      "1 Tool",      3 },
+    { "Wall",          2, 1,  8, "5 Stone + 2 Iron Bars",     "1 Wall",      2 },
+    { "Spike Trap",    2, 1, 12, "3 Iron Bars + 1 Tool",      "1 Spike Trap", 2 },
+    { "Slow Trap",     2, 1, 10, "2 Iron Bars + 1 Gem",       "1 Slow Trap",  2 },
 };
 
 /* Count total craftsdwarves and free ones */

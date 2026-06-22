@@ -93,7 +93,10 @@ typedef struct {
 #define RECIPE_WEAPONS_I     3
 #define RECIPE_ARMOUR_I      4
 #define RECIPE_TOOLS_I       5
-#define RECIPE_COUNT         6
+#define RECIPE_WALL_I        6   /* 5 stone + 2 bars  -> 1 wall      */
+#define RECIPE_SPIKE_I       7   /* 3 bars + 1 tool   -> 1 spike trap */
+#define RECIPE_SLOW_I        8   /* 2 bars + 1 gem    -> 1 slow trap  */
+#define RECIPE_COUNT         9
 
 /* Craft slot — one per recipe */
 typedef struct {
@@ -206,7 +209,8 @@ typedef struct {
 #define UPGR_DEEP_BARRACKS  16   /* depth 3: dwarf cap beyond 40 */
 #define UPGR_RELIC_VAULT    17   /* depth 4: relics/crystals cap */
 #define UPGR_CRYSTAL_CONDUIT 18  /* depth 5: passive mana from crystals */
-#define UPGR_COUNT          19
+#define UPGR_OUTPOSTS       19  /* breach: +50 ticks/level to raid interval */
+#define UPGR_COUNT          20
 
 /* Max levels per category */
 #define UPGR_MAX_TOOLS      5
@@ -214,8 +218,14 @@ typedef struct {
 #define UPGR_MAX_WATCHTOWER 5
 #define UPGR_MAX_RUNEHALLS  5
 #define UPGR_MAX_MANAWELL   5
+#define UPGR_MAX_OUTPOSTS   5   /* +50 ticks/level, max +250 on RAID_INTERVAL */
 
+/* Read a 4-bit level from tier1 (ids 0-15) */
 #define UPGR_LEVEL(tier1, id)  (((tier1) >> ((id) * 4)) & 0xF)
+/* Read a 4-bit level from tier2 (ids 16+).
+ * Bits 0-23 of tier2 are owned by the rune system (6 runes * 4 bits).
+ * Upgrade ids 16+ pack into bits 24+ at (24 + (id-16)*4). */
+#define UPGR_LEVEL2(tier2, id) (((tier2) >> (24 + ((id) - 16) * 4)) & 0xF)
 
 /* Tool costs */
 #define UPGR_COST_GOLD_TOOLS    150
@@ -233,7 +243,22 @@ typedef struct {
 #define UPGR_COST_GOLD_MANA     200
 #define UPGR_COST_STONE_MANA     50
 
-/* Workforce constants */
+/* Outposts upgrade costs (5 levels, indexed by current level 0-4) */
+#define UPGR_COST_GOLD_OUTPOSTS_1    400
+#define UPGR_COST_GOLD_OUTPOSTS_2    700
+#define UPGR_COST_GOLD_OUTPOSTS_3   1100
+#define UPGR_COST_GOLD_OUTPOSTS_4   1600
+#define UPGR_COST_GOLD_OUTPOSTS_5   2500
+#define UPGR_COST_STONE_OUTPOSTS_1   300
+#define UPGR_COST_STONE_OUTPOSTS_2   500
+#define UPGR_COST_STONE_OUTPOSTS_3   800
+#define UPGR_COST_STONE_OUTPOSTS_4  1200
+#define UPGR_COST_STONE_OUTPOSTS_5  1800
+#define UPGR_COST_BARS_OUTPOSTS_1      5
+#define UPGR_COST_BARS_OUTPOSTS_2     10
+#define UPGR_COST_BARS_OUTPOSTS_3     20
+#define UPGR_COST_BARS_OUTPOSTS_4     40
+#define UPGR_COST_BARS_OUTPOSTS_5     75
 #define DWARF_CAP_BASE      16
 #define DWARF_CAP_PER_LEVEL  8
 #define HIRE_GOLD_DISCOUNT  10

@@ -20,6 +20,23 @@
 
 %include "core/offsets.inc"
 
+; tier2 is the second uint64_t in the Upgrades struct
+%ifndef GS_UPGR_TIER2
+%define GS_UPGR_TIER2  GS_UPGR_TIER1 + 8
+%endif
+
+; Crafted breach item resource offsets (Resources struct, each field 8 bytes)
+; walls=index 14, spike_traps=15, slow_traps=16 → offsets 0x70, 0x78, 0x80
+%ifndef RES_WALLS
+%define RES_WALLS       0x70
+%endif
+%ifndef RES_SPIKE_TRAPS
+%define RES_SPIKE_TRAPS 0x78
+%endif
+%ifndef RES_SLOW_TRAPS
+%define RES_SLOW_TRAPS  0x80
+%endif
+
 extern asm_rng_next
 extern asm_tavern_buff_active
 
@@ -816,10 +833,8 @@ asm_breach_place:
     jmp     .place_done
 
 .place_wall:
-    ; consume: 5 stone + 2 iron bars
-    cmp     qword [rbx + GS_RESOURCES + RES_STONE], 5
-    jl      .place_fail
-    cmp     qword [rbx + GS_RESOURCES + RES_IRON_BARS], 2
+    ; consume 1 crafted wall from stockpile (craft via Workshop)
+    cmp     qword [rbx + GS_RESOURCES + RES_WALLS], 1
     jl      .place_fail
     ; check wall count
     movzx   eax, byte [r15 + RAID_WALL_COUNT]
@@ -833,8 +848,7 @@ asm_breach_place:
     test    r8d, r8d
     jnz     .place_fail
     ; place wall
-    sub     qword [rbx + GS_RESOURCES + RES_STONE], 5
-    sub     qword [rbx + GS_RESOURCES + RES_IRON_BARS], 2
+    sub     qword [rbx + GS_RESOURCES + RES_WALLS], 1
     mov     byte [rdx + rcx], CELL_WALL
     movzx   eax, byte [r15 + RAID_WALL_COUNT]
     imul    ecx, eax, SIZEOF_RAIDWALL
@@ -848,10 +862,8 @@ asm_breach_place:
     jmp     .place_done
 
 .place_spike:
-    ; consume: 3 iron bars + 1 tool
-    cmp     qword [rbx + GS_RESOURCES + RES_IRON_BARS], 3
-    jl      .place_fail
-    cmp     qword [rbx + GS_RESOURCES + RES_TOOLS], 1
+    ; consume 1 crafted spike trap from stockpile (craft via Workshop)
+    cmp     qword [rbx + GS_RESOURCES + RES_SPIKE_TRAPS], 1
     jl      .place_fail
     imul    ecx, r13d, RAID_COLS
     add     ecx, r12d
@@ -859,17 +871,14 @@ asm_breach_place:
     movzx   eax, byte [rdx + rcx]
     test    eax, eax
     jnz     .place_fail
-    sub     qword [rbx + GS_RESOURCES + RES_IRON_BARS], 3
-    sub     qword [rbx + GS_RESOURCES + RES_TOOLS], 1
+    sub     qword [rbx + GS_RESOURCES + RES_SPIKE_TRAPS], 1
     mov     byte [rdx + rcx], CELL_SPIKE_TRAP
     mov     eax, 1
     jmp     .place_done
 
 .place_slow:
-    ; consume: 2 iron bars + 1 gem
-    cmp     qword [rbx + GS_RESOURCES + RES_IRON_BARS], 2
-    jl      .place_fail
-    cmp     qword [rbx + GS_RESOURCES + RES_GEMS], 1
+    ; consume 1 crafted slow trap from stockpile (craft via Workshop)
+    cmp     qword [rbx + GS_RESOURCES + RES_SLOW_TRAPS], 1
     jl      .place_fail
     imul    ecx, r13d, RAID_COLS
     add     ecx, r12d
@@ -877,8 +886,7 @@ asm_breach_place:
     movzx   eax, byte [rdx + rcx]
     test    eax, eax
     jnz     .place_fail
-    sub     qword [rbx + GS_RESOURCES + RES_IRON_BARS], 2
-    sub     qword [rbx + GS_RESOURCES + RES_GEMS], 1
+    sub     qword [rbx + GS_RESOURCES + RES_SLOW_TRAPS], 1
     mov     byte [rdx + rcx], CELL_SLOW_TRAP
     mov     eax, 1
     jmp     .place_done
@@ -1076,6 +1084,17 @@ asm_tick_breach:
     inc     dword [r12 + RAID_COMPLETED]
     mov     rax, [rbx + GS_TICK]
     mov     rcx, RAID_INTERVAL
+
+    ; UPGR_OUTPOSTS (id=19) lives in tier2 at bit 36 (= 24 + (19-16)*4).
+    ; Each level adds 50 ticks to RAID_INTERVAL (+50 to +250 at max).
+    push    rdx
+    mov     rdx, [rbx + GS_UPGR_TIER2]
+    shr     rdx, 36
+    and     edx, 0xF            ; outpost level 0-5
+    imul    edx, 50
+    add     rcx, rdx
+    pop     rdx
+
     add     rax, rcx
     mov     [r12 + RAID_NEXT_TICK], rax
     mov     byte [r12 + RAID_ACTIVE], RAID_NONE

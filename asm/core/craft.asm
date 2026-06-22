@@ -41,6 +41,11 @@
 %define RID_ARMOUR_R    12      ; RES_ARMOUR  = 0x60 / 8
 %define RID_TOOL_R      13      ; RES_TOOLS   = 0x68 / 8
 
+; Crafted breach items (follow on from equipment slots in Resources)
+%define RID_WALLS       14      ; RES_WALLS        = 0x70 / 8
+%define RID_SPIKE_TRAPS 15      ; RES_SPIKE_TRAPS  = 0x78 / 8
+%define RID_SLOW_TRAPS  16      ; RES_SLOW_TRAPS   = 0x80 / 8
+
 section .data
 
 recipe_table:
@@ -56,6 +61,12 @@ recipe_table:
     db 2, 2, 15, 0, RID_IRON_BARS, 4, RES_NONE, 0,  RID_ARMOUR_R, 1
     ; [5] RECIPE_TOOLS_I      -- tier 2, 2 dwarves/unit, 10 ticks, 2 bars+1 gem -> 1 tool
     db 2, 2, 10, 0, RID_IRON_BARS, 2, RID_GEMS, 1,  RID_TOOL_R, 1
+    ; [6] RECIPE_WALL_I       -- tier 2, 1 dwarf/unit, 8 ticks, 5 stone+2 bars -> 1 wall
+    db 2, 1, 8, 0,  RID_STONE, 5, RID_IRON_BARS, 2, RID_WALLS, 1
+    ; [7] RECIPE_SPIKE_I      -- tier 2, 1 dwarf/unit, 12 ticks, 3 bars+1 tool -> 1 spike trap
+    db 2, 1, 12, 0, RID_IRON_BARS, 3, RID_TOOL_R, 1, RID_SPIKE_TRAPS, 1
+    ; [8] RECIPE_SLOW_I       -- tier 2, 1 dwarf/unit, 10 ticks, 2 bars+1 gem -> 1 slow trap
+    db 2, 1, 10, 0, RID_IRON_BARS, 2, RID_GEMS, 1,  RID_SLOW_TRAPS, 1
 
 %define RSIZ    10  ; recipe entry size
 

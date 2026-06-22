@@ -16,7 +16,17 @@
 
 %include "core/offsets.inc"
 
+; tier2 field is the 8 bytes immediately after tier1
+%ifndef GS_UPGR_TIER2
+%define GS_UPGR_TIER2  GS_UPGR_TIER1 + 8
+%endif
+
 section .data
+
+; Outposts costs (5 levels, indexed by current level 0-4)
+outpost_gold:   dd 400, 700, 1100, 1600, 2500
+outpost_stone:  dd 300, 500,  800, 1200, 1800
+outpost_bars:   dd   5,  10,   20,   40,   75
 
 ; Tools extended costs (levels 4-5, index 3=Lv4, 4=Lv5)
 tools_ext_gold:   dd 400, 700
@@ -144,14 +154,20 @@ asm_buy_upgrade:
 
 .chk_new_upgrades:
     ; All new upgrades use generic max-3 check
-    ; except deep barracks which needs depth check
+    ; except deep barracks and outposts which need their own
     cmp     r12, UPGR_DEEP_BARRACKS
     je      .chk_deep_barracks
+    cmp     r12, UPGR_OUTPOSTS
+    je      .chk_outposts
     cmp     r13, 3
     jge     .fail
     jmp     .compute_cost
 .chk_deep_barracks:
     cmp     r13, UPGR_MAX_DEEP_BARRACKS
+    jge     .fail
+    jmp     .compute_cost
+.chk_outposts:
+    cmp     r13, UPGR_MAX_OUTPOSTS
     jge     .fail
     jmp     .compute_cost
 
@@ -209,6 +225,8 @@ asm_buy_upgrade:
     je      .cost_relic_vault
     cmp     r12, UPGR_CRYSTAL_CONDUIT
     je      .cost_crystal_conduit
+    cmp     r12, UPGR_OUTPOSTS
+    je      .cost_outposts
     ; id 5 = watchtower
     jmp     .cost_watchtower
 
@@ -712,7 +730,34 @@ asm_buy_upgrade:
     sub     qword [rbx + GS_RESOURCES + RES_CRYSTALS], rcx
     jmp     .write_level
 
+; Outposts: gold + stone + iron bars (5-level table)
+.cost_outposts:
+    lea     rax, [rel outpost_gold]
+    mov     r14d, [rax + r13*4]
+    cmp     [rbx + GS_RESOURCES + RES_GOLD], r14
+    jl      .fail
+    lea     rax, [rel outpost_stone]
+    movsx   rcx, dword [rax + r13*4]
+    cmp     [rbx + GS_RESOURCES + RES_STONE], rcx
+    jl      .fail
+    lea     rax, [rel outpost_bars]
+    movsx   rcx, dword [rax + r13*4]
+    cmp     qword [rbx + GS_RESOURCES + RES_IRON_BARS], rcx
+    jl      .fail
+    sub     [rbx + GS_RESOURCES + RES_GOLD], r14
+    lea     rax, [rel outpost_stone]
+    movsx   rcx, dword [rax + r13*4]
+    sub     [rbx + GS_RESOURCES + RES_STONE], rcx
+    lea     rax, [rel outpost_bars]
+    movsx   rcx, dword [rax + r13*4]
+    sub     qword [rbx + GS_RESOURCES + RES_IRON_BARS], rcx
+    jmp     .write_level
+
 .write_level:
+    cmp     r12, 16
+    jge     .write_tier2
+
+    ; ids 0-15 pack into tier1 at (id * 4) bits
     mov     rcx, r12
     shl     rcx, 2
     mov     rax, 0xF
@@ -722,8 +767,24 @@ asm_buy_upgrade:
     mov     rax, r15
     shl     rax, cl
     or      [rbx + GS_UPGR_TIER1], rax
+    jmp     .write_event
 
-    mov     byte [rbx + GS_PENDING + PENDING_CODE],     0x41
+.write_tier2:
+    ; ids 16+ pack into tier2 at (24 + (id-16)*4) bits.
+    ; Bits 0-23 of tier2 belong to the rune system (6 runes * 4 bits).
+    mov     rcx, r12
+    sub     rcx, 16
+    shl     rcx, 2
+    add     rcx, 24
+    mov     rax, 0xF
+    shl     rax, cl
+    not     rax
+    and     [rbx + GS_UPGR_TIER2], rax
+    mov     rax, r15
+    shl     rax, cl
+    or      [rbx + GS_UPGR_TIER2], rax
+
+.write_event:
     mov     byte [rbx + GS_PENDING + PENDING_SEVERITY], EVT_MILESTONE
     mov     byte [rbx + GS_PENDING + PENDING_DWARF],    0xFF
 
