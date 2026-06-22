@@ -297,6 +297,28 @@ void ui_draw_upgrades(Renderer *r, const GameState *state) {
             && (cost_wood == 0 || state->resources.wood >= cost_wood)
             && (cost_food == 0 || state->resources.food >= cost_food);
 
+        /* Iron bar affordability — checked separately since bars aren't in
+           the generic cost fields. Covers Outposts and the ext-cost tiers
+           of Watch Tower, Tools, Mana Well, Forge, Deep Barracks, etc. */
+        if (can_afford && !maxed) {
+            static const int wt_bars[]   = {0,0,0,3,8};
+            static const int tool_bars[] = {0,0,0,5,15};
+            static const int mw_bars[]   = {0,0,0,2,5};
+            static const int op_bars[]   = {5,10,20,40,75};
+            static const int forge_bars[]= {10,25,50};
+            static const int dbar_bars[] = {15,35,70};
+            int bar_cost = 0;
+            int lv = level < u->max_level ? level : u->max_level - 1;
+            if (i == UPGR_OUTPOSTS      && lv < 5) bar_cost = op_bars[lv];
+            else if (i == UPGR_WATCH_TOWER  && lv >= 3) bar_cost = wt_bars[lv];
+            else if (i < 3              && lv >= 3) bar_cost = tool_bars[lv];
+            else if (i == UPGR_MANA_WELL    && lv >= 3) bar_cost = mw_bars[lv];
+            else if (i == UPGR_FORGE        && lv < 3) bar_cost = forge_bars[lv];
+            else if (i == UPGR_DEEP_BARRACKS && lv < 3) bar_cost = dbar_bars[lv];
+            if (bar_cost > 0 && state->resources.iron_bars < bar_cost)
+                can_afford = 0;
+        }
+
         int is_degraded = 0;
         if (i == UPGR_WATCH_TOWER) is_degraded = (state->flags & FLAG_WATCH_DEGRADED) != 0;
         if (i == UPGR_RUNE_HALLS)  is_degraded = (state->flags & FLAG_RUNE_DEGRADED)  != 0;
