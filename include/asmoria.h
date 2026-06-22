@@ -93,7 +93,13 @@ typedef struct {
 #define RECIPE_WEAPONS_I     3
 #define RECIPE_ARMOUR_I      4
 #define RECIPE_TOOLS_I       5
-#define RECIPE_WALL_I        6   /* 5 stone + 2 bars  -> 1 wall      */
+#define RECIPE_IRON_BARS_I   0
+#define RECIPE_ALE_I         1
+#define RECIPE_IRON_BARS_II  2
+#define RECIPE_WEAPONS_I     3
+#define RECIPE_ARMOUR_I      4
+#define RECIPE_TOOLS_I       5
+#define RECIPE_WALL_I        6   /* 5 stone + 2 bars  -> 1 wall       */
 #define RECIPE_SPIKE_I       7   /* 3 bars + 1 tool   -> 1 spike trap */
 #define RECIPE_SLOW_I        8   /* 2 bars + 1 gem    -> 1 slow trap  */
 #define RECIPE_COUNT         9
@@ -209,7 +215,7 @@ typedef struct {
 #define UPGR_DEEP_BARRACKS  16   /* depth 3: dwarf cap beyond 40 */
 #define UPGR_RELIC_VAULT    17   /* depth 4: relics/crystals cap */
 #define UPGR_CRYSTAL_CONDUIT 18  /* depth 5: passive mana from crystals */
-#define UPGR_OUTPOSTS       19  /* breach: +50 ticks/level to raid interval */
+#define UPGR_OUTPOSTS       19   /* breach: +50 ticks/level to raid interval */
 #define UPGR_COUNT          20
 
 /* Max levels per category */
@@ -218,14 +224,14 @@ typedef struct {
 #define UPGR_MAX_WATCHTOWER 5
 #define UPGR_MAX_RUNEHALLS  5
 #define UPGR_MAX_MANAWELL   5
-#define UPGR_MAX_OUTPOSTS   5   /* +50 ticks/level, max +250 on RAID_INTERVAL */
+#define UPGR_MAX_OUTPOSTS   5
 
 /* Read a 4-bit level from tier1 (ids 0-15) */
-#define UPGR_LEVEL(tier1, id)  (((tier1) >> ((id) * 4)) & 0xF)
+#define UPGR_LEVEL(tier1, id)   (((tier1) >> ((id) * 4)) & 0xF)
 /* Read a 4-bit level from tier2 (ids 16+).
- * Bits 0-23 of tier2 are owned by the rune system (6 runes * 4 bits).
+ * Bits 0-23 of tier2 belong to the rune system (6 runes * 4 bits).
  * Upgrade ids 16+ pack into bits 24+ at (24 + (id-16)*4). */
-#define UPGR_LEVEL2(tier2, id) (((tier2) >> (24 + ((id) - 16) * 4)) & 0xF)
+#define UPGR_LEVEL2(tier2, id)  (((tier2) >> (24 + ((id) - 16) * 4)) & 0xF)
 
 /* Tool costs */
 #define UPGR_COST_GOLD_TOOLS    150
@@ -243,22 +249,7 @@ typedef struct {
 #define UPGR_COST_GOLD_MANA     200
 #define UPGR_COST_STONE_MANA     50
 
-/* Outposts upgrade costs (5 levels, indexed by current level 0-4) */
-#define UPGR_COST_GOLD_OUTPOSTS_1    400
-#define UPGR_COST_GOLD_OUTPOSTS_2    700
-#define UPGR_COST_GOLD_OUTPOSTS_3   1100
-#define UPGR_COST_GOLD_OUTPOSTS_4   1600
-#define UPGR_COST_GOLD_OUTPOSTS_5   2500
-#define UPGR_COST_STONE_OUTPOSTS_1   300
-#define UPGR_COST_STONE_OUTPOSTS_2   500
-#define UPGR_COST_STONE_OUTPOSTS_3   800
-#define UPGR_COST_STONE_OUTPOSTS_4  1200
-#define UPGR_COST_STONE_OUTPOSTS_5  1800
-#define UPGR_COST_BARS_OUTPOSTS_1      5
-#define UPGR_COST_BARS_OUTPOSTS_2     10
-#define UPGR_COST_BARS_OUTPOSTS_3     20
-#define UPGR_COST_BARS_OUTPOSTS_4     40
-#define UPGR_COST_BARS_OUTPOSTS_5     75
+/* Workforce constants */
 #define DWARF_CAP_BASE      16
 #define DWARF_CAP_PER_LEVEL  8
 #define HIRE_GOLD_DISCOUNT  10
@@ -383,6 +374,10 @@ typedef struct {
 #define ENEMY_STONE_TROLL   3
 #define ENEMY_WAR_TROLL     4
 #define ENEMY_DEMON         5
+#define ENEMY_SKELETON      6   /* necromancer raid - fast, fragile  */
+#define ENEMY_LICH          7   /* necromancer raid - slow, powerful */
+#define ENEMY_DRAKE         8   /* dragon raid - mid-tier            */
+#define ENEMY_DRAGON        9   /* dragon raid - boss tier           */
 
 #define RAID_MAX_ENEMIES    8
 #define RAID_MAX_GUARDS     8
@@ -458,8 +453,15 @@ typedef struct {
     uint8_t  cursor_col;
     uint8_t  cursor_row;
     uint8_t  place_mode;    /* 0=guard 1=wall 2=spike 3=slow       */
-    uint8_t  _pad[1];
+    uint8_t  raid_type;     /* RAID_TYPE_* — set when WARNING fires */
 } Raid;
+
+/* Raid type constants — determines enemy flavour, picked at WARNING by depth+RNG */
+#define RAID_TYPE_GOBLIN        0   /* depth 1+: scouts and raiders      */
+#define RAID_TYPE_TROLL         1   /* depth 2+: stone and war trolls    */
+#define RAID_TYPE_NECROMANCER   2   /* depth 3+: skeletons and liches    */
+#define RAID_TYPE_DRAGON        3   /* depth 4+: drakes and dragons      */
+#define RAID_TYPE_COUNT         4
 
 /* Craftable breach items (stored in Resources) */
 #define WALLS_CRAFT_STONE   5
@@ -500,7 +502,7 @@ typedef struct {
     /* offset 0x0000 */ Resources    resources;
     /* offset 0x0028 */ Dwarf        dwarves[MAX_DWARVES];
     /* offset 0x1028 */ Upgrades     upgrades;
-    CraftSlot    craft[RECIPE_COUNT];   /* 6 * 4 = 24 bytes */
+    CraftSlot    craft[RECIPE_COUNT];   /* 9 * 4 = 36 bytes */
     TavernBuff   tavern_buffs[MAX_TAVERN_BUFFS]; /* 3 * 4 = 12 bytes */
     uint32_t     tavern_level;           /* 0 = not built */
     /* offset 0x1038 */ RngState     rng;

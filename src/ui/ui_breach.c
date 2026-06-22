@@ -95,6 +95,10 @@ static void draw_grid(Renderer *r, const GameState *state, int phase) {
                     case ENEMY_STONE_TROLL:
                     case ENEMY_WAR_TROLL:     glyph = " [T]"; break;
                     case ENEMY_DEMON:          glyph = " [D]"; break;
+                    case ENEMY_SKELETON:       glyph = " [s]"; break;
+                    case ENEMY_LICH:           glyph = " [L]"; break;
+                    case ENEMY_DRAKE:          glyph = " [r]"; break;
+                    case ENEMY_DRAGON:         glyph = " [W]"; break;
                     default:                   glyph = " [?]"; break;
                 }
                 gcol = 0xFF4444FF;
@@ -210,7 +214,7 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
 
         int lr = GRID_START_ROW + RAID_ROWS + 1;
         renderer_draw_text_grid(r, _UI_COL_MARGIN, lr, COL_DIM,
-            "  [G]=Guard  [W]=Wall  [^]=Spike  [~]=Slow  [|]=Settlement");
+            "  [G]=Guard  [W]=Wall  [^]=Spike  [~]=Slow  [|]=Settlement  [g]=Goblin [T]=Troll [s/L]=Undead [r/W]=Dragon");
         renderer_draw_hline_partial(r, 41, 0, _DIVIDER_COL, COL_DIM);
         renderer_draw_text_grid(r, _UI_COL_MARGIN, 42, COL_DIM,
             "  Arrows: move   TAB: cycle mode   ENTER: place   X: remove   B: close");
@@ -221,17 +225,19 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
     int threat = raid->threat;
     if (threat < 1) threat = 1;
     if (threat > 5) threat = 5;
+
+    static const char *raid_type_names[] = {
+        "Goblin Raid", "Troll Raid", "Necromancer Raid", "Dragon Raid"
+    };
+    int rt = raid->raid_type < RAID_TYPE_COUNT ? raid->raid_type : 0;
+    const char *rt_name = raid_type_names[rt];
+
     if (raid->active == RAID_COMBAT)
         snprintf(buf, sizeof(buf), "  Threat: %d/5 - %s    Enemies remaining: %d",
-                 threat,
-                 (threat <= 2) ? "Goblins" :
-                 (threat <= 4) ? "Trolls"  : "Demon",
-                 raid->enemies_remaining);
+                 threat, rt_name, raid->enemies_remaining);
     else
         snprintf(buf, sizeof(buf), "  Threat: %d/5 - %s    Place your defences!",
-                 threat,
-                 (threat <= 2) ? "Goblins" :
-                 (threat <= 4) ? "Trolls"  : "Demon");
+                 threat, rt_name);
     renderer_draw_text_grid(r, _UI_COL_MARGIN, 2,
                             raid->active == RAID_COMBAT ? 0xFF4444FF : COL_GOLD,
                             buf);

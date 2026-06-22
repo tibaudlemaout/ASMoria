@@ -43,12 +43,26 @@ extern asm_tavern_buff_active
 ; Enemy stat tables [threat 0-5, index 0 unused]
 section .data
 
-enemy_hp_max:   dw 30, 50, 120, 200, 350   ; indexed by threat-1
-enemy_atk:      db  5,  8,  15,  22,  35
-enemy_move_int: db  8,  8,  12,  12,  10       ; ticks per move, indexed by threat-1
-enemy_count:    db  2,  4,   2,   3,   2       ; enemies to spawn, indexed by threat-1
-enemy_type_for_threat: db ENEMY_GOBLIN_SCOUT, ENEMY_GOBLIN_RAIDER, \
-                           ENEMY_STONE_TROLL, ENEMY_WAR_TROLL, ENEMY_DEMON
+; ---------------------------------------------------------------
+; Raid-type tables — indexed by (raid_type * 2 + variant)
+; variant = 0 for threat 1-2 (weak), 1 for threat 3+ (strong)
+; Layout: [goblin_w, goblin_s, troll_w, troll_s,
+;           necro_w,  necro_s,  dragon_w, dragon_s]
+;
+; Goblin:      Scout / Raider   (familiar foes, low depth)
+; Troll:       Stone / War      (tough, mid depth)
+; Necromancer: Skeleton / Lich  (fast chaff or slow powerhouse)
+; Dragon:      Drake / Dragon   (rare, high depth, deadly)
+; ---------------------------------------------------------------
+rt_hp_max:   dw  30,  50, 120, 200,  20,  90, 180, 350
+rt_atk:      db   5,   8,  15,  22,   7,  20,  30,  45
+rt_move_int: db   8,   8,  12,  12,   6,  15,  10,  14
+rt_type:     db   ENEMY_GOBLIN_SCOUT, ENEMY_GOBLIN_RAIDER, \
+                  ENEMY_STONE_TROLL,  ENEMY_WAR_TROLL,     \
+                  ENEMY_SKELETON,     ENEMY_LICH,           \
+                  ENEMY_DRAKE,        ENEMY_DRAGON
+; enemy count per (raid_type*2+variant)
+rt_count:    db   2,   4,   1,   3,   3,   5,   1,   2
 
 ; Reward tables [threat 1-5]
 reward_gold_tab:   dd 0, 50, 100, 200, 350, 600
@@ -143,25 +157,32 @@ spawn_enemies:
     push    r10
     push    r11
     push    r12
+    push    r13
+    push    r14
+    push    r15
 
     lea     r12, [rbx + GS_RAID]
 
+    ; compute table index = raid_type * 2 + variant
+    ; variant = (threat >= 3) ? 1 : 0
     movzx   eax, byte [r12 + RAID_THREAT]
-    cmp     eax, 5
-    jle     .threat_ok
-    mov     eax, 5
-.threat_ok:
+    movzx   r10d, byte [r12 + RAID_TYPE]
+    imul    r10d, 2                ; r10 = raid_type * 2
+    cmp     eax, 3
+    jl      .se_weak
+    inc     r10d                   ; strong variant
+.se_weak:
+    ; r10 = final table index (0-7)
+
+    ; load stats for this raid type + variant
     push    rcx
-    lea     rcx, [rel enemy_count]
-    movzx   r9d, byte [rcx + rax - 1]
-    lea     rcx, [rel enemy_hp_max]
-    movzx   r10d, word [rcx + rax*2 - 2]
-    lea     rcx, [rel enemy_atk]
-    movzx   r11d, byte [rcx + rax - 1]
+    lea     rcx, [rel rt_count]
+    movzx   r9d, byte [rcx + r10]         ; r9 = enemy count
+    lea     rcx, [rel rt_hp_max]
+    movzx   r11d, word [rcx + r10*2]      ; r11 = hp_max
     pop     rcx
 
     lea     r8, [r12 + RAID_ENEMIES]
-    ; clear enemy array first
     push    rdi
     push    rcx
     mov     rdi, r8
@@ -171,16 +192,13 @@ spawn_enemies:
     pop     rcx
     pop     rdi
 
-    ; set enemies_remaining
     mov     byte [r12 + RAID_ENEMIES_REMAINING], r9b
 
     ; TEMP DEBUG: stash computed enemy_count + zero an iteration counter
-    ; into the unused enemies[7] slot (enemy_count maxes at 4, so slot 7
-    ; is never touched by real spawning logic)
+    ; into the unused enemies[7] slot
     mov     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_ATK], r9b
     mov     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_SLOW_TIMER], 0
 
-    ; spawn each enemy on a random row, staggered spawn delay
     xor     ecx, ecx
 .spawn_loop:
     cmp     ecx, r9d
@@ -192,7 +210,6 @@ spawn_enemies:
     inc     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_SLOW_TIMER]
     mov     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_MOVE_TIMER], cl
 
-    ; get enemy slot ptr
     imul    eax, ecx, SIZEOF_ENEMY
     lea     rdi, [r8 + rax]
 
@@ -212,51 +229,42 @@ spawn_enemies:
     pop     rcx
     pop     rdi
 
-    ; row = rax % RAID_ROWS
     xor     edx, edx
     mov     r13d, RAID_ROWS
-    div     r13
-    ; rdx = row
+    div     r13                    ; rdx = row
 
-    movzx   eax, byte [r12 + RAID_THREAT]
-    cmp     eax, 5
-    jle     .t_ok2
-    mov     eax, 5
-.t_ok2:
+    ; load enemy type, atk, move_int from tables using r10 index
     push    rcx
-    lea     rcx, [rel enemy_type_for_threat]
-    movzx   r13d, byte [rcx + rax - 1]
+    lea     rcx, [rel rt_type]
+    movzx   r13d, byte [rcx + r10]         ; enemy type
+    lea     rcx, [rel rt_atk]
+    movzx   r14d, byte [rcx + r10]         ; atk
+    lea     rcx, [rel rt_move_int]
+    movzx   r15d, byte [rcx + r10]         ; move interval
     pop     rcx
 
-    mov     byte [rdi + ENEMY_TYPE],        r13b
-    mov     byte [rdi + ENEMY_COL],         0       ; spawn at col 0
-    mov     byte [rdi + ENEMY_ROW],         dl
-    mov     byte [rdi + ENEMY_SLOW_TIMER],  0
-    mov     word [rdi + ENEMY_HP],          r10w
-    mov     word [rdi + ENEMY_HP_MAX],      r10w
-    mov     byte [rdi + ENEMY_ATK],         r11b
+    mov     byte [rdi + ENEMY_TYPE],       r13b
+    mov     byte [rdi + ENEMY_COL],        0
+    mov     byte [rdi + ENEMY_ROW],        dl
+    mov     byte [rdi + ENEMY_SLOW_TIMER], 0
+    mov     word [rdi + ENEMY_HP],         r11w
+    mov     word [rdi + ENEMY_HP_MAX],     r11w
+    mov     byte [rdi + ENEMY_ATK],        r14b
+    mov     byte [rdi + ENEMY_MOVE_TIMER], r15b
+    mov     byte [rdi + ENEMY_MOVE_INT],   r15b   ; stored for tick_enemies
 
-    movzx   eax, byte [r12 + RAID_THREAT]
-    cmp     eax, 5
-    jle     .t_ok3
-    mov     eax, 5
-.t_ok3:
-    push    rcx
-    lea     rcx, [rel enemy_move_int]
-    movzx   r13d, byte [rcx + rax - 1]
-    pop     rcx
-    mov     byte [rdi + ENEMY_MOVE_TIMER],  r13b
-
-    ; spawn delay: each enemy waits 10 ticks more than previous
     imul    eax, ecx, 10
     mov     byte [rdi + ENEMY_SPAWN_DELAY], al
 
     inc     ecx
     jmp     .spawn_loop
 .spawn_done:
-    ; TEMP DEBUG: snapshot r9d (enemy_count) right at loop exit
+    ; TEMP DEBUG: snapshot r9d at loop exit
     mov     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_ROW], r9b
 
+    pop     r15
+    pop     r14
+    pop     r13
     pop     r12
     pop     r11
     pop     r10
@@ -446,36 +454,20 @@ tick_enemies:
     jmp     .te_next
 
 .te_move:
-    ; reset move timer based on speed (slow if slow_timer active)
+    ; reset move timer from ENEMY_MOVE_INT stored at spawn
+    ; slow_timer doubles the interval when active
     movzx   ecx, byte [r8 + ENEMY_SLOW_TIMER]
     test    ecx, ecx
     jz      .te_normal_speed
     dec     ecx
     mov     byte [r8 + ENEMY_SLOW_TIMER], cl
-    ; slowed: double the move interval
-    movzx   eax, byte [r12 + RAID_THREAT]
-    cmp     eax, 5
-    jle     .te_s1
-    mov     eax, 5
-.te_s1:
-    push    rcx
-    lea     rcx, [rel enemy_move_int]
-    movzx   eax, byte [rcx + rax - 1]
-    pop     rcx
-    shl     eax, 1          ; *2 when slowed
+    movzx   eax, byte [r8 + ENEMY_MOVE_INT]
+    shl     eax, 1              ; *2 when slowed
     mov     byte [r8 + ENEMY_MOVE_TIMER], al
     jmp     .te_do_move
 
 .te_normal_speed:
-    movzx   eax, byte [r12 + RAID_THREAT]
-    cmp     eax, 5
-    jle     .te_s2
-    mov     eax, 5
-.te_s2:
-    push    rcx
-    lea     rcx, [rel enemy_move_int]
-    movzx   eax, byte [rcx + rax - 1]
-    pop     rcx
+    movzx   eax, byte [r8 + ENEMY_MOVE_INT]
     mov     byte [r8 + ENEMY_MOVE_TIMER], al
 
 .te_do_move:
@@ -958,6 +950,24 @@ asm_tick_breach:
     ; trigger warning
     call    compute_threat
     mov     byte [r12 + RAID_THREAT], al
+
+    ; pick raid type: available types = min(depth, 4), chosen by rng % available
+    ; depth 1 → goblin only; depth 2 → +troll; depth 3 → +necro; depth 4+ → +dragon
+    push    rax
+    push    rdi
+    movzx   eax, byte [rbx + GS_DEPTH]
+    cmp     eax, RAID_TYPE_COUNT
+    jle     .rt_clamp
+    mov     eax, RAID_TYPE_COUNT
+.rt_clamp:
+    mov     r13d, eax           ; r13 = number of available types
+    mov     rdi, rbx
+    call    asm_rng_next        ; rax = random value
+    xor     edx, edx
+    div     r13                 ; rdx = rax % available_types
+    mov     byte [r12 + RAID_TYPE], dl
+    pop     rdi
+    pop     rax
 
     mov     byte [r12 + RAID_ACTIVE], RAID_WARNING
     mov     byte [r12 + RAID_SETTLEMENT_BREACH], 0

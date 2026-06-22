@@ -104,6 +104,7 @@
 %define RAID_CURSOR_COL         0x128
 %define RAID_CURSOR_ROW         0x129
 %define RAID_PLACE_MODE         0x12a
+%define RAID_TYPE               0x12b   ; RAID_TYPE_* constant, set at WARNING
 
 ; --- Enemy struct offsets ---
 %define ENEMY_TYPE          0x00
@@ -115,6 +116,7 @@
 %define ENEMY_ATK           0x08
 %define ENEMY_MOVE_TIMER    0x09
 %define ENEMY_SPAWN_DELAY   0x0a
+%define ENEMY_MOVE_INT      0x0b    ; base move interval, stored at spawn (was padding)
 %define SIZEOF_ENEMY        0x0c
 
 ; --- RaidGuard struct offsets ---
@@ -152,6 +154,10 @@
 %define ENEMY_STONE_TROLL       3
 %define ENEMY_WAR_TROLL         4
 %define ENEMY_DEMON             5
+%define ENEMY_SKELETON          6
+%define ENEMY_LICH              7
+%define ENEMY_DRAKE             8
+%define ENEMY_DRAGON            9
 
 %define RAID_MAX_ENEMIES    8
 %define RAID_MAX_GUARDS     8
@@ -161,6 +167,13 @@
 %define RAID_WARNING        1
 %define RAID_COMBAT         2
 %define RAID_RESULT         3
+
+; Raid type — determines enemy flavour, set when WARNING fires
+%define RAID_TYPE_GOBLIN        0
+%define RAID_TYPE_TROLL         1
+%define RAID_TYPE_NECROMANCER   2
+%define RAID_TYPE_DRAGON        3
+%define RAID_TYPE_COUNT         4
 
 %define RAID_WARN_TICKS     120
 %define RAID_FIRST_TICK     300
