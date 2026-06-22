@@ -57,16 +57,17 @@ asm_tick_infra:
     ; -------------------------------------------------------
 .check_rune:
     test    r9d, (1 << 1)               ; FLAG_RUNE_DEGRADED
-    jnz     .check_xp_bonus             ; skip if degraded
+    jnz     .prestige_bonuses           ; skip if degraded
 
     mov     rax, r8
     shr     rax, (UPGR_RUNE_HALLS * 4)
     and     rax, 0xF                    ; rune halls level
-    cmp     rax, 2
-    jl      .check_xp_bonus             ; lv1 = unlock only
+    test    rax, rax
+    jz      .prestige_bonuses           ; not built at all
 
-    ; lv2+: count alive scholars, add mana
-    ; lv4+: double mana per scholar
+    ; lv1+: count alive scholars, add mana
+    ; lv1-3: +1 mana/scholar/tick
+    ; lv4+:  +2 mana/scholar/tick
     mov     r9, rax                     ; r9 = rune level
     xor     r10, r10                    ; r10 = scholar count
     lea     r11, [rbx + GS_DWARVES]
@@ -91,7 +92,7 @@ asm_tick_infra:
     test    r10, r10
     jz      .check_xp_bonus
 
-    ; mana per scholar: 1 at lv2-3, 2 at lv4-5
+    ; mana per scholar: 1 at lv1-3, 2 at lv4-5
     mov     rax, 1
     cmp     r9, 4
     jl      .add_mana
@@ -108,15 +109,14 @@ asm_tick_infra:
     shr     rax, (UPGR_RUNE_HALLS * 4)
     and     rax, 0xF
     cmp     rax, 3
-    jl      .done
+    jl      .prestige_bonuses           ; fixed: was jumping to .done (skipping prestige)
 
-    ; add 1 XP to job_xp[current_job] for each working dwarf
     lea     r11, [rbx + GS_DWARVES]
     mov     rcx, MAX_DWARVES
 
 .xp_loop:
     test    rcx, rcx
-    jz      .done
+    jz      .prestige_bonuses           ; fixed: was jumping to .done (skipping prestige)
     movzx   edx, byte [r11 + DWARF_ALIVE]
     test    dl, dl
     jz      .xp_next
@@ -127,7 +127,6 @@ asm_tick_infra:
     test    al, al
     jnz     .xp_next                    ; force-resting: no bonus
 
-    ; add 1 XP to job_xp[job]
     movzx   rax, dl
     shl     rax, 3
     add     qword [r11 + DWARF_JOB_XP + rax], 1
@@ -138,8 +137,10 @@ asm_tick_infra:
     jmp     .xp_loop
 
     ; -------------------------------------------------------
-    ; Prestige bonuses: passive food/wood ticks
+    ; Prestige bonuses: passive food/wood/mana ticks
+    ; (always run — independent of rune halls state)
     ; -------------------------------------------------------
+.prestige_bonuses:
     mov     rax, [rbx + GS_PRESTIGE + PRESTIGE_NODES]
 
     bt      rax, PNODE_FOOD_TICK

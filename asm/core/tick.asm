@@ -69,22 +69,25 @@ asm_tick:
     mov     rdi, rbx
     call    asm_tick_resources
 
-    ; 6. Building upkeep (before infra so degraded buildings dont produce)
+    ; 6. Infrastructure effects (Scholar/Mana Well) — run BEFORE upkeep
+    ;    so scholars generate mana before Rune Halls upkeep is checked.
+    ;    Without this order, upkeep degrades Rune Halls on tick 1 (mana=0)
+    ;    and infra is then skipped, creating an unbreakable deadlock.
+    mov     rdi, rbx
+    call    asm_tick_infra
+
+    ; 7. Building upkeep — now has mana from scholars to pay with
     mov     rdi, rbx
     call    asm_tick_upkeep
 
-    ; 7. Depth resource yields
+    ; 8. Depth resource yields
     mov     rdi, rbx
     call    asm_tick_depth
 
     mov     rdi, rbx
     call    asm_tick_craft
 
-    ; 8. Infrastructure effects (Scholar/Mana Well) — skipped if degraded
-    mov     rdi, rbx
-    call    asm_tick_infra
-
-    ; 8. Raid / Breach system
+    ; 9. Raid / Breach system
     mov     rdi, rbx
     call    asm_tick_breach
 

@@ -84,15 +84,14 @@ asm_tick_upkeep:
 
 .wt_skip:
     ; -------------------------------------------------------
-    ; Rune Halls upkeep: level * 2 mana/tick
+    ; Rune Halls upkeep: level * 1 mana/tick
     ; -------------------------------------------------------
     mov     rax, r8
     shr     rax, (UPGR_RUNE_HALLS * 4)
     and     rax, 0xF
     test    rax, rax
     jz      .rh_skip
-
-    shl     rax, 1                      ; * 2
+    ; rax = level (no multiply — cost is 1 mana per level per tick)
     cmp     [rbx + GS_RESOURCES + RES_MANA], rax
     jl      .rh_degrade
 
