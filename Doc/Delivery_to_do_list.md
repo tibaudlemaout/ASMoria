@@ -45,7 +45,7 @@
 - [x] Iron Bars crafting (2 ore → 1 bar / 10 ticks)
 - [x] Ale crafting (food + wood)
 - [x] Crafted goods as upgrade costs
-- [ ] Great Forge building (depth 3 unlock)
+- [x] Great Forge building (depth 3 unlock)
 - [x] UI: storage cap display per resource
 
 ---
@@ -70,7 +70,7 @@
 - [x] Hero trait display in dwarf panel
 - [x] Raid type variety (Goblin, Troll, Necromancer, Dragon)
 - [x] Raid type tied to depth + RNG
-- [ ] Trap upgrade category
+- [x] Trap upgrade category
 - [x] Spike Pit, Flame Vent, Ballista
 - [ ] Trap passive damage per combat round
 - [ ] Trap upkeep

@@ -24,6 +24,8 @@ int ui_show_prestige     = 0;
 int ui_show_craft        = 0;
 int ui_show_tavern       = 0;
 int ui_show_depth        = 0;
+int ui_show_help         = 0;
+int ui_show_achievements = 0;
 static int scroll_offset      = 0;
 static int dwarf_scroll_offset = 0;
 
@@ -177,7 +179,11 @@ void ui_draw_all(Renderer *r, const GameState *state) {
     }
     ui_draw_titlebar(r, state);
     ui_draw_resources(r, state);
-    if (ui_show_depth) {
+    if (ui_show_help) {
+        ui_draw_help(r);
+    } else if (ui_show_achievements) {
+        ui_draw_achievements(r, state);
+    } else if (ui_show_depth) {
         ui_draw_depth_confirm(r, state);
     } else {
         ui_draw_dwarves(r, state);
@@ -535,6 +541,174 @@ void ui_draw_dwarf_detail(Renderer *r, const GameState *state) {
     /* Row 6: job assignment keys */
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 6, COL_DIM,
         " [M]iner [L]umberer [F]armer [G]uard [S]cholar [C]raftsdwarf [I]dle  [E] Feed");
+}
+
+/* =========================================================
+ * Help panel  ([/] key)
+ * ========================================================= */
+void ui_draw_help(Renderer *r) {
+    int row = UI_ROW_DWARVES;
+    renderer_draw_hline_partial(r, row, 0, DIVIDER_COL, COL_DIM);
+    row++;
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_ACCENT,
+        "  [ HELP \xe2\x80\x94 KEY BINDINGS ]");
+    row += 2;
+
+    int lc = UI_COL_MARGIN;
+    int rc = UI_COL_MARGIN + 44;
+
+    renderer_draw_text_grid(r, lc, row, COL_FG,  "  GENERAL");
+    renderer_draw_text_grid(r, rc, row, COL_FG,  "  DWARVES");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [H]        Hire dwarf");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [M/L/F/G/S/C/I] Assign job");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [U]        Upgrades");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [E]   Feed selected dwarf");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [R]        Research");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [1/2/3]   Equip weapon/armour/tool");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [P]        Prestige");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [0]        Unequip");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [W]        Workshop");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [T]        Tavern");
+    renderer_draw_text_grid(r, rc, row, COL_FG,  "  BREACH");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [B]        Breach");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [TAB]     Cycle placement mode");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [D]        Dig deeper");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [ENTER]   Place defence");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [A]        Achievements");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [X]        Remove defence");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [SPACE]    This help");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [R]        Retreat");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [ESC/Q]    Close / Quit");
+    row += 2;
+    renderer_draw_text_grid(r, lc, row, COL_FG,  "  NAVIGATION");
+    renderer_draw_text_grid(r, rc, row, COL_FG,  "  SAVE / LOAD");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [↑/↓]      Select dwarf");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [F5]  Save");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [←/→]      Scroll list");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [F9]  Load");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [PgUp/Dn]  Scroll event log");
+    row += 2;
+    renderer_draw_hline_partial(r, row, 0, DIVIDER_COL, COL_DIM);
+    row++;
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM, "  [SPACE] or [ESC] Close");
+}
+
+/* =========================================================
+ * Achievement panel  ([A] key)
+ * ========================================================= */
+
+static int ach_alive_count(const GameState *state) {
+    int n = 0;
+    for (int i = 0; i < MAX_DWARVES; i++)
+        if (state->dwarves[i].alive) n++;
+    return n;
+}
+
+static int ach_has_hero(const GameState *state) {
+    for (int i = 0; i < MAX_DWARVES; i++)
+        if (state->dwarves[i].alive && state->dwarves[i].is_hero) return 1;
+    return 0;
+}
+
+static int ach_max_job_level(const GameState *state) {
+    int best = 0;
+    for (int i = 0; i < MAX_DWARVES; i++) {
+        if (!state->dwarves[i].alive) continue;
+        for (int j = 1; j < JOB_COUNT; j++)
+            if (state->dwarves[i].job_level[j] > best)
+                best = state->dwarves[i].job_level[j];
+    }
+    return best;
+}
+
+void ui_draw_achievements(Renderer *r, const GameState *state) {
+    static const char *names[10] = {
+        "The Clan Grows", "Full Barracks",
+        "Second Level",   "Heart of Stone",
+        "First Blood",    "Unbreachable",
+        "The Long Watch", "Iron Clan",
+        "Chosen One",     "Master Crafter",
+    };
+    static const char *descs[10] = {
+        "2+ dwarves alive",     "16 dwarves at once",
+        "Reach depth 2",        "Reach depth 5",
+        "Win your first raid",  "Win 10 raids",
+        "2000 ticks survived",  "Hold 10+ iron bars",
+        "Hire a hero dwarf",    "Any dwarf at job Lv5",
+    };
+
+    int ac = ach_alive_count(state);
+    int unlocked[10] = {
+        ac >= 2,
+        ac >= 16,
+        state->depth >= 2,
+        state->depth >= 5,
+        state->raid.raids_completed >= 1,
+        state->raid.raids_completed >= 10,
+        state->tick >= 2000,
+        state->resources.iron_bars >= 10,
+        ach_has_hero(state),
+        ach_max_job_level(state) >= MAX_JOB_LEVEL,
+    };
+
+    int total = 0;
+    for (int i = 0; i < 10; i++) total += unlocked[i];
+
+    int row = UI_ROW_DWARVES;
+    renderer_draw_hline_partial(r, row, 0, DIVIDER_COL, COL_DIM);
+    row++;
+
+    char buf[80];
+    snprintf(buf, sizeof(buf), "  [ ACHIEVEMENTS  %d / 10 ]", total);
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row,
+                            total == 10 ? COL_GOLD : COL_ACCENT, buf);
+    row += 2;
+
+    int lc = UI_COL_MARGIN;
+    int rc = UI_COL_MARGIN + 44;
+
+    for (int i = 0; i < 10; i += 2) {
+        uint32_t lcol = unlocked[i]   ? COL_GOLD : COL_DIM;
+        uint32_t rcol = (i+1 < 10 && unlocked[i+1]) ? COL_GOLD : COL_DIM;
+
+        snprintf(buf, sizeof(buf), "  %s %s",
+                 unlocked[i] ? "[*]" : "[ ]", names[i]);
+        renderer_draw_text_grid(r, lc, row, lcol, buf);
+
+        if (i + 1 < 10) {
+            snprintf(buf, sizeof(buf), "  %s %s",
+                     unlocked[i+1] ? "[*]" : "[ ]", names[i+1]);
+            renderer_draw_text_grid(r, rc, row, rcol, buf);
+        }
+        row++;
+
+        snprintf(buf, sizeof(buf), "      %s", descs[i]);
+        renderer_draw_text_grid(r, lc, row, COL_DIM, buf);
+        if (i + 1 < 10) {
+            snprintf(buf, sizeof(buf), "      %s", descs[i+1]);
+            renderer_draw_text_grid(r, rc, row, COL_DIM, buf);
+        }
+        row += 2;
+    }
+
+    renderer_draw_hline_partial(r, row, 0, DIVIDER_COL, COL_DIM);
+    row++;
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM,
+        "  [A] or [ESC] Close");
 }
 
 /* =========================================================

@@ -66,6 +66,10 @@ int main(void) {
                                 ui_show_tavern = 0;
                             else if (ui_show_depth)
                                 ui_show_depth = 0;
+                            else if (ui_show_help)
+                                ui_show_help = 0;
+                            else if (ui_show_achievements)
+                                ui_show_achievements = 0;
                             else {
                                 save_game(&state);
                                 running = 0;
@@ -217,6 +221,21 @@ int main(void) {
 
                         case SDLK_u:
                             ui_show_upgrades = !ui_show_upgrades;
+                            break;
+
+                        case SDLK_SPACE:
+                            /* toggle help — works from anywhere */
+                            ui_show_help         = !ui_show_help;
+                            ui_show_achievements = 0;
+                            break;
+
+                        case SDLK_a:
+                            if (!ui_show_upgrades && !ui_show_research
+                                && !ui_show_breach && !ui_show_prestige
+                                && !ui_show_craft  && !ui_show_tavern) {
+                                ui_show_achievements = !ui_show_achievements;
+                                ui_show_help = 0;
+                            }
                             break;
 
                         case SDLK_UP:
