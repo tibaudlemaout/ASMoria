@@ -103,12 +103,30 @@ asm_buy_upgrade:
     jge     .fail
 
     ; --- get current level ---
+    ; ids 0-15: tier1 at (id * 4) bits
+    ; ids 16+:  tier2 at (24 + (id-16)*4) bits — same split as .write_level
+    cmp     r12, 16
+    jge     .read_tier2
+
     mov     rax, [rbx + GS_UPGR_TIER1]
     mov     rcx, r12
     shl     rcx, 2
     shr     rax, cl
     and     rax, 0xF
     mov     r13, rax                    ; current level
+    jmp     .check_max
+
+.read_tier2:
+    mov     rax, [rbx + GS_UPGR_TIER2]
+    mov     rcx, r12
+    sub     rcx, 16
+    shl     rcx, 2
+    add     rcx, 24
+    shr     rax, cl
+    and     rax, 0xF
+    mov     r13, rax                    ; current level
+
+.check_max:
 
     ; --- check max level by id ---
     cmp     r12, 3
