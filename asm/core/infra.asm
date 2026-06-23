@@ -83,6 +83,14 @@ asm_tick_infra:
     cmp     dl, JOB_SCHOLAR
     jne     .scholar_next
     inc     r10
+    ; TRAIT_SCHOLAR_KING: counts as 2 scholars for mana generation
+    movzx   edx, byte [r11 + DWARF_IS_HERO]
+    test    dl, dl
+    jz      .scholar_next
+    movzx   edx, byte [r11 + DWARF_HERO_TRAIT]
+    cmp     dl, TRAIT_SCHOLAR_KING
+    jne     .scholar_next
+    inc     r10         ; extra count — generates double mana
 .scholar_next:
     add     r11, SIZEOF_DWARF
     dec     rcx

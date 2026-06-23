@@ -204,6 +204,18 @@ asm_tick_dwarves:
     mov     [r12 + DWARF_MORALE], al
 
 .store_fatigue:
+    ; TRAIT_BLESSED: morale cannot drop below 50 for hero dwarves
+    movzx   eax, byte [r12 + DWARF_IS_HERO]
+    test    eax, eax
+    jz      .sf_no_blessed
+    movzx   eax, byte [r12 + DWARF_HERO_TRAIT]
+    cmp     eax, TRAIT_BLESSED
+    jne     .sf_no_blessed
+    movzx   eax, byte [r12 + DWARF_MORALE]
+    cmp     eax, 50
+    jge     .sf_no_blessed
+    mov     byte [r12 + DWARF_MORALE], 50
+.sf_no_blessed:
     mov     [r12 + DWARF_FATIGUE], r15b
 
 .next_dwarf:

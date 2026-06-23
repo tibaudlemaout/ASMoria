@@ -389,6 +389,17 @@ collect_guards:
     mov     word [rdx + RGUARD_HP],     ax
     mov     word [rdx + RGUARD_HP_MAX], ax
 
+    ; TRAIT_IRONHIDE: +20 max HP for hero guards
+    movzx   ecx, byte [r10 + DWARF_IS_HERO]
+    test    ecx, ecx
+    jz      .cg_no_ironhide
+    movzx   ecx, byte [r10 + DWARF_HERO_TRAIT]
+    cmp     ecx, TRAIT_IRONHIDE
+    jne     .cg_no_ironhide
+    add     word [rdx + RGUARD_HP],     20
+    add     word [rdx + RGUARD_HP_MAX], 20
+.cg_no_ironhide:
+
     inc     r9d
 
 .cg_next:
@@ -660,6 +671,26 @@ tick_enemies:
     jne     .no_wpn
     add     r10d, WEAPON_ATK_BONUS
 .no_wpn:
+    ; TRAIT_BERSERKER: double ATK when guard HP < 30% of max
+    ; r11 = guard_find loop index (safe to repurpose — guard found, loop ends here)
+    movzx   r11d, byte [r9 + RGUARD_DWARF_IDX]
+    imul    r11d, SIZEOF_DWARF
+    lea     r11, [rbx + GS_DWARVES + r11]
+    movzx   eax, byte [r11 + DWARF_IS_HERO]
+    test    eax, eax
+    jz      .no_berserker
+    movzx   eax, byte [r11 + DWARF_HERO_TRAIT]
+    cmp     eax, TRAIT_BERSERKER
+    jne     .no_berserker
+    ; hp * 10 < hp_max * 3  →  HP below 30%
+    movsx   eax, word [r9 + RGUARD_HP]
+    movsx   ecx, word [r9 + RGUARD_HP_MAX]
+    imul    eax, 10
+    imul    ecx, 3
+    cmp     eax, ecx
+    jge     .no_berserker
+    shl     r10d, 1             ; double ATK
+.no_berserker:
     movsx   eax, word [r8 + ENEMY_HP]
     sub     eax, r10d
     mov     word [r8 + ENEMY_HP], ax
@@ -953,19 +984,23 @@ asm_tick_breach:
 
     ; pick raid type: available types = min(depth, 4), chosen by rng % available
     ; depth 1 → goblin only; depth 2 → +troll; depth 3 → +necro; depth 4+ → +dragon
-    push    rax
+    push    rax                 ; preserve compute_threat result (already stored)
     push    rdi
     movzx   eax, byte [rbx + GS_DEPTH]
     cmp     eax, RAID_TYPE_COUNT
     jle     .rt_clamp
     mov     eax, RAID_TYPE_COUNT
 .rt_clamp:
-    mov     r13d, eax           ; r13 = number of available types
+    push    rax                 ; push count through stack — immune to rng_next clobbering
     mov     rdi, rbx
-    call    asm_rng_next        ; rax = random value
-    xor     edx, edx
-    div     r13                 ; rdx = rax % available_types
+    call    asm_rng_next        ; rax = 64-bit random
+    pop     rcx                 ; rcx = count (1..4)
+    test    ecx, ecx
+    jz      .no_raid_type       ; safety: depth=0 guard (shouldn't happen)
+    xor     edx, edx            ; 32-bit div: edx:eax / ecx
+    div     ecx                 ; edx = eax % ecx
     mov     byte [r12 + RAID_TYPE], dl
+.no_raid_type:
     pop     rdi
     pop     rax
 

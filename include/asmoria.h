@@ -35,7 +35,19 @@ typedef struct {
     uint8_t  prev_job;          /* +0x04 */
     uint8_t  job_level[7];      /* +0x05 : level per job (indexed by JOB_*, incl. Craftsdwarf) */
     uint8_t  name_idx;          /* +0x0C : index into dwarf name table */
-    uint8_t  equipment;         /* +0x0D : EQUIP_* constant */
+    uint8_t  equipment;         /* +0x0D : EQUIP_* constant        */
+    uint8_t  is_hero;           /* +0x0E : 1 if hero dwarf (5% hire chance) */
+    uint8_t  hero_trait;        /* +0x0F : TRAIT_* constant        */
+
+/* Hero trait IDs */
+#define TRAIT_NONE          0
+#define TRAIT_IRONHIDE      1   /* Guard:       +20 max HP                    */
+#define TRAIT_BERSERKER     2   /* Guard:       double ATK when HP < 30%      */
+#define TRAIT_SCHOLAR_KING  3   /* Scholar:     counts as 2 scholars for mana */
+#define TRAIT_FOREMAN       4   /* Craftsdwarf: craft timers tick 1 extra     */
+#define TRAIT_DEEPBORN      5   /* Miner:       +1 stone and gold per tick    */
+#define TRAIT_BLESSED       6   /* Any job:     morale floor 50               */
+#define TRAIT_COUNT         6
     uint8_t  _pad2[2];          /* +0x0E : padding to align job_xp on 8 bytes */
     int64_t  job_xp[7];         /* +0x10 : xp per job (incl. Craftsdwarf) */
 } Dwarf;                        /* size: 64 bytes */

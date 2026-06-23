@@ -379,10 +379,21 @@ void ui_draw_dwarves(Renderer *r, const GameState *state) {
         renderer_draw_text_grid(r, UI_COL_MARGIN + col_off + 6, row,
                                 fatigue_color(d->fatigue), fat_buf);
 
-        /* TLv + Lv (dim) */
-        snprintf(buf, sizeof(buf), "T%-2d  L%d", total_lv, cur_lv);
-        renderer_draw_text_grid(r, UI_COL_MARGIN + col_off + 12, row,
-                                COL_DIM, buf);
+        /* TLv + Lv — gold and trait tag for heroes */
+        if (d->is_hero && d->hero_trait > 0 && d->hero_trait <= TRAIT_COUNT) {
+            static const char *trait_names[] = {
+                "", "Ironhide", "Berserker", "Scholar-King",
+                "Foreman", "Deepborn", "Blessed"
+            };
+            snprintf(buf, sizeof(buf), "T%-2d  L%d [%s]",
+                     total_lv, cur_lv, trait_names[d->hero_trait]);
+            renderer_draw_text_grid(r, UI_COL_MARGIN + col_off + 12, row,
+                                    COL_GOLD, buf);
+        } else {
+            snprintf(buf, sizeof(buf), "T%-2d  L%d", total_lv, cur_lv);
+            renderer_draw_text_grid(r, UI_COL_MARGIN + col_off + 12, row,
+                                    COL_DIM, buf);
+        }
         row++;
     }
 }
@@ -428,14 +439,34 @@ void ui_draw_dwarf_detail(Renderer *r, const GameState *state) {
              total_lv);
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL, COL_ACCENT, buf);
 
+    /* Hero trait banner — shown on the same row, offset right */
+    if (d->is_hero && d->hero_trait > 0 && d->hero_trait <= TRAIT_COUNT) {
+        static const char *trait_names[] = {
+            "", "Ironhide", "Berserker", "Scholar-King",
+            "Foreman", "Deepborn", "Blessed"
+        };
+        static const char *trait_desc[] = {
+            "",
+            "+20 max HP as guard",
+            "Double ATK below 30% HP",
+            "Counts as 2 scholars",
+            "Craft timers tick faster",
+            "+1 stone and gold/tick",
+            "Morale never below 50"
+        };
+        snprintf(buf, sizeof(buf), " ★ HERO: %s — %s",
+                 trait_names[d->hero_trait], trait_desc[d->hero_trait]);
+        renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 1, COL_GOLD, buf);
+    }
+
     /* Row 2: morale bar + fatigue bar side by side */
     make_bar(bar, d->morale, 100);
     snprintf(buf, sizeof(buf), " Morale:  %s  %3d%%", bar, d->morale);
-    renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 1,
+    renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 2,
                             morale_color(d->morale), buf);
     make_bar(bar, d->fatigue, 100);
     snprintf(buf, sizeof(buf), " Fatigue: %s  %3d%%", bar, d->fatigue);
-    renderer_draw_text_grid(r, UI_COL_MARGIN + 30, UI_ROW_DETAIL + 1,
+    renderer_draw_text_grid(r, UI_COL_MARGIN + 30, UI_ROW_DETAIL + 2,
                             fatigue_color(d->fatigue), buf);
 
     /* Row 3: XP progress bar */
@@ -461,17 +492,17 @@ void ui_draw_dwarf_detail(Renderer *r, const GameState *state) {
     else
         snprintf(buf, sizeof(buf), " XP: %s  MAX   Lv%d  %s",
                  bar, cur_lv, job);
-    renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 2, COL_GOLD, buf);
+    renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 3, COL_GOLD, buf);
 
     /* Row 4: per-job levels */
     static const char *jnames[] = {"Idle","Mine","Lumb","Farm","Guard","Scholar","Craft"};
     int col = UI_COL_MARGIN;
-    renderer_draw_text_grid(r, col, UI_ROW_DETAIL + 3, COL_DIM, " Jobs: ");
+    renderer_draw_text_grid(r, col, UI_ROW_DETAIL + 4, COL_DIM, " Jobs: ");
     col += 7;
     for (int j = 1; j < JOB_COUNT; j++) {
         snprintf(buf, sizeof(buf), "%s Lv%d  ", jnames[j], d->job_level[j]);
         uint32_t jcol = (j == d->job) ? COL_ACCENT : COL_DIM;
-        renderer_draw_text_grid(r, col, UI_ROW_DETAIL + 3, jcol, buf);
+        renderer_draw_text_grid(r, col, UI_ROW_DETAIL + 4, jcol, buf);
         col += 12;
     }
 
@@ -485,19 +516,19 @@ void ui_draw_dwarf_detail(Renderer *r, const GameState *state) {
 
         /* Left: equipped item */
         snprintf(buf, sizeof(buf), " Equipped: %-8s", eq_name);
-        renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 4, eq_col, buf);
+        renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 5, eq_col, buf);
 
         /* Right: equip key hints */
         int ws_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_WORKSHOP);
         if (ws_lv >= 1) {
-            renderer_draw_text_grid(r, UI_COL_MARGIN + 19, UI_ROW_DETAIL + 4,
+            renderer_draw_text_grid(r, UI_COL_MARGIN + 19, UI_ROW_DETAIL + 5,
                                     COL_DIM,
                                     "  [1] Weapon  [2] Armour  [3] Tool  [0] Unequip");
         }
     }
 
-    /* Row 5: job assignment keys */
-    renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 5, COL_DIM,
+    /* Row 6: job assignment keys */
+    renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 6, COL_DIM,
         " [M]iner [L]umberer [F]armer [G]uard [S]cholar [C]raftsdwarf [I]dle  [E] Feed");
 }
 

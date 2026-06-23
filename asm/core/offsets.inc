@@ -33,6 +33,8 @@
 %define DWARF_JOB_LEVEL     0x05
 %define DWARF_NAME_IDX      0x0C
 %define DWARF_EQUIPMENT     0x0D
+%define DWARF_IS_HERO       0x0E
+%define DWARF_HERO_TRAIT    0x0F
 %define DWARF_JOB_XP        0x10
 %define SIZEOF_DWARF        0x48
 %define MAX_DWARVES         64
@@ -61,11 +63,17 @@
 %define MORALE_MAX          100
 %define MORALE_IDLE_RATE    5
 
+; --- Hero trait IDs ---
+%define TRAIT_NONE          0
+%define TRAIT_IRONHIDE      1
+%define TRAIT_BERSERKER     2
+%define TRAIT_SCHOLAR_KING  3
+%define TRAIT_FOREMAN       4
+%define TRAIT_DEEPBORN      5
+%define TRAIT_BLESSED       6
+%define TRAIT_COUNT         6
+
 ; --- GameState offsets ---
-; craft[RECIPE_COUNT] grew from 6 to 9 slots (+12 bytes).
-; The extra slots also change the alignment of RngState (uint64_t seed),
-; which needs GCC to insert 4 bytes of padding after tavern_level.
-; Net shift: +12 for TAVERN_BUFFS/TAVERN_LEVEL, +16 for everything else.
 %define GS_RESOURCES        0x0000
 %define GS_DWARVES          0x0088
 %define GS_UPGR_TIER1       0x1288
@@ -104,7 +112,7 @@
 %define RAID_CURSOR_COL         0x128
 %define RAID_CURSOR_ROW         0x129
 %define RAID_PLACE_MODE         0x12a
-%define RAID_TYPE               0x12b   ; RAID_TYPE_* constant, set at WARNING
+%define RAID_TYPE               0x12b
 
 ; --- Enemy struct offsets ---
 %define ENEMY_TYPE          0x00
@@ -116,7 +124,7 @@
 %define ENEMY_ATK           0x08
 %define ENEMY_MOVE_TIMER    0x09
 %define ENEMY_SPAWN_DELAY   0x0a
-%define ENEMY_MOVE_INT      0x0b    ; base move interval, stored at spawn (was padding)
+%define ENEMY_MOVE_INT      0x0b
 %define SIZEOF_ENEMY        0x0c
 
 ; --- RaidGuard struct offsets ---
@@ -168,7 +176,6 @@
 %define RAID_COMBAT         2
 %define RAID_RESULT         3
 
-; Raid type — determines enemy flavour, set when WARNING fires
 %define RAID_TYPE_GOBLIN        0
 %define RAID_TYPE_TROLL         1
 %define RAID_TYPE_NECROMANCER   2

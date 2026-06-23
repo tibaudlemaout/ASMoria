@@ -41,11 +41,6 @@
 %define RID_ARMOUR_R    12      ; RES_ARMOUR  = 0x60 / 8
 %define RID_TOOL_R      13      ; RES_TOOLS   = 0x68 / 8
 
-; Crafted breach items (follow on from equipment slots in Resources)
-%define RID_WALLS       14      ; RES_WALLS        = 0x70 / 8
-%define RID_SPIKE_TRAPS 15      ; RES_SPIKE_TRAPS  = 0x78 / 8
-%define RID_SLOW_TRAPS  16      ; RES_SLOW_TRAPS   = 0x80 / 8
-
 section .data
 
 recipe_table:
@@ -61,12 +56,6 @@ recipe_table:
     db 2, 2, 15, 0, RID_IRON_BARS, 4, RES_NONE, 0,  RID_ARMOUR_R, 1
     ; [5] RECIPE_TOOLS_I      -- tier 2, 2 dwarves/unit, 10 ticks, 2 bars+1 gem -> 1 tool
     db 2, 2, 10, 0, RID_IRON_BARS, 2, RID_GEMS, 1,  RID_TOOL_R, 1
-    ; [6] RECIPE_WALL_I       -- tier 2, 1 dwarf/unit, 8 ticks, 5 stone+2 bars -> 1 wall
-    db 2, 1, 8, 0,  RID_STONE, 5, RID_IRON_BARS, 2, RID_WALLS, 1
-    ; [7] RECIPE_SPIKE_I      -- tier 2, 1 dwarf/unit, 12 ticks, 3 bars+1 tool -> 1 spike trap
-    db 2, 1, 12, 0, RID_IRON_BARS, 3, RID_TOOL_R, 1, RID_SPIKE_TRAPS, 1
-    ; [8] RECIPE_SLOW_I       -- tier 2, 1 dwarf/unit, 10 ticks, 2 bars+1 gem -> 1 slow trap
-    db 2, 1, 10, 0, RID_IRON_BARS, 2, RID_GEMS, 1,  RID_SLOW_TRAPS, 1
 
 %define RSIZ    10  ; recipe entry size
 
@@ -319,6 +308,34 @@ asm_tick_craft:
     mov     rbx, rdi
     xor     r13d, r13d          ; r13 = recipe index
 
+    ; Pre-scan: check if any hero Foreman craftsdwarf is working.
+    ; Result stored in [rsp] (already allocated by sub rsp,8).
+    mov     dword [rsp], 0
+    lea     rdi, [rbx + GS_DWARVES]
+    mov     esi, MAX_DWARVES
+.foreman_scan:
+    test    esi, esi
+    jz      .foreman_scan_done
+    movzx   eax, byte [rdi + DWARF_ALIVE]
+    test    al, al
+    jz      .foreman_scan_next
+    movzx   eax, byte [rdi + DWARF_JOB]
+    cmp     al, JOB_CRAFTSDWARF
+    jne     .foreman_scan_next
+    movzx   eax, byte [rdi + DWARF_IS_HERO]
+    test    al, al
+    jz      .foreman_scan_next
+    movzx   eax, byte [rdi + DWARF_HERO_TRAIT]
+    cmp     al, TRAIT_FOREMAN
+    jne     .foreman_scan_next
+    mov     dword [rsp], 1
+    jmp     .foreman_scan_done
+.foreman_scan_next:
+    add     rdi, SIZEOF_DWARF
+    dec     esi
+    jmp     .foreman_scan
+.foreman_scan_done:
+
 .loop:
     cmp     r13d, RECIPE_COUNT
     jge     .done
@@ -368,11 +385,18 @@ asm_tick_craft:
     mov     word [r14 + CRAFT_TIMER], 0
     jmp     .complete
 .no_focus:
+    ; Decrement timer by 1, or 2 if a hero Foreman craftsdwarf exists
     movzx   eax, word [r14 + CRAFT_TIMER]
-    dec     eax
-    mov     word [r14 + CRAFT_TIMER], ax
     test    eax, eax
-    jnz     .next               ; still ticking
+    jz      .complete
+    mov     ecx, dword [rsp]    ; 0 = no foreman, 1 = foreman active
+    inc     ecx                 ; decrement amount: 1 or 2
+    sub     eax, ecx
+    jle     .foreman_force_zero
+    mov     word [r14 + CRAFT_TIMER], ax
+    jmp     .next
+.foreman_force_zero:
+    mov     word [r14 + CRAFT_TIMER], 0
 
 .complete:
     ; Timer hit 0 — compute output_count and deliver

@@ -250,6 +250,33 @@ asm_hire_dwarf:
     lea     r12, [rbx + GS_DWARVES + r9]
     mov     [r12 + DWARF_NAME_IDX], al
 
+    ; --- hero trait roll (5% chance: rng % 20 == 0) ---
+    ; Zero both hero fields first (default non-hero for all hires).
+    mov     byte [r12 + DWARF_IS_HERO],    0
+    mov     byte [r12 + DWARF_HERO_TRAIT], 0
+    ; Use the alignment pad [rsp] to preserve rdx (slot_index) across
+    ; the RNG calls without disturbing stack alignment (RSP is currently
+    ; 16-aligned, so calls are safe without any extra pushes).
+    mov     [rsp], rdx
+    mov     rdi, rbx
+    call    asm_rng_next            ; rax = random value
+    mov     ecx, 20
+    xor     edx, edx
+    div     ecx                     ; rdx = rax % 20
+    test    edx, edx
+    jnz     .no_hero                ; not 0 → not a hero
+    ; is a hero! pick trait 1..TRAIT_COUNT
+    mov     rdi, rbx
+    call    asm_rng_next
+    mov     ecx, TRAIT_COUNT
+    xor     edx, edx
+    div     ecx                     ; rdx = rax % TRAIT_COUNT (0..5)
+    inc     edx                     ; rdx = 1..TRAIT_COUNT (1..6)
+    mov     byte [r12 + DWARF_IS_HERO],    1
+    mov     byte [r12 + DWARF_HERO_TRAIT], dl
+.no_hero:
+    mov     rdx, [rsp]              ; restore slot_index
+
     add     rsp, 8
     pop     r15
     pop     r14

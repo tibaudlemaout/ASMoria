@@ -445,6 +445,17 @@ asm_tick_resources:
     call    apply_tavern_yield_inline
     add     [r12 + GS_RESOURCES + RES_GOLD], rax
     add     [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], rax
+
+    ; TRAIT_DEEPBORN: +1 stone and gold for hero miners
+    movzx   eax, byte [rsi + DWARF_IS_HERO]
+    test    eax, eax
+    jz      .next
+    movzx   eax, byte [rsi + DWARF_HERO_TRAIT]
+    cmp     eax, TRAIT_DEEPBORN
+    jne     .next
+    add     qword [r12 + GS_RESOURCES + RES_STONE], 1
+    add     qword [r12 + GS_RESOURCES + RES_GOLD], 1
+    add     qword [r12 + GS_PRESTIGE + PRESTIGE_RESOURCES], 2
     jmp     .next
 
 .do_lumberer:
