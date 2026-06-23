@@ -51,7 +51,6 @@ static void sanitise_craft(GameState *state) {
         state->tavern_buffs[i].buff_id = 0;
         state->tavern_buffs[i].timer  = 0;
     }
-    state->tavern_level = 0;
 
     for (int i = 0; i < RECIPE_COUNT; i++) {
         /* Clear any garbage assigned counts or stuck timers */
