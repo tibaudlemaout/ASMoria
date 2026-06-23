@@ -194,21 +194,12 @@ spawn_enemies:
 
     mov     byte [r12 + RAID_ENEMIES_REMAINING], r9b
 
-    ; TEMP DEBUG: stash computed enemy_count + zero an iteration counter
-    ; into the unused enemies[7] slot
-    mov     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_ATK], r9b
-    mov     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_SLOW_TIMER], 0
-
     xor     ecx, ecx
 .spawn_loop:
     cmp     ecx, r9d
     jge     .spawn_done
     cmp     ecx, RAID_MAX_ENEMIES
     jge     .spawn_done
-
-    ; TEMP DEBUG: bump iteration counter, record current ecx
-    inc     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_SLOW_TIMER]
-    mov     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_MOVE_TIMER], cl
 
     imul    eax, ecx, SIZEOF_ENEMY
     lea     rdi, [r8 + rax]
@@ -259,9 +250,6 @@ spawn_enemies:
     inc     ecx
     jmp     .spawn_loop
 .spawn_done:
-    ; TEMP DEBUG: snapshot r9d at loop exit
-    mov     byte [r8 + 7*SIZEOF_ENEMY + ENEMY_ROW], r9b
-
     pop     r15
     pop     r14
     pop     r13
@@ -293,10 +281,6 @@ collect_guards:
     lea     r8, [rbx + GS_RAID + RAID_GUARDS]
     xor     r9d, r9d    ; guard count
 
-    ; TEMP DEBUG: mark function entry, zero iteration counter
-    mov     byte [r8 + 6*SIZEOF_RAIDGUARD + RGUARD_COL], 0x11
-    mov     byte [r8 + 6*SIZEOF_RAIDGUARD + RGUARD_DWARF_IDX], 0
-
     lea     r10, [rbx + GS_DWARVES]
     xor     r11d, r11d  ; dwarf index
 .cg_loop:
@@ -304,22 +288,6 @@ collect_guards:
     jge     .cg_done
     cmp     r9d, RAID_MAX_GUARDS
     jge     .cg_done
-
-    ; TEMP DEBUG: prove the loop body itself executes, and how often
-    inc     byte [r8 + 6*SIZEOF_RAIDGUARD + RGUARD_DWARF_IDX]
-    mov     byte [r8 + 6*SIZEOF_RAIDGUARD + RGUARD_COL], 0x22
-
-    ; TEMP DEBUG: stash raw field reads for dwarf index 5 into the
-    ; unused guards[7] slot (harmless with only 1 real guard) so we
-    ; can inspect exactly what DWARF_ALIVE/DWARF_JOB resolve to.
-    cmp     r11d, 5
-    jne     .no_dbg5
-    movzx   eax, byte [r10 + DWARF_ALIVE]
-    mov     byte [r8 + 7*SIZEOF_RAIDGUARD + RGUARD_DWARF_IDX], al
-    movzx   eax, byte [r10 + DWARF_JOB]
-    mov     byte [r8 + 7*SIZEOF_RAIDGUARD + RGUARD_ACTIVE], al
-    mov     byte [r8 + 7*SIZEOF_RAIDGUARD + RGUARD_COL], 0xAA
-.no_dbg5:
 
     movzx   eax, byte [r10 + DWARF_ALIVE]
     test    eax, eax
@@ -407,10 +375,6 @@ collect_guards:
     inc     r11d
     jmp     .cg_loop
 .cg_done:
-    ; TEMP DEBUG: stash final loop-exit counters before r8 is repurposed
-    mov     byte [r8 + 6*SIZEOF_RAIDGUARD + RGUARD_ACTIVE], r9b
-    mov     byte [r8 + 6*SIZEOF_RAIDGUARD + RGUARD_ROW],    r11b
-
     lea     r8, [rbx + GS_RAID]
     mov     byte [r8 + RAID_GUARD_COUNT], r9b
 

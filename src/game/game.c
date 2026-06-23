@@ -4,19 +4,8 @@
 #include <string.h>
 #include <time.h>
 #include <stdio.h>
-#include <stddef.h>
 
 void game_init(GameState *state) {
-    /* Layout diagnostic — remove once confirmed correct */
-    fprintf(stderr,
-        "[layout] sizeof(GameState)=%zu  tick=0x%zx  pending=0x%zx  "
-        "event_log=0x%zx  raid=0x%zx  prestige=0x%zx\n",
-        sizeof(GameState),
-        offsetof(GameState, tick),
-        offsetof(GameState, pending),
-        offsetof(GameState, event_log),
-        offsetof(GameState, raid),
-        offsetof(GameState, prestige));
     memset(state, 0, sizeof(*state));
     asm_rng_seed(state, (uint64_t)time(NULL) ^ 0xA5710A1A000ULL);
 
