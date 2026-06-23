@@ -277,6 +277,10 @@ int main(void) {
                                 int id = ui_upgr_selected();
                                 if (id >= 0)
                                     asm_buy_upgrade(&state, (uint8_t)id);
+                            } else if (ui_show_tavern) {
+                                int buff = ui_tavern_selected();
+                                if (buff > 0)
+                                    asm_tavern_activate(&state, (uint8_t)buff);
                             } else if (ui_show_breach && (state.raid.active == RAID_NONE
                                 || state.raid.active == RAID_WARNING)) {
                                 /* place_mode 0=Guard,1=Wall,2=Spike,3=Slow

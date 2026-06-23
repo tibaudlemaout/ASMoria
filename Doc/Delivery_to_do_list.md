@@ -101,8 +101,8 @@
 - [ ] Ascension biome: Golden Mountain
 - [ ] Event text expanded to 128 entries
 - [ ] SDL_mixer sound effect hooks
-- [ ] In-game help panel (? key)
-- [ ] High score / achievements screen
+- [x] In-game help panel (? key)
+- [x] High score / achievements screen
 - [ ] Final balance pass
 
 ---
