@@ -23,6 +23,7 @@ int ui_show_breach       = 0;
 int ui_show_prestige     = 0;
 int ui_show_craft        = 0;
 int ui_show_tavern       = 0;
+int ui_show_depth        = 0;
 static int scroll_offset      = 0;
 static int dwarf_scroll_offset = 0;
 
@@ -176,8 +177,12 @@ void ui_draw_all(Renderer *r, const GameState *state) {
     }
     ui_draw_titlebar(r, state);
     ui_draw_resources(r, state);
-    ui_draw_dwarves(r, state);
-    ui_draw_dwarf_detail(r, state);
+    if (ui_show_depth) {
+        ui_draw_depth_confirm(r, state);
+    } else {
+        ui_draw_dwarves(r, state);
+        ui_draw_dwarf_detail(r, state);
+    }
     ui_draw_cmdbar(r, state);
     ui_draw_divider(r);
     ui_draw_eventlog(r, state);
@@ -530,6 +535,91 @@ void ui_draw_dwarf_detail(Renderer *r, const GameState *state) {
     /* Row 6: job assignment keys */
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 6, COL_DIM,
         " [M]iner [L]umberer [F]armer [G]uard [S]cholar [C]raftsdwarf [I]dle  [E] Feed");
+}
+
+/* =========================================================
+ * Depth confirmation popup
+ * Shown when player presses D — overlays the main panel.
+ * ========================================================= */
+void ui_draw_depth_confirm(Renderer *r, const GameState *state) {
+    if (!ui_show_depth) return;
+
+    char buf[128];
+    uint32_t depth = state->depth;
+
+    /* Already at max depth — nothing to show */
+    if (depth >= DEPTH_MAX) {
+        renderer_draw_text_grid(r, UI_COL_MARGIN, 8, COL_DIM,
+            "  You have reached the deepest halls. No further descent is possible.");
+        renderer_draw_text_grid(r, UI_COL_MARGIN, 10, COL_DIM,
+            "  [D] or [ESC] Close");
+        return;
+    }
+
+    /* Per-depth unlock descriptions and costs */
+    static const char *unlock_title[] = {
+        "", /* depth 1 → 2 */
+        "Iron Ore deposits open up — smelt bars, forge weapons and armour.",
+        "Gem seams discovered — enables traps, tools, and rune research.",
+        "Ancient Relics surface — accelerates prestige gain.",
+        "Crystal formations exposed — endgame mana and conduit upgrades."
+    };
+    static const int cost_stone[] = { 0, 500, 1500, 3000, 6000 };
+    static const int cost_gold[]  = { 0, 300, 1000, 2500, 5000 };
+
+    int next = (int)depth; /* index into cost/unlock arrays (depth 1→2 uses [1]) */
+
+    int stone_ok = state->resources.stone >= cost_stone[next];
+    int gold_ok  = state->resources.gold  >= cost_gold[next];
+    int can_dig  = stone_ok && gold_ok;
+
+    /* Box — draw over rows 6..18 of the left panel */
+    int row = 6;
+    renderer_draw_hline_partial(r, row, 0, DIVIDER_COL, COL_DIM);
+    row++;
+
+    snprintf(buf, sizeof(buf), "  [ DESCEND TO DEPTH %u / %d ]", depth + 1, DEPTH_MAX);
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row,
+                            can_dig ? COL_ACCENT : COL_GOLD, buf);
+    row += 2;
+
+    /* What unlocks */
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_FG, "  What awaits:");
+    row++;
+    snprintf(buf, sizeof(buf), "    %s", unlock_title[next]);
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM, buf);
+    row += 2;
+
+    /* Cost lines */
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_FG, "  Cost:");
+    row++;
+
+    snprintf(buf, sizeof(buf), "    Stone: %d  (have %lld)",
+             cost_stone[next], (long long)state->resources.stone);
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row,
+                            stone_ok ? COL_FOOD : 0xFF4444FF, buf);
+    row++;
+
+    snprintf(buf, sizeof(buf), "    Gold:  %d  (have %lld)",
+             cost_gold[next], (long long)state->resources.gold);
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row,
+                            gold_ok ? COL_FOOD : 0xFF4444FF, buf);
+    row += 2;
+
+    /* Confirm / cancel */
+    if (can_dig) {
+        renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_ACCENT,
+            "  [D] Confirm descent   [ESC] Cancel");
+    } else {
+        renderer_draw_text_grid(r, UI_COL_MARGIN, row, 0xFF4444FF,
+            "  Not enough resources.");
+        row++;
+        renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM,
+            "  [ESC] Close");
+    }
+
+    row += 2;
+    renderer_draw_hline_partial(r, row, 0, DIVIDER_COL, COL_DIM);
 }
 
 /* =========================================================

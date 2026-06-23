@@ -26,34 +26,34 @@
 
 ## Week 1 — Depth & Mining Layers
 
-- [ ] `asm_dig_deeper()` function
-- [ ] Depth unlock cost (stone + gold)
-- [ ] Depth yield multiplier per level
-- [ ] Depth fatigue penalty per level
-- [ ] New resources per depth (Iron Ore, Gems, Relics, Crystals)
-- [ ] Depth-gated events in `events_text.h`
+- [x] `asm_dig_deeper()` function
+- [x] Depth unlock cost (stone + gold)
+- [x] Depth yield multiplier per level
+- [x] Depth fatigue penalty per level
+- [x] New resources per depth (Iron Ore, Gems, Relics, Crystals)
+- [x] Depth-gated events in `events_text.h`
 - [ ] UI: depth progress bar + dig button in title bar
-- [ ] Rune of the Deep gates max depth
+- [x] Rune of the Deep gates max depth
 
 ---
 
 ## Week 2 — Storage & Crafting
 
-- [ ] Resource storage caps (per type)
-- [ ] Granary, Vault, Warehouse upgrades
-- [ ] Craftsdwarf job
-- [ ] Iron Bars crafting (2 ore → 1 bar / 10 ticks)
-- [ ] Ale crafting (food + wood)
-- [ ] Crafted goods as upgrade costs
+- [x] Resource storage caps (per type)
+- [x] Granary, Vault, Warehouse upgrades
+- [x] Craftsdwarf job
+- [x] Iron Bars crafting (2 ore → 1 bar / 10 ticks)
+- [x] Ale crafting (food + wood)
+- [x] Crafted goods as upgrade costs
 - [ ] Great Forge building (depth 3 unlock)
-- [ ] UI: storage cap display per resource
+- [x] UI: storage cap display per resource
 
 ---
 
 ## Week 3 — Tavern & Morale Expansion
 
-- [ ] Tavern building (wood + stone)
-- [ ] Ale consumption → morale bonus
+- [x] Tavern building (wood + stone)
+- [x] Ale consumption → morale bonus
 - [ ] Morale decay without Ale
 - [ ] Morale → combat HP scaling
 - [ ] Morale → Scholar XP scaling
@@ -65,13 +65,13 @@
 
 ## Week 4 — Hero Units & Combat Expansion
 
-- [ ] Hero dwarf trait system (5% hire chance)
-- [ ] 6+ hero traits (Ironhide, Berserker, Scholar-King, Foreman…)
-- [ ] Hero trait display in dwarf panel
-- [ ] Raid type variety (Goblin, Troll, Necromancer, Dragon)
-- [ ] Raid type tied to depth + RNG
+- [x] Hero dwarf trait system (5% hire chance)
+- [x] 6+ hero traits (Ironhide, Berserker, Scholar-King, Foreman…)
+- [x] Hero trait display in dwarf panel
+- [x] Raid type variety (Goblin, Troll, Necromancer, Dragon)
+- [x] Raid type tied to depth + RNG
 - [ ] Trap upgrade category
-- [ ] Spike Pit, Flame Vent, Ballista
+- [x] Spike Pit, Flame Vent, Ballista
 - [ ] Trap passive damage per combat round
 - [ ] Trap upkeep
 

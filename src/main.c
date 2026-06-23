@@ -64,6 +64,8 @@ int main(void) {
                                 ui_show_craft = 0;
                             else if (ui_show_tavern)
                                 ui_show_tavern = 0;
+                            else if (ui_show_depth)
+                                ui_show_depth = 0;
                             else {
                                 save_game(&state);
                                 running = 0;
@@ -237,9 +239,16 @@ int main(void) {
                             break;
 
                         case SDLK_d:
-                            if (!ui_show_upgrades && !ui_show_research
-                                && !ui_show_breach && !ui_show_prestige)
+                            if (ui_show_depth) {
+                                /* second D while popup open = confirm dig */
                                 asm_dig_deeper(&state);
+                                ui_show_depth = 0;
+                            } else if (!ui_show_upgrades && !ui_show_research
+                                       && !ui_show_breach && !ui_show_prestige
+                                       && !ui_show_craft && !ui_show_tavern) {
+                                /* first D = open confirm popup */
+                                ui_show_depth = 1;
+                            }
                             break;
 
                         case SDLK_EQUALS:
