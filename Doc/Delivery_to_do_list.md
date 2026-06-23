@@ -32,7 +32,7 @@
 - [x] Depth fatigue penalty per level
 - [x] New resources per depth (Iron Ore, Gems, Relics, Crystals)
 - [x] Depth-gated events in `events_text.h`
-- [ ] UI: depth progress bar + dig button in title bar
+- [x] UI: depth progress bar + dig button in title bar
 - [x] Rune of the Deep gates max depth
 
 ---

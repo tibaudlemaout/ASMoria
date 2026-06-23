@@ -23,10 +23,6 @@ void ui_breach_move(int dc, int dr) {
     if (ui_breach_cursor_row >= RAID_ROWS)           ui_breach_cursor_row = RAID_ROWS - 1;
 }
 
-static const char *place_mode_names[] = {
-    "Guard", "Wall (5s+2bar)", "Spike Trap (3bar+1tol)", "Slow Trap (2bar+1gem)"
-};
-
 /* ---- HP bar ---- */
 static void make_hp_bar(char *out, int hp, int max, int width) {
     int filled = (max > 0 && hp > 0) ? hp * width / max : 0;
@@ -172,6 +168,14 @@ void ui_draw_breach(Renderer *r, const GameState *state) {
     const Raid *raid = &state->raid;
     char buf[128];
     int row = 0;
+
+    int forge_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_FORGE);
+    const char *place_mode_names[4] = {
+        "Guard",
+        "Wall",
+        forge_lv >= 3 ? "Ballista  [Forge 3]" : "Spike Trap",
+        forge_lv >= 2 ? "Flame Vent [Forge 2]" : "Slow Trap"
+    };
 
     uint32_t hcol = (raid->active == RAID_COMBAT)  ? 0xFF4444FF :
                     (raid->active == RAID_WARNING)  ? COL_GOLD   : COL_DIM;

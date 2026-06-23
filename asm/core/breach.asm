@@ -43,6 +43,12 @@ extern asm_tavern_buff_active
 ; Enemy stat tables [threat 0-5, index 0 unused]
 section .data
 
+; Passive trap AOE damage per tick, indexed by Forge upgrade level (0-3).
+; Spike Trap → "Ballista" at Forge 3: high damage to adjacent cells.
+; Slow Trap → "Flame Vent" at Forge 2: fire damage + slow to adjacent cells.
+spike_aoe_dmg:  db  5,  8, 10, 15
+slow_aoe_dmg:   db  3,  5,  8, 10
+
 ; ---------------------------------------------------------------
 ; Raid-type tables — indexed by (raid_type * 2 + variant)
 ; variant = 0 for threat 1-2 (weak), 1 for threat 3+ (strong)
@@ -150,6 +156,153 @@ init_grid:
 
 ; ---------------------------------------------------------
 ; spawn_enemies(rbx=state) — populate enemy list based on threat
+; ---------------------------------------------------------
+; tick_trap_aoe(rbx=state, r12=raid)
+; For each active enemy scan the 4 adjacent grid cells.
+; If a trap is present, deal passive AOE damage (and slow
+; for Slow Trap / Flame Vent). The trap stays until the
+; enemy physically walks into it. Damage scales with the
+; Forge upgrade level so traps grow more dangerous as the
+; forge is upgraded and earn their "Ballista" / "Flame Vent"
+; names in the UI.
+; ---------------------------------------------------------
+tick_trap_aoe:
+    push    r13
+    push    r14
+    push    r15
+
+    ; forge level: UPGR_FORGE=14, bit offset = 14*4 = 56
+    mov     rax, [rbx + GS_UPGR_TIER1]
+    shr     rax, (UPGR_FORGE * 4)
+    and     eax, 0xF
+    cmp     eax, 3
+    jle     .tta_forge_ok
+    mov     eax, 3
+.tta_forge_ok:
+    mov     r14d, eax               ; r14d = forge level 0-3
+
+    lea     r13, [r12 + RAID_ENEMIES]  ; r13 = enemies array base
+    lea     r15, [r12 + RAID_GRID]     ; r15 = grid base
+
+    xor     ecx, ecx                   ; ecx = enemy index
+.tta_enemy_loop:
+    cmp     ecx, RAID_MAX_ENEMIES
+    jge     .tta_done
+
+    imul    eax, ecx, SIZEOF_ENEMY
+    lea     r8, [r13 + rax]         ; r8 = current enemy slot
+
+    ; skip dead or not-yet-spawned enemies
+    movzx   edx, byte [r8 + ENEMY_TYPE]
+    test    edx, edx
+    jz      .tta_next
+    movzx   edx, byte [r8 + ENEMY_SPAWN_DELAY]
+    test    edx, edx
+    jnz     .tta_next
+
+    ; enemy position
+    movzx   r9d,  byte [r8 + ENEMY_ROW]  ; r9d  = row
+    movzx   r10d, byte [r8 + ENEMY_COL]  ; r10d = col
+
+    ; ---- 4-directional adjacency check ----
+
+    ; North: (row-1, col)
+    test    r9d, r9d
+    jz      .tta_skip_n
+    mov     eax, r9d
+    dec     eax
+    imul    eax, RAID_COLS
+    add     eax, r10d
+    movzx   edx, byte [r15 + rax]
+    call    .tta_apply
+.tta_skip_n:
+
+    ; South: (row+1, col)
+    mov     eax, r9d
+    inc     eax
+    cmp     eax, RAID_ROWS
+    jge     .tta_skip_s
+    imul    eax, RAID_COLS
+    add     eax, r10d
+    movzx   edx, byte [r15 + rax]
+    call    .tta_apply
+.tta_skip_s:
+
+    ; West: (row, col-1)
+    test    r10d, r10d
+    jz      .tta_skip_w
+    imul    eax, r9d, RAID_COLS
+    mov     edx, r10d
+    dec     edx
+    add     eax, edx
+    movzx   edx, byte [r15 + rax]
+    call    .tta_apply
+.tta_skip_w:
+
+    ; East: (row, col+1)
+    mov     eax, r10d
+    inc     eax
+    cmp     eax, RAID_COLS
+    jge     .tta_skip_e
+    imul    eax, r9d, RAID_COLS
+    mov     edx, r10d
+    inc     edx
+    add     eax, edx
+    movzx   edx, byte [r15 + rax]
+    call    .tta_apply
+.tta_skip_e:
+
+    ; death check after all adjacent traps are processed
+    movzx   eax, byte [r8 + ENEMY_TYPE]
+    test    eax, eax
+    jz      .tta_next               ; already ENEMY_NONE (shouldn't happen)
+    movsx   eax, word [r8 + ENEMY_HP]
+    test    eax, eax
+    jg      .tta_next               ; survived
+    mov     byte [r8 + ENEMY_TYPE], ENEMY_NONE
+    movzx   eax, byte [r12 + RAID_ENEMIES_REMAINING]
+    test    eax, eax
+    jz      .tta_next
+    dec     eax
+    mov     byte [r12 + RAID_ENEMIES_REMAINING], al
+
+.tta_next:
+    inc     ecx
+    jmp     .tta_enemy_loop
+
+.tta_done:
+    pop     r15
+    pop     r14
+    pop     r13
+    ret
+
+; ---- local helper: apply one adjacent trap's passive effect ----
+; edx = cell type, r8 = enemy ptr, r14d = forge level
+; clobbers: eax, rcx
+.tta_apply:
+    cmp     edx, CELL_SPIKE_TRAP
+    je      .tta_spike
+    cmp     edx, CELL_SLOW_TRAP
+    je      .tta_slow
+    ret                             ; not a trap — no effect
+
+.tta_spike:
+    push    rcx
+    lea     rcx, [rel spike_aoe_dmg]
+    movzx   eax, byte [rcx + r14]  ; damage by forge level
+    pop     rcx
+    sub     word [r8 + ENEMY_HP], ax
+    ret
+
+.tta_slow:
+    push    rcx
+    lea     rcx, [rel slow_aoe_dmg]
+    movzx   eax, byte [rcx + r14]
+    pop     rcx
+    sub     word [r8 + ENEMY_HP], ax
+    mov     byte [r8 + ENEMY_SLOW_TIMER], RAID_SLOW_TURNS
+    ret
+
 ; ---------------------------------------------------------
 spawn_enemies:
     push    r8
@@ -1006,6 +1159,8 @@ asm_tick_breach:
 .tick_combat:
     ; tick enemies every tick
     call    tick_enemies
+    ; passive trap AOE — traps damage adjacent enemies each tick while they exist
+    call    tick_trap_aoe
 
     ; Don't resolve until at least RAID_MOVE_INTERVAL ticks into combat
     mov     rax, [rbx + GS_TICK]
