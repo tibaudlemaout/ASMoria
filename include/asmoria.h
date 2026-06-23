@@ -37,7 +37,9 @@ typedef struct {
     uint8_t  name_idx;          /* +0x0C : index into dwarf name table */
     uint8_t  equipment;         /* +0x0D : EQUIP_* constant        */
     uint8_t  is_hero;           /* +0x0E : 1 if hero dwarf (5% hire chance) */
-    uint8_t  hero_trait;        /* +0x0F : TRAIT_* constant        */
+    uint8_t  hero_trait;        /* +0x0F : TRAIT_* constant (was _pad2) */
+    int64_t  job_xp[7];         /* +0x10 : xp per job (incl. Craftsdwarf) */
+} Dwarf;                        /* size: 72 bytes */
 
 /* Hero trait IDs */
 #define TRAIT_NONE          0
@@ -48,9 +50,6 @@ typedef struct {
 #define TRAIT_DEEPBORN      5   /* Miner:       +1 stone and gold per tick    */
 #define TRAIT_BLESSED       6   /* Any job:     morale floor 50               */
 #define TRAIT_COUNT         6
-    uint8_t  _pad2[2];          /* +0x0E : padding to align job_xp on 8 bytes */
-    int64_t  job_xp[7];         /* +0x10 : xp per job (incl. Craftsdwarf) */
-} Dwarf;                        /* size: 64 bytes */
 
 #define JOB_IDLE     0
 #define JOB_MINER    1
