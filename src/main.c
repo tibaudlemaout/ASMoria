@@ -168,6 +168,53 @@ int main(void) {
                             break;
                         }
 
+                        /* =====================================================
+                         * DEV KEYS — remove before release
+                         * ===================================================== */
+
+                        /* F12: flood all resources for testing */
+                        case SDLK_F12: {
+                            state.resources.gold        = 99999;
+                            state.resources.stone       = 99999;
+                            state.resources.wood        = 9999;
+                            state.resources.food        = 9999;
+                            state.resources.mana        = 9999;
+                            state.resources.iron_ore    = 9999;
+                            state.resources.gems        = 999;
+                            state.resources.relics      = 99;
+                            state.resources.crystals    = 99;
+                            state.resources.iron_bars   = 999;
+                            state.resources.ale         = 99;
+                            state.resources.weapons     = 9;
+                            state.resources.armour      = 9;
+                            state.resources.tools       = 99;
+                            state.resources.walls       = 99;
+                            state.resources.spike_traps = 99;
+                            state.resources.slow_traps  = 99;
+                            fprintf(stderr, "[DEV F12] Resources filled. "
+                                "Depth %u/%d, tick %llu.\n",
+                                state.depth, DEPTH_MAX,
+                                (unsigned long long)state.tick);
+                            break;
+                        }
+
+                        /* F11: advance depth by 1 (pays cost automatically).
+                           Note: still requires Rune of the Deep — buy it first
+                           with the mana provided by F12. */
+                        case SDLK_F11: {
+                            if (state.depth >= DEPTH_MAX) {
+                                fprintf(stderr, "[DEV F11] Already at max depth.\n");
+                            } else {
+                                state.resources.gold  = 99999;
+                                state.resources.stone = 99999;
+                                asm_dig_deeper(&state);
+                                ui_show_depth = 0;
+                                fprintf(stderr, "[DEV F11] Depth now %u (need Rune of the Deep if stuck).\n",
+                                    state.depth);
+                            }
+                            break;
+                        }
+
                         case SDLK_u:
                             ui_show_upgrades = !ui_show_upgrades;
                             break;
