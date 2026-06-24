@@ -88,6 +88,7 @@ void ui_draw_wonder(Renderer *r, const GameState *state) {
         /* Status tag */
         char status[40];
         uint32_t scol;
+        int has_bp = (int)WONDER_HAS_BP(state->upgrades.tier2, i);
         if (done[i]) {
             snprintf(status, sizeof(status), "[COMPLETE]");
             scol = COL_GOLD;
@@ -98,8 +99,11 @@ void ui_draw_wonder(Renderer *r, const GameState *state) {
         } else if (active != WONDER_NONE_VAL) {
             snprintf(status, sizeof(status), "[other wonder building]");
             scol = COL_DIM;
+        } else if (has_bp) {
+            snprintf(status, sizeof(status), "[blueprint ready]");
+            scol = COL_FOOD;
         } else {
-            snprintf(status, sizeof(status), "[not started]");
+            snprintf(status, sizeof(status), "[no blueprint]");
             scol = COL_DIM;
         }
 

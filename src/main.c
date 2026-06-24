@@ -294,6 +294,7 @@ int main(void) {
                             else if (ui_show_craft)      ui_craft_move(+1);
                             else if (ui_show_tavern)     ui_tavern_move(+1);
                             else if (ui_show_wonder)     ui_wonder_move(+1);
+                            else if (ui_show_caravan)    ui_caravan_adjust(-1);
                             else                        ui_dwarf_select(+1);
                             break;
                         case SDLK_LEFT:

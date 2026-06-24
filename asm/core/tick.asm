@@ -9,6 +9,8 @@ extern asm_tick_dwarves
 extern asm_tick_events
 extern asm_tick_breach
 extern asm_tick_wonder
+extern asm_tick_caravan
+extern asm_tick_tavern
 extern asm_tick_xp
 extern asm_event_push
 extern asm_tick_infra
@@ -88,6 +90,9 @@ asm_tick:
     mov     rdi, rbx
     call    asm_tick_craft
 
+    mov     rdi, rbx
+    call    asm_tick_tavern
+
     ; 9. Raid / Breach system
     mov     rdi, rbx
     call    asm_tick_breach
@@ -99,6 +104,10 @@ asm_tick:
     ; 10. World Wonder construction tick
     mov     rdi, rbx
     call    asm_tick_wonder
+
+    ; 11. Caravan tick
+    mov     rdi, rbx
+    call    asm_tick_caravan
 
     add     rsp, 8
     pop     rbx

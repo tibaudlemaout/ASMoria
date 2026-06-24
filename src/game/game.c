@@ -8,6 +8,7 @@
 
 void game_init(GameState *state) {
     memset(state, 0, sizeof(*state));
+    state->prestige._pad = 0xFF;   /* WONDER_NONE — no active wonder */
     asm_rng_seed(state, (uint64_t)time(NULL) ^ 0xA5710A1A000ULL);
 
     state->resources.gold  = 10;
