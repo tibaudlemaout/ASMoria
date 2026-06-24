@@ -32,6 +32,8 @@ extern int ui_show_craft;
 extern int ui_show_depth;
 extern int ui_show_help;
 extern int ui_show_achievements;
+extern int ui_show_wonder;
+extern int ui_game_won;
 
 void ui_draw_all(Renderer *r, const GameState *state);
 void ui_draw_titlebar(Renderer *r, const GameState *state);
@@ -41,6 +43,7 @@ void ui_draw_dwarf_detail(Renderer *r, const GameState *state);
 void ui_draw_depth_confirm(Renderer *r, const GameState *state);
 void ui_draw_help(Renderer *r);
 void ui_draw_achievements(Renderer *r, const GameState *state);
+void ui_draw_win_screen(Renderer *r, const GameState *state);
 void ui_draw_divider(Renderer *r);
 void ui_draw_hline_full(Renderer *r, int row);
 void ui_draw_eventlog(Renderer *r, const GameState *state);

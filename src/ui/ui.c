@@ -4,6 +4,7 @@
 #include "ui_prestige.h"
 #include "ui_craft.h"
 #include "ui_tavern.h"
+#include "ui_wonder.h"
 #include "ui.h"
 #include "events_text.h"
 #include <stdio.h>
@@ -26,6 +27,7 @@ int ui_show_tavern       = 0;
 int ui_show_depth        = 0;
 int ui_show_help         = 0;
 int ui_show_achievements = 0;
+int ui_game_won          = 0;
 static int scroll_offset      = 0;
 static int dwarf_scroll_offset = 0;
 
@@ -179,10 +181,14 @@ void ui_draw_all(Renderer *r, const GameState *state) {
     }
     ui_draw_titlebar(r, state);
     ui_draw_resources(r, state);
-    if (ui_show_help) {
+    if (ui_game_won) {
+        ui_draw_win_screen(r, state);
+    } else if (ui_show_help) {
         ui_draw_help(r);
     } else if (ui_show_achievements) {
         ui_draw_achievements(r, state);
+    } else if (ui_show_wonder) {
+        ui_draw_wonder(r, state);
     } else if (ui_show_depth) {
         ui_draw_depth_confirm(r, state);
     } else {
@@ -541,6 +547,51 @@ void ui_draw_dwarf_detail(Renderer *r, const GameState *state) {
     /* Row 6: job assignment keys */
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 6, COL_DIM,
         " [M]iner [L]umberer [F]armer [G]uard [S]cholar [C]raftsdwarf [I]dle  [E] Feed");
+}
+
+/* =========================================================
+ * Victory / Win screen
+ * Shown when all three World Wonders are complete.
+ * ========================================================= */
+
+void ui_draw_win_screen(Renderer *r, const GameState *state) {
+    char buf[128];
+    int  row = UI_ROW_DWARVES;
+    int  ac  = 0;
+    for (int i = 0; i < MAX_DWARVES; i++) if (state->dwarves[i].alive) ac++;
+
+    renderer_draw_hline_partial(r, row, 0, DIVIDER_COL, COL_GOLD);
+    row++;
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_GOLD,
+        "  \xe2\x98\x85  THE MOUNTAIN KING'S LEGACY IS COMPLETE  \xe2\x98\x85");
+    row += 2;
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_FG,
+        "  Three great wonders stand as testament to the");
+    row++;
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_FG,
+        "  indomitable spirit and craft of your clan.");
+    row += 2;
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_GOLD,
+        "  [*] Throne of the Mountain King     COMPLETE");
+    row++;
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_GOLD,
+        "  [*] World Drill                     COMPLETE");
+    row++;
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_GOLD,
+        "  [*] Divine Hammer                   COMPLETE");
+    row += 2;
+    snprintf(buf, sizeof(buf), "  Ticks survived: %llu    Raids repelled: %d",
+             (unsigned long long)state->tick, state->raid.raids_completed);
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM, buf);
+    row++;
+    snprintf(buf, sizeof(buf), "  Dwarves sworn: %d       Depths delved: %u / %d",
+             ac, state->depth, DEPTH_MAX);
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM, buf);
+    row += 2;
+    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_ACCENT,
+        "  [F5] Save your victory    [ESC] Continue playing");
+    row += 2;
+    renderer_draw_hline_partial(r, row, 0, DIVIDER_COL, COL_GOLD);
 }
 
 /* =========================================================

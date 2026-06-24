@@ -8,6 +8,7 @@ extern asm_tick_resources
 extern asm_tick_dwarves
 extern asm_tick_events
 extern asm_tick_breach
+extern asm_tick_wonder
 extern asm_tick_xp
 extern asm_event_push
 extern asm_tick_infra
@@ -94,6 +95,10 @@ asm_tick:
     ; 9. Flavour + stat events
     mov     rdi, rbx
     call    asm_tick_events
+
+    ; 10. World Wonder construction tick
+    mov     rdi, rbx
+    call    asm_tick_wonder
 
     add     rsp, 8
     pop     rbx

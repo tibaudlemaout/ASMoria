@@ -347,6 +347,50 @@ typedef struct {
 #define PRESTIGE_MIN_RUNES      3
 #define PRESTIGE_MIN_RESOURCES  10000
 
+/* =========================================================
+ * World Wonders — three mega-projects that win the game
+ * Completion: upgrades.tier2 bits [42:40]
+ * Active construction: prestige._pad (see wonder.asm)
+ * ========================================================= */
+#define WONDER_THRONE           0
+#define WONDER_DRILL            1
+#define WONDER_HAMMER           2
+#define WONDER_COUNT            3
+#define WONDER_BIT_BASE         40
+#define WONDER_NONE_VAL         0xFF
+
+/* Completion check macros */
+#define WONDER_DONE(t2, idx)    (((t2) >> (40 + (idx))) & 1ULL)
+#define ALL_WONDERS_DONE(t2)    (WONDER_DONE(t2,0) && WONDER_DONE(t2,1) && WONDER_DONE(t2,2))
+
+/* Active construction accessors (read from prestige._pad) */
+#define WONDER_ACTIVE(pad)      ((uint8_t)((pad) & 0xFF))
+#define WONDER_TIMER(pad)       ((uint16_t)(((pad) >> 8) & 0xFFFF))
+
+/* Costs and requirements */
+#define WONDER_THRONE_GOLD      1500
+#define WONDER_THRONE_STONE     2000
+#define WONDER_THRONE_BARS      150
+#define WONDER_THRONE_GEMS      20
+#define WONDER_THRONE_MIN_DWF   12
+#define WONDER_THRONE_TICKS     300
+
+#define WONDER_DRILL_GOLD       1000
+#define WONDER_DRILL_STONE      1500
+#define WONDER_DRILL_BARS       300
+#define WONDER_DRILL_GEMS       30
+#define WONDER_DRILL_CRYSTALS   15
+#define WONDER_DRILL_MIN_DWF    15
+#define WONDER_DRILL_TICKS      400
+
+#define WONDER_HAMMER_GOLD      2000
+#define WONDER_HAMMER_STONE     1000
+#define WONDER_HAMMER_BARS      400
+#define WONDER_HAMMER_RELICS    30
+#define WONDER_HAMMER_CRYSTALS  20
+#define WONDER_HAMMER_MIN_DWF   10
+#define WONDER_HAMMER_TICKS     500
+
 typedef struct {
     uint32_t honor;             /* unspent honor                    */
     uint32_t total_honor;       /* all-time honor earned            */
@@ -541,6 +585,11 @@ extern void     asm_tick_breach(GameState *state);
 extern int64_t  asm_buy_pnode(GameState *state, uint8_t node_id);
 extern int64_t  asm_do_prestige(GameState *state);
 extern int64_t  asm_can_prestige(GameState *state);
+
+/* World Wonder functions */
+extern int64_t  asm_start_wonder(GameState *state, uint64_t wonder_idx);
+extern void     asm_tick_wonder(GameState *state);
+extern void     asm_cancel_wonder(GameState *state);
 extern void     asm_breach_retreat(GameState *state);
 extern void     asm_collect_guards(GameState *state);
 extern int      asm_breach_place(GameState *state, uint8_t col, uint8_t row, uint8_t mode);

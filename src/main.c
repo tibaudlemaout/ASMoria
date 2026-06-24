@@ -10,6 +10,7 @@
 #include "ui/ui_breach.h"
 #include "ui/ui_prestige.h"
 #include "ui/ui_craft.h"
+#include "ui/ui_wonder.h"
 #include "ui/ui_tavern.h"
 #include "game/game.h"
 #include "game/save.h"
@@ -70,6 +71,10 @@ int main(void) {
                                 ui_show_help = 0;
                             else if (ui_show_achievements)
                                 ui_show_achievements = 0;
+                            else if (ui_show_wonder)
+                                ui_show_wonder = 0;
+                            else if (ui_game_won)
+                                ui_game_won = 0;   /* continue playing */
                             else {
                                 save_game(&state);
                                 running = 0;
@@ -132,6 +137,8 @@ int main(void) {
                                     }
                                     state.raid.grid[cr][cc] = CELL_EMPTY;
                                 }
+                            } else if (ui_show_wonder) {
+                                asm_cancel_wonder(&state);
                             }
                             break;
 
@@ -238,6 +245,17 @@ int main(void) {
                             }
                             break;
 
+                        case SDLK_j:
+                            /* World Wonders panel */
+                            if (!ui_show_upgrades && !ui_show_research
+                                && !ui_show_breach && !ui_show_prestige
+                                && !ui_show_craft  && !ui_show_tavern) {
+                                ui_show_wonder       = !ui_show_wonder;
+                                ui_show_achievements = 0;
+                                ui_show_help         = 0;
+                            }
+                            break;
+
                         case SDLK_UP:
                             if (ui_show_upgrades)       ui_upgr_move(-1);
                             else if (ui_show_research)  ui_research_move(-1);
@@ -245,6 +263,7 @@ int main(void) {
                             else if (ui_show_prestige)  ui_prestige_move(-1);
                             else if (ui_show_craft)      ui_craft_move(-1);
                             else if (ui_show_tavern)     ui_tavern_move(-1);
+                            else if (ui_show_wonder)     ui_wonder_move(-1);
                             else                        ui_dwarf_select(-1);
                             break;
                         case SDLK_DOWN:
@@ -254,6 +273,7 @@ int main(void) {
                             else if (ui_show_prestige)  ui_prestige_move(+1);
                             else if (ui_show_craft)      ui_craft_move(+1);
                             else if (ui_show_tavern)     ui_tavern_move(+1);
+                            else if (ui_show_wonder)     ui_wonder_move(+1);
                             else                        ui_dwarf_select(+1);
                             break;
                         case SDLK_LEFT:
@@ -277,6 +297,9 @@ int main(void) {
                                 int id = ui_upgr_selected();
                                 if (id >= 0)
                                     asm_buy_upgrade(&state, (uint8_t)id);
+                            } else if (ui_show_wonder) {
+                                int w = ui_wonder_selected();
+                                asm_start_wonder(&state, (uint64_t)w);
                             } else if (ui_show_tavern) {
                                 int buff = ui_tavern_selected();
                                 if (buff > 0)
@@ -412,6 +435,9 @@ int main(void) {
         uint64_t now = SDL_GetTicks64();
         if (now - last_tick_ms >= TICK_MS) {
             game_update(&state);
+            /* Win condition: all three World Wonders complete */
+            if (!ui_game_won && ALL_WONDERS_DONE(state.upgrades.tier2))
+                ui_game_won = 1;
             last_tick_ms = now;
         }
 

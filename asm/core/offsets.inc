@@ -37,6 +37,16 @@
 %define DWARF_HERO_TRAIT    0x0F
 %define DWARF_JOB_XP        0x10
 %define SIZEOF_DWARF        0x48
+
+; Hero trait IDs
+%define TRAIT_NONE          0
+%define TRAIT_IRONHIDE      1
+%define TRAIT_BERSERKER     2
+%define TRAIT_SCHOLAR_KING  3
+%define TRAIT_FOREMAN       4
+%define TRAIT_DEEPBORN      5
+%define TRAIT_BLESSED       6
+%define TRAIT_COUNT         6
 %define MAX_DWARVES         64
 %define JOB_COUNT           7
 %define MAX_JOB_LEVEL       5
@@ -62,16 +72,6 @@
 %define FATIGUE_WARN        85
 %define MORALE_MAX          100
 %define MORALE_IDLE_RATE    5
-
-; --- Hero trait IDs ---
-%define TRAIT_NONE          0
-%define TRAIT_IRONHIDE      1
-%define TRAIT_BERSERKER     2
-%define TRAIT_SCHOLAR_KING  3
-%define TRAIT_FOREMAN       4
-%define TRAIT_DEEPBORN      5
-%define TRAIT_BLESSED       6
-%define TRAIT_COUNT         6
 
 ; --- GameState offsets ---
 %define GS_RESOURCES        0x0000
@@ -425,3 +425,39 @@
 %define PRESTIGE_MIN_RAIDS      1
 %define PRESTIGE_MIN_RUNES      3
 %define PRESTIGE_MIN_RESOURCES  10000
+
+; --- World Wonders ---
+; Completion flags stored in upgrades.tier2 bits [42:40] (one bit per wonder).
+; Active construction packed into prestige._pad (uint32):
+;   bits  [7:0]  = wonder index (0-2) or WONDER_NONE (0xFF)
+;   bits [23:8]  = ticks remaining (uint16)
+;   bits [31:24] = spare
+%define WONDER_THRONE           0
+%define WONDER_DRILL            1
+%define WONDER_HAMMER           2
+%define WONDER_COUNT            3
+%define WONDER_BIT_BASE         40
+%define WONDER_NONE             0xFF
+
+%define WONDER_THRONE_GOLD      1500
+%define WONDER_THRONE_STONE     2000
+%define WONDER_THRONE_BARS      150
+%define WONDER_THRONE_GEMS      20
+%define WONDER_THRONE_MIN_DWF   12
+%define WONDER_THRONE_TICKS     300
+
+%define WONDER_DRILL_GOLD       1000
+%define WONDER_DRILL_STONE      1500
+%define WONDER_DRILL_BARS       300
+%define WONDER_DRILL_GEMS       30
+%define WONDER_DRILL_CRYSTALS   15
+%define WONDER_DRILL_MIN_DWF    15
+%define WONDER_DRILL_TICKS      400
+
+%define WONDER_HAMMER_GOLD      2000
+%define WONDER_HAMMER_STONE     1000
+%define WONDER_HAMMER_BARS      400
+%define WONDER_HAMMER_RELICS    30
+%define WONDER_HAMMER_CRYSTALS  20
+%define WONDER_HAMMER_MIN_DWF   10
+%define WONDER_HAMMER_TICKS     500
