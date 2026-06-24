@@ -113,6 +113,15 @@
 %define RAID_CURSOR_ROW         0x129
 %define RAID_PLACE_MODE         0x12a
 %define RAID_TYPE               0x12b
+%define RAID_CARAVAN_STATE      0x12c
+
+; Caravan phase constants (bits [1:0] of RAID_CARAVAN_STATE)
+%define CAVAN_IDLE              0
+%define CAVAN_INFLIGHT          1
+%define CAVAN_SUCCESS           2
+%define CAVAN_FAIL              3
+%define CARAVAN_TRIP_TICKS      60
+%define CARAVAN_FOOD_STEP       100
 
 ; --- Enemy struct offsets ---
 %define ENEMY_TYPE          0x00
@@ -427,16 +436,17 @@
 %define PRESTIGE_MIN_RESOURCES  10000
 
 ; --- World Wonders ---
-; Completion flags stored in upgrades.tier2 bits [42:40] (one bit per wonder).
-; Active construction packed into prestige._pad (uint32):
+; Completion flags: upgrades.tier2 bits [42:40]
+; Blueprint flags:  upgrades.tier2 bits [45:43]
+; Active build packed into prestige._pad (uint32):
 ;   bits  [7:0]  = wonder index (0-2) or WONDER_NONE (0xFF)
-;   bits [23:8]  = ticks remaining (uint16)
-;   bits [31:24] = spare
+;   bits [23:8]  = ticks remaining
 %define WONDER_THRONE           0
 %define WONDER_DRILL            1
 %define WONDER_HAMMER           2
 %define WONDER_COUNT            3
 %define WONDER_BIT_BASE         40
+%define WONDER_BP_BIT_BASE      43
 %define WONDER_NONE             0xFF
 
 %define WONDER_THRONE_GOLD      1500

@@ -72,7 +72,7 @@
 - [x] Raid type tied to depth + RNG
 - [x] Trap upgrade category
 - [x] Spike Pit, Flame Vent, Ballista
-- [ ] Trap passive damage per combat round
+- [x] Trap passive damage per combat round
 - [ ] Trap upkeep
 
 ---
@@ -92,9 +92,9 @@
 
 ## Week 6 — Endgame & Polish
 
-- [ ] World Wonder: Throne of the Mountain King
-- [ ] World Wonder: World Drill (unlocks Ascension)
-- [ ] World Wonder: Divine Hammer
+- [x] World Wonder: Throne of the Mountain King
+- [x] World Wonder: World Drill (unlocks Ascension)
+- [x] World Wonder: Divine Hammer
 - [ ] Ascension biome: Frozen Peak
 - [ ] Ascension biome: Volcano Core
 - [ ] Ascension biome: Haunted Range

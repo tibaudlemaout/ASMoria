@@ -28,7 +28,8 @@ C_SRCS    := $(SRCDIR)/main.c              \
              $(SRCDIR)/ui/ui_prestige.c \
              $(SRCDIR)/ui/ui_craft.c \
              $(SRCDIR)/ui/ui_tavern.c \
-             $(SRCDIR)/ui/ui_wonder.c
+             $(SRCDIR)/ui/ui_wonder.c \
+             $(SRCDIR)/ui/ui_caravan.c
 
 ASM_SRCS  := $(ASMDIR)/core/tick.asm      \
              $(ASMDIR)/core/resources.asm  \
@@ -52,6 +53,7 @@ ASM_SRCS  := $(ASMDIR)/core/tick.asm      \
              $(ASMDIR)/core/equip.asm      \
              $(ASMDIR)/core/tavern.asm    \
              $(ASMDIR)/core/wonder.asm    \
+             $(ASMDIR)/core/caravan.asm   \
              $(ASMDIR)/math/rng.asm
 
 C_OBJS    := $(patsubst $(SRCDIR)/%.c,   $(BLDDIR)/%.c.o,   $(C_SRCS))

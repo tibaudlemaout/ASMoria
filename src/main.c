@@ -11,9 +11,13 @@
 #include "ui/ui_prestige.h"
 #include "ui/ui_craft.h"
 #include "ui/ui_wonder.h"
+#include "ui/ui_caravan.h"
 #include "ui/ui_tavern.h"
 #include "game/game.h"
 #include "game/save.h"
+#include "game/caravan.h"
+#include <time.h>
+#include <stdlib.h>
 
 int main(void) {
     Renderer  renderer;
@@ -73,6 +77,8 @@ int main(void) {
                                 ui_show_achievements = 0;
                             else if (ui_show_wonder)
                                 ui_show_wonder = 0;
+                            else if (ui_show_caravan)
+                                ui_show_caravan = 0;
                             else if (ui_game_won)
                                 ui_game_won = 0;   /* continue playing */
                             else {
@@ -252,6 +258,19 @@ int main(void) {
                                 && !ui_show_craft  && !ui_show_tavern) {
                                 ui_show_wonder       = !ui_show_wonder;
                                 ui_show_achievements = 0;
+                                ui_show_caravan      = 0;
+                                ui_show_help         = 0;
+                            }
+                            break;
+
+                        case SDLK_k:
+                            /* Caravan panel */
+                            if (!ui_show_upgrades && !ui_show_research
+                                && !ui_show_breach && !ui_show_prestige
+                                && !ui_show_craft  && !ui_show_tavern) {
+                                ui_show_caravan      = !ui_show_caravan;
+                                ui_show_wonder       = 0;
+                                ui_show_achievements = 0;
                                 ui_show_help         = 0;
                             }
                             break;
@@ -263,6 +282,7 @@ int main(void) {
                             else if (ui_show_prestige)  ui_prestige_move(-1);
                             else if (ui_show_craft)      ui_craft_move(-1);
                             else if (ui_show_tavern)     ui_tavern_move(-1);
+                            else if (ui_show_caravan)    ui_caravan_adjust(1);
                             else if (ui_show_wonder)     ui_wonder_move(-1);
                             else                        ui_dwarf_select(-1);
                             break;
@@ -297,6 +317,16 @@ int main(void) {
                                 int id = ui_upgr_selected();
                                 if (id >= 0)
                                     asm_buy_upgrade(&state, (uint8_t)id);
+                            } else if (ui_show_caravan) {
+                                uint32_t cs = state.raid.caravan_state;
+                                if (CAVAN_PHASE(cs) == CAVAN_IDLE)
+                                    asm_caravan_launch(&state,
+                                        ui_caravan_cur_workers(),
+                                        ui_caravan_cur_guards(),
+                                        ui_caravan_cur_food());
+                                else if (CAVAN_PHASE(cs) == CAVAN_SUCCESS
+                                      || CAVAN_PHASE(cs) == CAVAN_FAIL)
+                                    asm_caravan_acknowledge(&state);
                             } else if (ui_show_wonder) {
                                 int w = ui_wonder_selected();
                                 asm_start_wonder(&state, (uint64_t)w);

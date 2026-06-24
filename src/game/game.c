@@ -1,5 +1,6 @@
 #include "game.h"
 #include "save.h"
+#include "caravan.h"
 #include "../../include/asmoria.h"
 #include <string.h>
 #include <time.h>
@@ -40,6 +41,7 @@ void game_init(GameState *state) {
 
 void game_update(GameState *state) {
     asm_tick(state);
+    asm_tick_caravan(state);
 
     if (state->tick % AUTOSAVE_INTERVAL == 0)
         save_game(state);

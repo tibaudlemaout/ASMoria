@@ -33,6 +33,7 @@ extern int ui_show_depth;
 extern int ui_show_help;
 extern int ui_show_achievements;
 extern int ui_show_wonder;
+extern int ui_show_caravan;
 extern int ui_game_won;
 
 void ui_draw_all(Renderer *r, const GameState *state);

@@ -5,6 +5,7 @@
 #include "ui_craft.h"
 #include "ui_tavern.h"
 #include "ui_wonder.h"
+#include "ui_caravan.h"
 #include "ui.h"
 #include "events_text.h"
 #include <stdio.h>
@@ -190,6 +191,8 @@ void ui_draw_all(Renderer *r, const GameState *state) {
         ui_draw_achievements(r, state);
     } else if (ui_show_wonder) {
         ui_draw_wonder(r, state);
+    } else if (ui_show_caravan) {
+        ui_draw_caravan(r, state);
     } else if (ui_show_depth) {
         ui_draw_depth_confirm(r, state);
     } else {
