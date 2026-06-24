@@ -79,9 +79,9 @@
 
 ## Week 5 — Economy, Trade & Automation
 
-- [ ] Caravan system (food cost, 50-tick trip)
-- [ ] Trade resource → gold / blueprints
-- [ ] Ambush risk + guard escort option
+- [x] Caravan system (food cost, 50-tick trip)
+- [x] Trade resource → gold / blueprints
+- [x] Ambush risk + guard escort option
 - [ ] Dynamic trade pricing (surplus = lower price)
 - [ ] Foreman upgrade
 - [ ] Configurable auto-assignment rules
