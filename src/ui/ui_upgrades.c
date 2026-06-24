@@ -94,7 +94,7 @@ static const UpgradeInfo upgrades[UPGR_COUNT] = {
 
     { "Forge", "DEPTH", UPGR_MAX_FORGE,
       500, 300, 0, 0, 0, 2, 1,
-      { "Traps deal 8 passive AOE dmg/tick (10 bars). Spike → Ballista soon.",
+      { "Traps deal 8 passive AOE dmg/tick (10 bars). Spike -> Ballista soon.",
         "Slow Trap becomes Flame Vent: 8 dmg + slow AOE per tick (25 bars).",
         "Spike Trap becomes Ballista: 15 dmg AOE per tick (50 bars)." } },
 

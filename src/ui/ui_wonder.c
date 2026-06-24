@@ -173,5 +173,5 @@ void ui_draw_wonder(Renderer *r, const GameState *state) {
     }
 
     renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM,
-        "  [↑/↓] Navigate  [J/ESC] Close");
+        "  [^/v] Navigate  [J/ESC] Close");
 }

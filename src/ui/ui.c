@@ -454,7 +454,7 @@ void ui_draw_dwarf_detail(Renderer *r, const GameState *state) {
     int64_t cur_xp = d->job_xp[d->job];
 
     /* Row 1: name, job, total level */
-    snprintf(buf, sizeof(buf), " %s  —  %s%s                              TLv: %d",
+    snprintf(buf, sizeof(buf), " %s  --  %s%s                              TLv: %d",
              dname, job,
              (d->job == JOB_IDLE && d->prev_job != JOB_IDLE) ? " (Resting)" : "",
              total_lv);
@@ -475,7 +475,7 @@ void ui_draw_dwarf_detail(Renderer *r, const GameState *state) {
             "+1 stone and gold/tick",
             "Morale never below 50"
         };
-        snprintf(buf, sizeof(buf), " ★ HERO: %s — %s",
+        snprintf(buf, sizeof(buf), " * HERO: %s -- %s",
                  trait_names[d->hero_trait], trait_desc[d->hero_trait]);
         renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_DETAIL + 1, COL_GOLD, buf);
     }
@@ -567,7 +567,7 @@ void ui_draw_win_screen(Renderer *r, const GameState *state) {
     renderer_draw_hline_partial(r, row, 0, DIVIDER_COL, COL_GOLD);
     row++;
     renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_GOLD,
-        "  \xe2\x98\x85  THE MOUNTAIN KING'S LEGACY IS COMPLETE  \xe2\x98\x85");
+        "  ***  THE MOUNTAIN KING'S LEGACY IS COMPLETE  ***");
     row += 2;
     renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_FG,
         "  Three great wonders stand as testament to the");
@@ -606,7 +606,7 @@ void ui_draw_help(Renderer *r) {
     renderer_draw_hline_partial(r, row, 0, DIVIDER_COL, COL_DIM);
     row++;
     renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_ACCENT,
-        "  [ HELP \xe2\x80\x94 KEY BINDINGS ]");
+        "  [ HELP -- KEY BINDINGS ]");
     row += 2;
 
     int lc = UI_COL_MARGIN;
@@ -649,10 +649,10 @@ void ui_draw_help(Renderer *r) {
     renderer_draw_text_grid(r, lc, row, COL_FG,  "  NAVIGATION");
     renderer_draw_text_grid(r, rc, row, COL_FG,  "  SAVE / LOAD");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [↑/↓]      Select dwarf");
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [^/v]      Select dwarf");
     renderer_draw_text_grid(r, rc, row, COL_DIM, "  [F5]  Save");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [←/→]      Scroll list");
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [</> ]      Scroll list");
     renderer_draw_text_grid(r, rc, row, COL_DIM, "  [F9]  Load");
     row++;
     renderer_draw_text_grid(r, lc, row, COL_DIM, "  [PgUp/Dn]  Scroll event log");
@@ -788,10 +788,10 @@ void ui_draw_depth_confirm(Renderer *r, const GameState *state) {
     /* Per-depth unlock descriptions and costs */
     static const char *unlock_title[] = {
         "", /* depth 1 → 2 */
-        "Iron Ore deposits open up — smelt bars, forge weapons and armour.",
-        "Gem seams discovered — enables traps, tools, and rune research.",
-        "Ancient Relics surface — accelerates prestige gain.",
-        "Crystal formations exposed — endgame mana and conduit upgrades."
+        "Iron Ore deposits open up -- smelt bars, forge weapons and armour.",
+        "Gem seams discovered -- enables traps, tools, and rune research.",
+        "Ancient Relics surface -- accelerates prestige gain.",
+        "Crystal formations exposed -- endgame mana and conduit upgrades."
     };
     static const int cost_stone[] = { 0, 500, 1500, 3000, 6000 };
     static const int cost_gold[]  = { 0, 300, 1000, 2500, 5000 };
@@ -889,7 +889,7 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state) {
     /* ---- Row 2: panels and meta keys ---- */
     char row2[192];
     snprintf(row2, sizeof(row2),
-             "[D] Depth  [J] Wonders  [A] Achievements  [SPACE] Help  [F5] Save  [F9] Load");
+             "[D] Depth  [J] Wonders  [K] Caravan  [A] Achievements  [SPACE] Help  [F5] Save  [F9] Load");
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR + 1, COL_DIM, row2);
 }
 
