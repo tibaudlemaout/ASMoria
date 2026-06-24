@@ -83,6 +83,10 @@ $(BLDDIR)/%.asm.o: $(ASMDIR)/%.asm
 run: all
 	./$(TARGET)
 
+.PHONY: valgrind
+valgrind: all
+	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./$(TARGET)
+
 .PHONY: clean
 clean:
 	rm -rf $(BLDDIR)
