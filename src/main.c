@@ -298,10 +298,16 @@ int main(void) {
                             break;
                         case SDLK_LEFT:
                             if (ui_show_breach) ui_breach_move(-1, 0);
+                            else if (ui_show_caravan &&
+                                     CAVAN_PHASE(state.raid.caravan_state) == CAVAN_IDLE)
+                                ui_caravan_field_move(-1);
                             else if (!ui_show_upgrades) ui_dwarf_scroll(-1);
                             break;
                         case SDLK_RIGHT:
                             if (ui_show_breach) ui_breach_move(+1, 0);
+                            else if (ui_show_caravan &&
+                                     CAVAN_PHASE(state.raid.caravan_state) == CAVAN_IDLE)
+                                ui_caravan_field_move(+1);
                             else if (!ui_show_upgrades) ui_dwarf_scroll(+1);
                             break;
                         case SDLK_PAGEUP:

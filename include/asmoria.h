@@ -48,9 +48,9 @@ typedef struct {
 #define TRAIT_DEEPBORN      5   /* Miner:       +1 stone and gold per tick    */
 #define TRAIT_BLESSED       6   /* Any job:     morale floor 50               */
 #define TRAIT_COUNT         6
-    uint8_t  _pad2[2];          /* +0x0E : padding to align job_xp on 8 bytes */
+    uint8_t  _pad3[0];          /* is_hero/hero_trait replaced the old _pad2[2] */
     int64_t  job_xp[7];         /* +0x10 : xp per job (incl. Craftsdwarf) */
-} Dwarf;                        /* size: 64 bytes */
+} Dwarf;                        /* sizeof = 0x48 = 72 bytes */
 
 #define JOB_IDLE     0
 #define JOB_MINER    1
