@@ -612,54 +612,84 @@ void ui_draw_help(Renderer *r) {
     int lc = UI_COL_MARGIN;
     int rc = UI_COL_MARGIN + 44;
 
-    renderer_draw_text_grid(r, lc, row, COL_FG,  "  GENERAL");
-    renderer_draw_text_grid(r, rc, row, COL_FG,  "  DWARVES");
+    /* ---- Left column: panels ---- */
+    renderer_draw_text_grid(r, lc, row, COL_FG, "  PANELS");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [H]        Hire dwarf");
-    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [M/L/F/G/S/C/I] Assign job");
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [H]       Hire dwarf");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [U]        Upgrades");
-    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [E]   Feed selected dwarf");
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [U]       Upgrades");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [R]        Research");
-    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [1/2/3]   Equip weapon/armour/tool");
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [R]       Research (Runes)");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [P]        Prestige");
-    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [0]        Unequip");
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [P]       Prestige");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [W]        Workshop");
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [W]       Workshop (if built)");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [T]        Tavern");
-    renderer_draw_text_grid(r, rc, row, COL_FG,  "  BREACH");
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [T]       Tavern (if built)");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [B]        Breach");
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [B]       Breach defence");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [D]       Dig deeper");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [J]       World Wonders");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [K]       Caravan");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [A]       Achievements");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [SPACE]   This help");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [ESC/Q]   Close / Quit");
+    row += 2;
+
+    renderer_draw_text_grid(r, lc, row, COL_FG, "  NAVIGATION");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [^/v]     Select dwarf");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [</> ]    Scroll list");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [PgUp/Dn] Scroll event log");
+    row++;
+    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [F5]      Save    [F9] Load");
+
+    /* ---- Right column: dwarves, breach, caravan ---- */
+    row = UI_ROW_DWARVES + 3;   /* reset to top, aligned with left */
+
+    renderer_draw_text_grid(r, rc, row, COL_FG, "  DWARVES");
+    row++;
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [M/L/F/G/S/C/I]  Assign job");
+    row++;
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [E]       Feed selected dwarf");
+    row++;
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [1/2/3]   Equip wpn/armour/tool");
+    row++;
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [0]       Unequip");
+    row += 2;
+
+    renderer_draw_text_grid(r, rc, row, COL_FG, "  BREACH");
+    row++;
     renderer_draw_text_grid(r, rc, row, COL_DIM, "  [TAB]     Cycle placement mode");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [D]        Dig deeper");
-    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [ENTER]   Place defence");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [Arrows]  Move cursor");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [A]        Achievements");
-    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [X]        Remove defence");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [ENTER]   Place unit / confirm");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [SPACE]    This help");
-    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [R]        Retreat");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [X]       Remove defence");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [ESC/Q]    Close / Quit");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [R]       Retreat guards");
     row += 2;
-    renderer_draw_text_grid(r, lc, row, COL_FG,  "  NAVIGATION");
-    renderer_draw_text_grid(r, rc, row, COL_FG,  "  SAVE / LOAD");
+
+    renderer_draw_text_grid(r, rc, row, COL_FG, "  CARAVAN  [K]");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [^/v]      Select dwarf");
-    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [F5]  Save");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [</> ]    Switch field");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [</> ]      Scroll list");
-    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [F9]  Load");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [^/v]     Adjust workers/guards/food");
     row++;
-    renderer_draw_text_grid(r, lc, row, COL_DIM, "  [PgUp/Dn]  Scroll event log");
-    row += 2;
-    renderer_draw_hline_partial(r, row, 0, DIVIDER_COL, COL_DIM);
-    row++;
-    renderer_draw_text_grid(r, UI_COL_MARGIN, row, COL_DIM, "  [SPACE] or [ESC] Close");
+    renderer_draw_text_grid(r, rc, row, COL_DIM, "  [ENTER]   Send / Acknowledge result");
+
+    renderer_draw_hline_partial(r, UI_ROW_CMDBAR - 2, 0, DIVIDER_COL, COL_DIM);
+    renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR - 1,
+        COL_DIM, "  [SPACE] or [ESC] Close");
 }
 
 /* =========================================================
