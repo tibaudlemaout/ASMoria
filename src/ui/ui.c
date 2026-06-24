@@ -27,6 +27,7 @@ int ui_show_tavern       = 0;
 int ui_show_depth        = 0;
 int ui_show_help         = 0;
 int ui_show_achievements = 0;
+/* ui_show_wonder is defined in ui_wonder.c — do NOT add it here */
 int ui_game_won          = 0;
 static int scroll_offset      = 0;
 static int dwarf_scroll_offset = 0;
@@ -853,7 +854,7 @@ void ui_draw_depth_confirm(Renderer *r, const GameState *state) {
 void ui_draw_cmdbar(Renderer *r, const GameState *state) {
     renderer_draw_hline_partial(r, UI_ROW_CMDBAR - 1, 0, DIVIDER_COL, COL_DIM);
 
-    char line1[256];
+    /* ---- shared calculations ---- */
     int rec_lv    = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_RECRUITERS);
     int alive_cnt = 0;
     for (int i = 0; i < MAX_DWARVES; i++)
@@ -862,25 +863,31 @@ void ui_draw_cmdbar(Renderer *r, const GameState *state) {
     int hire_food = HIRE_FOOD_BASE - rec_lv * HIRE_FOOD_DISCOUNT + alive_cnt * 2;
     if (hire_gold < 10) hire_gold = 10;
     if (hire_food < 5)  hire_food = 5;
-
     int can_hire = (state->resources.gold >= hire_gold &&
                     state->resources.food >= hire_food);
-
-    const char *breach_hint =
-        state->raid.active == RAID_COMBAT  ? "  [B] BREACH(!)" :
-        state->raid.active == RAID_WARNING ? "  [B] Breach(warn)" : "  [B] Breach";
-
     int ws_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_WORKSHOP);
     int tv_lv = (int)UPGR_LEVEL(state->upgrades.tier1, UPGR_TAVERN);
-    snprintf(line1, sizeof(line1),
-             "[H] Hire (%dg/%df)%s  [U] Upgrades  [R] Research  [P] Prestige%s%s%s  [F5] Save  [F9] Load",
+
+    /* ---- Row 1: core gameplay keys (stays within DIVIDER_COL) ---- */
+    char row1[192];
+    const char *breach_hint =
+        state->raid.active == RAID_COMBAT  ? "[B] BREACH(!)" :
+        state->raid.active == RAID_WARNING ? "[B] Breach(warn)" : "[B] Breach";
+    snprintf(row1, sizeof(row1),
+             "[H] Hire (%dg/%df)%s  [U] Upgrades  [R] Research  [P] Prestige  %s%s%s",
              hire_gold, hire_food,
-             can_hire ? "" : " [need resources]",
+             can_hire ? "" : "(!)",
              breach_hint,
              ws_lv >= 1 ? "  [W] Workshop" : "",
              tv_lv >= 1 ? "  [T] Tavern"   : "");
     renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR,
-                            can_hire ? COL_FG : COL_DIM, line1);
+                            can_hire ? COL_FG : COL_DIM, row1);
+
+    /* ---- Row 2: panels and meta keys ---- */
+    char row2[192];
+    snprintf(row2, sizeof(row2),
+             "[D] Depth  [J] Wonders  [A] Achievements  [SPACE] Help  [F5] Save  [F9] Load");
+    renderer_draw_text_grid(r, UI_COL_MARGIN, UI_ROW_CMDBAR + 1, COL_DIM, row2);
 }
 
 /* =========================================================
