@@ -13,9 +13,12 @@
 ;   - Force-rest ends when fatigue == 0, returns to prev_job
 ;
 ; No external calls — events written to GS_PENDING.
+; (Exception: asm_tavern_buff_active called for LONG_REST and TOAST)
 ; =========================================================
 
 %include "core/offsets.inc"
+
+extern asm_tavern_buff_active
 
 %define FATIGUE_MAX         100
 %define FATIGUE_WARN        85
@@ -153,6 +156,23 @@ asm_tick_dwarves:
     ; drain fatigue — base 2 + idle_level bonus
     movzx   eax, byte [r12 + DWARF_JOB_LEVEL + JOB_IDLE]
     add     eax, 2
+
+    ; BUFF_LONG_REST: +2 extra fatigue drain while idle (recover twice as fast)
+    push    rax
+    push    rdi
+    push    rsi
+    mov     rdi, rbx
+    mov     esi, BUFF_LONG_REST
+    call    asm_tavern_buff_active
+    mov     edx, eax                ; save result — pop rax would overwrite eax
+    pop     rsi
+    pop     rdi
+    pop     rax                     ; restore fatigue drain amount
+    test    edx, edx                ; now test the saved call result
+    jz      .no_long_rest
+    add     eax, 2
+.no_long_rest:
+
     sub     r15d, eax
     jge     .check_return
     xor     r15d, r15d
@@ -193,6 +213,24 @@ asm_tick_dwarves:
     jge     .kinship_rate_ok
     mov     rcx, 1                      ; floor at 1
 .kinship_rate_ok:
+
+    ; BUFF_TOAST: halve morale recovery interval (recover twice as fast)
+    push    rcx
+    push    rdi
+    push    rsi
+    mov     rdi, rbx
+    mov     esi, BUFF_TOAST
+    call    asm_tavern_buff_active
+    pop     rsi
+    pop     rdi
+    pop     rcx
+    test    eax, eax
+    jz      .no_toast
+    shr     rcx, 1
+    cmp     rcx, 1
+    jge     .no_toast
+    mov     rcx, 1
+.no_toast:
     mov     rax, [rbx + GS_TICK]
     xor     rdx, rdx
     div     rcx
@@ -204,18 +242,6 @@ asm_tick_dwarves:
     mov     [r12 + DWARF_MORALE], al
 
 .store_fatigue:
-    ; TRAIT_BLESSED: morale cannot drop below 50 for hero dwarves
-    movzx   eax, byte [r12 + DWARF_IS_HERO]
-    test    eax, eax
-    jz      .sf_no_blessed
-    movzx   eax, byte [r12 + DWARF_HERO_TRAIT]
-    cmp     eax, TRAIT_BLESSED
-    jne     .sf_no_blessed
-    movzx   eax, byte [r12 + DWARF_MORALE]
-    cmp     eax, 50
-    jge     .sf_no_blessed
-    mov     byte [r12 + DWARF_MORALE], 50
-.sf_no_blessed:
     mov     [r12 + DWARF_FATIGUE], r15b
 
 .next_dwarf:
